@@ -1,6 +1,6 @@
 from django.db import models
 
-from users.models import BaseUser
+from users.models import UserProfile
     
     
 class Entry(models.Model):
@@ -23,7 +23,7 @@ class Entry(models.Model):
     user = models.ForeignKey(
         null=True,
         blank=True,
-        to=BaseUser,
+        to=UserProfile,
         on_delete=models.SET_NULL,
     )
     csection = models.BooleanField(

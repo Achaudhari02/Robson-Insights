@@ -9,19 +9,21 @@ class Hospital(models.Model):
     def __str__(self):
         return f'{self.name}'
 
-class BaseUser(User):
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        to=User,
+        on_delete=models.CASCADE,
+    )
     hospital = models.ForeignKey(
         to=Hospital,
         on_delete=models.CASCADE,
     )
     
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.user.first_name} {self.user.last_name}'
     
-    class Meta:
-        verbose_name_plural = "Base Users"
     
-class Administrator(BaseUser):
+class Administrator(UserProfile):
     
     def __str__(self):
         return f'Administrator {super().__str__()}'
