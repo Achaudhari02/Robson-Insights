@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-
+from users.views import LoginView
 from .views import *
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     # App Views
     path("users/", include("users.urls", namespace="users")),
     path("survey/", include("survey.urls", namespace="survey")),
+     path('login/', LoginView.as_view(), name='login'),
 ]
