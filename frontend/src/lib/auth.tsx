@@ -45,7 +45,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   };
 
-  const logoutFn = () => {
+  const logoutFn = async () => {
+    console.log("user gang", user)
+    await axiosInstance.post('/logout/',{}, {
+      headers: {
+        Authorization: `Token ${user?.token}`
+      }
+    })
+    await AsyncStorage.removeItem('user');
     setUser(null);
   };
 
