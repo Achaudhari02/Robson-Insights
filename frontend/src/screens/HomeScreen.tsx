@@ -1,3 +1,5 @@
+import { useAuth } from '@/hooks/useAuth';
+import { axiosInstance } from '@/lib/axios';
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 
@@ -10,13 +12,15 @@ const questions = [
   { question: '5. Was this a multiparous woman?', key: 'mw' },
   { question: '6. Were there previous uterine scars?', key: 'us' },
   { question: '7. Was the labor induced or the cesarean section started before labor?', key: 'li' },
+  { question: '8. Was this a cesarean section?', key: 'cs' }, 
 ];
 
 const HomeScreen = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState([]);
-
+  const {user} = useAuth();
+  let data = {};
   const handleAnswer = (answer) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);
@@ -30,7 +34,7 @@ const HomeScreen = () => {
     }
   };
 
-  const computeResult = (answers) => {
+  const computeResult = async (answers) => {
     let groups = [];
     if (answers.mp === 'y') groups.push('8');
     if (answers.lie === 'y') groups.push('9');
@@ -47,6 +51,21 @@ const HomeScreen = () => {
     }
     setResult(groups);
     setCurrentQuestionIndex(0); // Reset for next quiz
+
+    try {
+      for (const group of groups) {
+        await axiosInstance.post('/survey/entries/', {
+          classification: group,
+          csection: answers.cs === 'y'
+        }, {headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${user.token}`
+        }});
+      }
+      console.log('Survey results submitted successfully.');
+    } catch (error) {
+      console.error('Error submitting survey results:', error);
+    }
   };
 
   const renderContent = () => {

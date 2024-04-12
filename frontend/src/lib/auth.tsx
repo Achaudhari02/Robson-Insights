@@ -1,11 +1,26 @@
-import { createContext } from "react";
-import React, { useState } from "react";
+import React, { useState, useEffect, createContext } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {axiosInstance} from "./axios";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.log("Error loading user from storage", error);
+      }
+    };
+
+    loadUser();
+  }, []);
+  
   const loginFn = async (email: string, password: string) => {
 
     try {
@@ -14,8 +29,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         username: email,
         password: password
       })
-      console.log(userCredential.data.token)
-      setUser({ email }); 
+      const userData = { email, token: userCredential.data.token };
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       setLoading(false);
     } catch (error) {
       throw new Error("Error logging in");
@@ -25,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const registerFn = async (email: string, password: string) => {
     setLoading(true);
-    setUser({ email }); 
+    setUser({ email, token: "fake" }); 
     setLoading(false);
   };
 
@@ -46,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 type User = {
   email: string;
+  token: string;
 };
 
 type AuthContextType = {
