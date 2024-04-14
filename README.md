@@ -1,11 +1,10 @@
-# Project Name
+# JDD 4109: Robson Classification App
 
-Provide a brief description of what your project does and what it is used for.
+The Robson Classification App is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
+
+Currently, the app includes core functionalities such as secure user authentication, a quiz interface where users can input data related to a patient's Robson classification, and a simplified results page that displays aggregated data.
 
 ## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
 ### Prerequisites
 
 What things you need to install the software and how to install them.
