@@ -17,7 +17,7 @@ const LoginScreen = ({navigation}) => {
       <Text style={styles.title}>Login</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Username or Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
