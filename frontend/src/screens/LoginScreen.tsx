@@ -12,6 +12,12 @@ const LoginScreen = ({navigation}) => {
     navigation.navigate('Home');
   };
 
+  function handleKeyPress(e) {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -29,6 +35,7 @@ const LoginScreen = ({navigation}) => {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        onKeyPress={handleKeyPress}
       />
       <Button title="Login" onPress={handleLogin} />
     </View>
