@@ -1,4 +1,4 @@
-# JDD 4109: Robson Classification App
+# JIB 4109: Robson Classification App
 
 The Robson Classification App is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
 
