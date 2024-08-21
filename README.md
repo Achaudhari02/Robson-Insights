@@ -1,6 +1,6 @@
-# JIB 4109: Robson Classification App
+# JIB 4109: Robson Insights
 
-The Robson Classification App is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
+The Robson Insights app is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
 
 Currently, the app includes core functionalities such as secure user authentication, a quiz interface where users can input data related to a patient's Robson classification, and a simplified results page that displays aggregated data.
 
