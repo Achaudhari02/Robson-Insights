@@ -12,8 +12,8 @@ class UserProfileList(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     
     def get_queryset(self):
-        user_hospital = self.request.user.userprofile.hospital
-        queryset = UserProfile.objects.filter(hospital=user_hospital)
+        user_group = self.request.user.userprofile.group
+        queryset = UserProfile.objects.filter(group=user_group)
         return queryset
 
 
@@ -22,8 +22,8 @@ class UserProfileDetail(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
     
     def get_queryset(self):
-        user_hospital = self.request.user.userprofile.hospital
-        queryset = UserProfile.objects.filter(hospital=user_hospital)
+        user_group = self.request.user.userprofile.group
+        queryset = UserProfile.objects.filter(group=user_group)
         return queryset
     
 class LoginView(ObtainAuthToken):

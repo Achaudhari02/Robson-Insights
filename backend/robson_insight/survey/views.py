@@ -8,8 +8,8 @@ class EntryList(generics.ListCreateAPIView):
     serializer_class = EntrySerializer
     
     def get_queryset(self):
-        user_hospital = self.request.user.userprofile.hospital
-        queryset = Entry.objects.filter(user__hospital=user_hospital)
+        user_group = self.request.user.userprofile.group
+        queryset = Entry.objects.filter(user__group=user_group)
         return queryset
     
     def perform_create(self, serializer):
@@ -21,7 +21,7 @@ class EntryDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EntrySerializer
     
     def get_queryset(self):
-        user_hospital = self.request.user.userprofile.hospital
-        queryset = Entry.objects.filter(user__hospital=user_hospital)
+        user_group = self.request.user.userprofile.group
+        queryset = Entry.objects.filter(user__group=user_group)
         return queryset
     

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Hospital(models.Model):
+class Group(models.Model):
     name = models.CharField(
         max_length=100,
     )
@@ -10,12 +10,12 @@ class Hospital(models.Model):
         return f'{self.name}'
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
     )
-    hospital = models.ForeignKey(
-        to=Hospital,
+    group = models.ForeignKey(
+        to=Group,
         on_delete=models.CASCADE,
     )
     

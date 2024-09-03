@@ -2,6 +2,6 @@ from django.contrib import admin
 
 from .models import *
 
-admin.site.register(Hospital)
+admin.site.register(Group)
 admin.site.register(UserProfile)
 admin.site.register(Administrator)
