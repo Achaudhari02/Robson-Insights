@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken, APIView
 from rest_framework.permissions import IsAuthenticated
-from .serializers import UserProfileSerializer
-from .models import UserProfile
+from .serializers import UserProfileSerializer, GroupSerializer
+from .models import UserProfile, Group
 
 
 class UserProfileList(generics.ListAPIView):
@@ -40,3 +40,15 @@ class LogoutView(APIView):
     def post(self, request):
         Token.objects.filter(user=request.user).delete()
         return Response({'detail': 'Logout successful'})
+    
+    
+class GroupListCreate(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
+    
+    def get_queryset(self):
+        queryset = Group.objects.all()
+        return queryset
+    
+    def perform_create(self, serializer):
+        serializer.save()
