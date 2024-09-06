@@ -10,7 +10,7 @@ class Group(models.Model):
         return f'{self.name}'
 
 class UserProfile(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         to=User,
         on_delete=models.CASCADE,
     )
