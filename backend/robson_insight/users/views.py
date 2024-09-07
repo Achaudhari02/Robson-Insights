@@ -55,6 +55,8 @@ class GroupListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save()
         
+
+        
 class AddUserToGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -95,4 +97,12 @@ class AddUserToGroupView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            
+    
+class GroupDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
+    
+    def get_queryset(self):
+        queryset = Group.objects.all()
+        return queryset
+    
