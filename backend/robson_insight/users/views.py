@@ -52,3 +52,14 @@ class GroupListCreate(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         serializer.save()
+        
+        
+class GroupDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
+    
+    def get_queryset(self):
+        queryset = Group.objects.all()
+        return queryset
+    
+    # Add delete method here ash
