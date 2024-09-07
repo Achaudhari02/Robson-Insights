@@ -9,4 +9,5 @@ urlpatterns = [
     path('groups/', GroupListCreate.as_view()),
     path('add-user-to-group/', AddUserToGroupView.as_view(), name='add-user-to-group'),
     path('groups/<int:pk>/', GroupDetail.as_view()),
+    path('get-groups-users/<int:pk>/', GroupsUsersView.as_view()),
 ]
