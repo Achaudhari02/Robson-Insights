@@ -7,6 +7,7 @@ from .serializers import UserProfileSerializer, GroupSerializer
 from .models import UserProfile, Group, Administrator
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
+from django.http import Http404
 
 
 class UserProfileList(generics.ListAPIView):
@@ -142,3 +143,15 @@ class GroupDetail(generics.RetrieveUpdateDestroyAPIView):
         queryset = Group.objects.all()
         return queryset
     
+
+class GroupsUsersView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserProfileSerializer
+    
+    def get(self, request, pk):
+        if request.user.userprofile.group.pk != pk:
+            raise Http404()
+        user_group = request.user.userprofile.group
+        queryset = UserProfile.objects.filter(group=user_group)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
