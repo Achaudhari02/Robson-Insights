@@ -3,7 +3,6 @@ import { axiosInstance } from '@/lib/axios';
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 
-// Define your questions and the logic to determine the next question or result
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
   { question: 'Was this a transverse or oblique lie?', key: 'lie' },

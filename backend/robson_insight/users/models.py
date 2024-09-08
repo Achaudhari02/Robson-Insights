@@ -10,7 +10,7 @@ class Group(models.Model):
         return f'{self.name}'
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
     )
@@ -19,8 +19,11 @@ class UserProfile(models.Model):
         on_delete=models.CASCADE,
     )
     
+    class Meta:
+        unique_together = ('user', 'group')
+    
     def __str__(self):
-        return f'{self.user.first_name} {self.user.last_name}'
+        return f'{self.user.username} - {self.group.name}'
     
     
 class Administrator(UserProfile):

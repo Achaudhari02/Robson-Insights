@@ -29,7 +29,6 @@ const BottomTabs = () => {
           iconName = 'group';
         }
 
-        // You can return any component that you like here!
         return <IconComponent name={iconName} size={size} color={color} />;
       },
     })}>

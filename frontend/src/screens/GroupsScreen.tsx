@@ -1,64 +1,111 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet } from 'react-native';
-import GroupSelector from '@/components/GroupSelector';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
+import { axiosInstance } from '@/lib/axios';
+import { useAuth } from '@/hooks/useAuth';
+import { Select } from '@/components/Select';
 
 export default function GroupsScreen() {
-  const [fields, setFields] = useState([{ key: Date.now(), text: '' }]);
+  const [groups, setGroups] = useState([]);
+  const [groupUsers, setGroupUsers] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const {user, logoutFn} = useAuth();
+  const [newMember, setNewMember] = useState('');
 
-  const addField = () => {
-    setFields([...fields, { key: Date.now(), text: '' }]);
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    if (selectedGroup) {
+      fetchGroupUsers(selectedGroup);
+    }
+  }, [selectedGroup]);
+
+  const fetchGroups = async () => {
+    try {
+      const response = await axiosInstance.get('users/groups/', {
+        headers: { 'Authorization': `Token ${user.token}` }
+      });
+      const groupData = response.data.map(group => ({ label: group.name, value: group.id }));
+      setGroups(groupData);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    }
   };
 
-  const removeField = (key) => {
-    setFields(fields.filter((field) => field.key !== key));
+  const fetchGroupUsers = async (groupId) => {
+    try {
+      const response = await axiosInstance.get(`users/get-groups-users/${groupId}/`, {
+        headers: { 'Authorization': `Token ${user.token}` }
+      });
+      setGroupUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching group users:', error);
+    }
   };
 
-  const updateField = (key, text) => {
-    const updatedFields = fields.map((field) =>
-      field.key === key ? { ...field, text } : field
-    );
-    setFields(updatedFields);
+  const addMember = async () => {
+    if (!newMember || !selectedGroup) return;
+    try {
+      await axiosInstance.post(`users/add-user-to-group/`, 
+        { username: newMember, group_id: Number(selectedGroup) },
+        { headers: { 'Authorization': `Token ${user.token}` } }
+      );
+      setNewMember('');
+      fetchGroupUsers(selectedGroup);
+    } catch (error) {
+      console.error('Error adding member:', error);
+    }
   };
 
-  const handleAddUsers = () => {
-    const usernames = fields.map((field) => field.text);
-    // add users to groups
+  const removeMember = async (username) => {
+    try {
+      // await axiosInstance.post(`users/groups/${selectedGroup}/remove_member/`, 
+      //   { username },
+      //   { headers: { 'Authorization': `Token ${user.token}` } }
+      // );
+      fetchGroupUsers(selectedGroup);
+    } catch (error) {
+      console.error('Error removing member:', error);
+    }
   };
+
 
   return (
     <View style={styles.container}>
-      <GroupSelector />
-      {fields.map((field, index) => (
-        <View key={field.key} style={styles.row}>
+    <Select
+      items={groups}
+      value={selectedGroup}
+      onValueChange={(value) => setSelectedGroup(value)}
+    />
+    
+    {selectedGroup && (
+      <>
+        <Text style={styles.subtitle}>Group Members:</Text>
+        {groupUsers.map((user) => (
+          <View key={user.id} style={styles.row}>
+            <Text style={styles.username}>{user.username}</Text>
+            <Button title="Remove" onPress={() => removeMember(user.userid)} />
+          </View>
+        ))}
+        
+        <View style={styles.row}>
           <TextInput
             style={styles.input}
-            value={field.text}
-            onChangeText={(text) => updateField(field.key, text)}
+            value={newMember}
+            onChangeText={setNewMember}
+            placeholder="Enter username"
           />
-          {fields.length === 1 && (
-            <Button title="+" onPress={addField} />
-          )}
-          {fields.length > 1 && (
-            <>
-              <Button title="-" onPress={() => removeField(field.key)} />
-              {index === fields.length - 1 && (
-                <View style={styles.spacer} />
-              )}
-              {index === fields.length - 1 && (
-                <Button title="+" onPress={addField} />
-              )}
-            </>
-          )}
+          <Button title="Add Member" onPress={addMember} />
         </View>
-      ))}
-
-      <Button
-        title="Add Users"
-        onPress={handleAddUsers}
-      />
-    </View>
+      </>
+    )}
+  </View>
   );
+
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -67,9 +114,19 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: 'center'
   },
+  username: {
+    flex: 1,
+    marginRight: 10,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
     marginBottom: 10,
   },
   input: {
