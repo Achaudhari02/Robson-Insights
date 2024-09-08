@@ -58,12 +58,12 @@ export default function GroupsScreen() {
     }
   };
 
-  const removeMember = async (username) => {
+  const removeMember = async (username : string) => {
     try {
-      // await axiosInstance.post(`users/groups/${selectedGroup}/remove_member/`, 
-      //   { username },
-      //   { headers: { 'Authorization': `Token ${user.token}` } }
-      // );
+      await axiosInstance.post(`users/remove-user-from-group/`, 
+        { username, group_id: Number(selectedGroup) },
+        { headers: { 'Authorization': `Token ${user.token}` } }
+      );
       fetchGroupUsers(selectedGroup);
     } catch (error) {
       console.error('Error removing member:', error);
@@ -85,7 +85,7 @@ export default function GroupsScreen() {
         {groupUsers.map((user) => (
           <View key={user.id} style={styles.row}>
             <Text style={styles.username}>{user.username}</Text>
-            <Button title="Remove" onPress={() => removeMember(user.userid)} />
+            <Button title="Remove" onPress={() => removeMember(user.username)} />
           </View>
         ))}
         

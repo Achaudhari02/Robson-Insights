@@ -94,32 +94,30 @@ class RemoveUserFromGroup(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
         username = request.data.get('username')
+        group_id = request.data.get('group_id')
 
-        if not username:
-            return Response({'error': 'Username is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not username or not group_id:
+            return Response({'error': 'Username and group_id are required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try: 
-
+        try:
             user = User.objects.get(username=username)
-            user_profile = UserProfile.objects.get(user=user)
+            group = Group.objects.get(id=group_id)
+            user_profile = UserProfile.objects.get(user=user, group=group)
 
-
-            requesting_user_profile = request.user.userprofile
-
-            if not isinstance(requesting_user_profile, Administrator) or requesting_user_profile.group != user_profile.group:
+            requesting_user_admin = Administrator.objects.filter(user=request.user, group=group).exists()
+            if not requesting_user_admin:
                 return Response({'error': 'You are not authorized to remove users from this group.'}, status=status.HTTP_403_FORBIDDEN)
-            
 
-            user_profile.group = None
-            user_profile.save()
+            user_profile.delete()
 
-            return Response({'success': f'User {username} removed from their group'}, status=status.HTTP_200_OK)
+            return Response({'success': f'User {username} removed from group {group.name}'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Group.DoesNotExist:
+            return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
         except UserProfile.DoesNotExist:
-            return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'User is not in this group'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
