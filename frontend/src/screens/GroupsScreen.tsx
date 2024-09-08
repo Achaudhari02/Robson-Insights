@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet } from 'react-native';
 import GroupSelector from '@/components/GroupSelector';
 
-export default function Invitation() {
+export default function GroupsScreen() {
   const [fields, setFields] = useState([{ key: Date.now(), text: '' }]);
 
   const addField = () => {
