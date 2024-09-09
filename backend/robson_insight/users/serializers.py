@@ -4,11 +4,12 @@ from .models import UserProfile, Group
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    id = serializers.IntegerField(source='user.id', read_only=True)
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'user', 'group']
-        
+        fields = ['id', 'username', 'group']        
 
 class GroupSerializer(serializers.ModelSerializer):
 
