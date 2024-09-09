@@ -3,6 +3,8 @@ import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { axiosInstance } from '@/lib/axios';
 import { useAuth } from '@/hooks/useAuth';
 import { Select } from '@/components/Select';
+import { Button as TamaguiButton, Sheet, H4, XStack, YStack} from 'tamagui';
+import { Menu } from '@tamagui/lucide-icons';
 
 export default function GroupsScreen() {
   const [groups, setGroups] = useState([]);
@@ -10,6 +12,8 @@ export default function GroupsScreen() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const {user, logoutFn} = useAuth();
   const [newMember, setNewMember] = useState('');
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [joinRequests, setJoinRequests] = useState([]);
 
   useEffect(() => {
     fetchGroups();
@@ -47,7 +51,7 @@ export default function GroupsScreen() {
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
-      await axiosInstance.post(`users/add-user-to-group/`, 
+      await axiosInstance.post(`users/add-user-to-group/`,
         { username: newMember, group_id: Number(selectedGroup) },
         { headers: { 'Authorization': `Token ${user.token}` } }
       );
@@ -73,12 +77,22 @@ export default function GroupsScreen() {
 
   return (
     <View style={styles.container}>
+
+    <XStack position="absolute" top={10} right={10}>
+      <TamaguiButton
+        icon={Menu}
+        size="$4"
+        circular
+        onPress={() => setSidebarOpen(true)}
+      />
+    </XStack>
+
     <Select
       items={groups}
       value={selectedGroup}
       onValueChange={(value) => setSelectedGroup(value)}
     />
-    
+
     {selectedGroup && (
       <>
         <Text style={styles.subtitle}>Group Members:</Text>
@@ -88,7 +102,7 @@ export default function GroupsScreen() {
             <Button title="Remove" onPress={() => removeMember(user.username)} />
           </View>
         ))}
-        
+
         <View style={styles.row}>
           <TextInput
             style={styles.input}
@@ -98,6 +112,48 @@ export default function GroupsScreen() {
           />
           <Button title="Add Member" onPress={addMember} />
         </View>
+
+        <Sheet
+        modal
+        open={isSidebarOpen}
+        onOpenChange={setSidebarOpen}
+        snapPoints={[0.4, 0.8]}
+        zIndex={200000}
+        dismissOnSnapToBottom
+        animation="bouncy"
+      >
+        <Sheet.Frame>
+          <Sheet.ScrollView>
+            <YStack space="$3" padding="$4">
+              <H4>Group Join Requests</H4>
+              {joinRequests.length === 0 ? (
+                <Text>No join requests</Text>
+              ) : (
+                joinRequests.map((request) => (
+                  <XStack key={request.username} justifyContent="space-between" alignItems="center">
+                    <Text>{request.username}</Text>
+                    <XStack space="$2">
+                      <TamaguiButton
+                        size="$3"
+                        /*onPress={() => handleJoinRequest(request.username, 'approve')}*/
+                      >
+                        Approve
+                      </TamaguiButton>
+                      <TamaguiButton
+                        size="$3"
+                        /* onPress={() => handleJoinRequest(request.username, 'decline')} */
+                      >
+                        Decline
+                      </TamaguiButton>
+                    </XStack>
+                  </XStack>
+                ))
+              )}
+            </YStack>
+          </Sheet.ScrollView>
+        </Sheet.Frame>
+      </Sheet>
+
       </>
     )}
   </View>
