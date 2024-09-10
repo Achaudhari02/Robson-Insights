@@ -10,6 +10,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 - User Authentication with manually approved accounts
 - Initial group management, administrators of groups can add and remove users
 ### Bug Fixes
+- No bug fixes addressed in Sprint 1
 ### Known Issues
 - Users cannot yet create or join their own groups
 - Group permissions of users must currently be manually set
