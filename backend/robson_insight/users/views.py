@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .serializers import UserProfileSerializer, GroupSerializer
 from .models import UserProfile, Group
-from .permissions import IsInGroup
+from .permissions import IsInGroup, IsGroupAdmin
 
 
 class UserProfileListView(generics.ListAPIView):
@@ -25,7 +25,7 @@ class UserProfileDetailView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         pk = self.kwargs.get('pk')
-        queryset = UserProfile.objects.get(pk=pk)
+        queryset = UserProfile.objects.filter(pk=pk)
         return queryset
     
     
@@ -45,9 +45,19 @@ class GroupListCreateView(generics.ListCreateAPIView):
             group=group,
             is_admin=True
         )
+        
+        
+class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsGroupAdmin]
+    serializer_class = GroupSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        queryset = Group.objects.filter(pk=pk)
+        return queryset
 
 
-class UserProfileInGroupList(generics.ListAPIView):
+class UserProfileInGroupListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsInGroup]
     serializer_class = UserProfileSerializer
     
