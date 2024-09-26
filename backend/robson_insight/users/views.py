@@ -4,7 +4,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken, APIView
 from rest_framework.permissions import IsAuthenticated
 from .serializers import UserProfileSerializer, GroupSerializer
-from .models import UserProfile, Group, Administrator
+from .models import UserProfile, Group
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -71,7 +71,7 @@ class AddUserToGroupView(APIView):
             user = User.objects.get(username__iexact=username)
             group = Group.objects.get(id=group_id)
 
-            requesting_user_admin = Administrator.objects.filter(user=request.user, group=group).exists()
+            requesting_user_admin = UserProfile.objects.get(user=request.user, group=group).is_admin
             if not requesting_user_admin:
                 return Response({'error': 'You are not authorized to add users to this group.'}, status=status.HTTP_403_FORBIDDEN)
             
@@ -105,7 +105,7 @@ class RemoveUserFromGroup(APIView):
             group = Group.objects.get(id=group_id)
             user_profile = UserProfile.objects.get(user=user, group=group)
 
-            requesting_user_admin = Administrator.objects.filter(user=request.user, group=group).exists()
+            requesting_user_admin = UserProfile.objects.get(user=request.user, group=group).is_admin
             if not requesting_user_admin:
                 return Response({'error': 'You are not authorized to remove users from this group.'}, status=status.HTTP_403_FORBIDDEN)
 
