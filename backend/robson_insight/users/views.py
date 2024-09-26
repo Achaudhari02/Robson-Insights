@@ -1,51 +1,35 @@
-from rest_framework import generics, permissions,status
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from rest_framework.authtoken.views import ObtainAuthToken, APIView
-from rest_framework.permissions import IsAuthenticated
-from .serializers import UserProfileSerializer, GroupSerializer
-from .models import UserProfile, Group
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
-from django.http import Http404
+
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.authtoken.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import UserProfileSerializer, GroupSerializer
+from .models import UserProfile, Group
+from .permissions import IsInGroup
 
 
-class UserProfileList(generics.ListAPIView):
+class UserProfileListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = UserProfileSerializer
+    
+    def get_queryset(self):
+        return UserProfile.objects.all()
+
+
+class UserProfileDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserProfileSerializer
     
     def get_queryset(self):
-        user_group = self.request.user.userprofile.group
-        queryset = UserProfile.objects.filter(group=user_group)
-        return queryset
-
-
-class UserProfileDetail(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserProfileSerializer
-    
-    def get_queryset(self):
-        user_group = self.request.user.userprofile.group
-        queryset = UserProfile.objects.filter(group=user_group)
+        pk = self.kwargs.get('pk')
+        queryset = UserProfile.objects.get(pk=pk)
         return queryset
     
-class LoginView(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key}, status=status.HTTP_200_OK)
     
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        Token.objects.filter(user=request.user).delete()
-        return Response({'detail': 'Logout successful'})
-    
-    
-class GroupListCreate(generics.ListCreateAPIView):
+class GroupListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = GroupSerializer
     
@@ -54,8 +38,23 @@ class GroupListCreate(generics.ListCreateAPIView):
         return queryset
     
     def perform_create(self, serializer):
-        serializer.save()
+        group = serializer.save()
         
+        UserProfile.objects.create(
+            user=self.request.user,
+            group=group,
+            is_admin=True
+        )
+
+
+class UserProfileInGroupList(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsInGroup]
+    serializer_class = UserProfileSerializer
+    
+    def get_queryset(self):
+        group_pk = self.kwargs.get('pk')
+        queryset = UserProfile.objects.filter(group=group_pk)
+        return queryset
 
         
 class AddUserToGroupView(APIView):
@@ -120,32 +119,3 @@ class RemoveUserFromGroup(APIView):
             return Response({'error': 'User is not in this group'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-            
-    
-class GroupDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = GroupSerializer
-    
-    def get_queryset(self):
-        queryset = Group.objects.all()
-        return queryset
-    
-
-class GroupsUsersView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserProfileSerializer
-    
-    def get(self, request, pk):
-        try:
-            group = Group.objects.get(pk=pk)
-            user_profile = request.user.userprofile_set.filter(group=group).first()
-            if not user_profile:
-                return Response({'error': 'You do not have permission to view this group'}, status=status.HTTP_403_FORBIDDEN)
-            queryset = UserProfile.objects.filter(group=group)
-            serializer = self.serializer_class(queryset, many=True)
-            return Response(serializer.data)
-        except Group.DoesNotExist:
-            return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
