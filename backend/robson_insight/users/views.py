@@ -1,10 +1,15 @@
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
+from django.db import transaction
 
+from django.core.exceptions import ValidationError
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 from rest_framework.permissions import IsAuthenticated
+
+from .models import UserProfile, Group
+from .permissions import IsGroupAdmin
 
 from .serializers import UserProfileSerializer, GroupSerializer
 from .models import UserProfile, Group
@@ -129,3 +134,61 @@ class RemoveUserFromGroup(APIView):
             return Response({'error': 'User is not in this group'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ChangeGroupAdminView(APIView):
+    permission_classes = [IsAuthenticated, IsGroupAdmin]
+
+    def post(self, request, pk):
+        new_admin_username = request.data.get('username')
+
+        if not new_admin_username:
+            return Response(
+                {'error': 'New admin username is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            group = Group.objects.get(pk=pk)
+            new_admin_user = User.objects.get(username__iexact=new_admin_username)
+            new_admin_profile = UserProfile.objects.get(user=new_admin_user, group=group)
+        except Group.DoesNotExist:
+            return Response(
+                {'error': 'Group not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'User is not a member of the group.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        current_admin_profile = UserProfile.objects.get(user=request.user, group=group, is_admin=True)
+
+        if current_admin_profile.user != request.user:
+            return Response(
+                {'error': 'You are not authorized to change the admin of this group.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            with transaction.atomic():
+                current_admin_profile.is_admin = False
+                current_admin_profile.save()
+
+                new_admin_profile.is_admin = True
+                new_admin_profile.save()
+        except ValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {'success': f'User {new_admin_user.username} is now the admin of group {group.name}.'},
+            status=status.HTTP_200_OK
+        ) 
