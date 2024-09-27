@@ -16,7 +16,7 @@
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@react-navigation/stack": "^6.3.29",
-    "@tamagui/config": "^1.110.2",
+    "@tamagui/config": "^1.112.0",
     "@tamagui/lucide-icons": "^1.110.2",
     "@types/react": "~18.2.45",
     "axios": "^1.6.8",
