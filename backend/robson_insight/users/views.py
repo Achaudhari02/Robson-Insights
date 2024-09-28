@@ -166,6 +166,12 @@ class ChangeGroupAdminView(APIView):
                 {'error': 'User is not a member of the group.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
         current_admin_profile = UserProfile.objects.get(user=request.user, group=group, is_admin=True)
 
@@ -186,6 +192,11 @@ class ChangeGroupAdminView(APIView):
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         return Response(
