@@ -18,6 +18,13 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
         
+class SmallInviteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Invite
+        fields = ['email']
+        
+        
 class InviteSerializer(serializers.ModelSerializer):
     
     class Meta:
