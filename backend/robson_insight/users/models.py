@@ -23,6 +23,9 @@ class UserProfile(models.Model):
         default=False,
     )
 
+    can_add = models.BooleanField(default=False)
+    can_view = models.BooleanField(default=True)
+
     class Meta:
         unique_together = ('user', 'group')
 

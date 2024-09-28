@@ -13,4 +13,5 @@ urlpatterns = [
     path('add-user-to-group/', AddUserToGroupView.as_view(), name='add-user-to-group'),
     path('remove-user-from-group/', RemoveUserFromGroup.as_view(), name='remove-user-from-group'),
     path('groups/<int:pk>/change-admin/', ChangeGroupAdminView.as_view(), name='change-group-admin'),
+    path('toggle-permissions/', TogglePermissionsView.as_view(), name='toggle-permissions'),
 ]
