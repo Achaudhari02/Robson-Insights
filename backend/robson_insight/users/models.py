@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -40,3 +43,26 @@ class UserProfile(models.Model):
         # Run the custom validation before saving
         self.clean()
         super(UserProfile, self).save(*args, **kwargs)
+        
+        
+class Invite(models.Model):
+    token = models.CharField(
+        max_length=100,
+        unique=True
+    )
+    group = models.ForeignKey(
+        to=Group,
+        on_delete=models.CASCADE
+    )
+    email = models.EmailField()
+    created_on = models.DateTimeField(
+        auto_now_add=True
+    )
+    
+    def is_expired(self):
+        now = timezone.now()
+        expiry_time = self.created_on + timedelta(hours=24)
+        return now > expiry_time
+
+    def __str__(self):
+        return f'{self.email} - {self.group}'
