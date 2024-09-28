@@ -1,18 +1,16 @@
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from django.db import transaction
-
 from django.core.exceptions import ValidationError
+from django.core.signing import Signer
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import UserProfile, Group
-from .permissions import IsGroupAdmin
-
-from .serializers import UserProfileSerializer, GroupSerializer
-from .models import UserProfile, Group
+from .serializers import UserProfileSerializer, GroupSerializer, InviteSerializer
+from .models import UserProfile, Group, Invite
 from .permissions import IsInGroup, IsGroupAdmin
 
 
@@ -190,8 +188,8 @@ class ChangeGroupAdminView(APIView):
 
         return Response(
             {'success': f'User {new_admin_user.username} is now the admin of group {group.name}.'},
-            status=status.HTTP_200_OK
-        ) 
+            status=status.HTTP_200_OK        )
+
 class TogglePermissionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -230,3 +228,52 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class InviteCreateView(generics.CreateAPIView):
+    serializer_class = InviteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGroupAdmin]
+
+    def perform_create(self, serializer):
+        group = Group.objects.get(pk=self.kwargs['group_id'])
+        email = serializer.validated_data['email']
+        signer = Signer()
+        token = signer.sign(email)
+        invite = serializer.save(token=token, group=group, email=email)
+        
+        invite_url = f"https://yourdomain.com/accept-invite/{token}/"
+
+
+class AcceptInviteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, token):
+        try:
+            invite = Invite.objects.get(token=token)
+        except Invite.DoesNotExist:
+            return Response(
+                {"error": "Invite not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        if (invite.is_expired()):
+            invite.delete()
+            return Response(
+            {"error": "This invite has expired."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+        UserProfile.objects.create(
+            user=request.user,
+            group=invite.group,
+            is_admin=False
+        )
+        
+        invite.delete()
+        
+        return Response(
+            {"message": "You have successfully joined the group."},
+            status=status.HTTP_200_OK
+        )
+        
+        

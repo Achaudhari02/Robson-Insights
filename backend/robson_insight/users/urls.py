@@ -15,3 +15,7 @@ urlpatterns = [
     path('groups/<int:pk>/change-admin/', ChangeGroupAdminView.as_view(), name='change-group-admin'),
     path('toggle-permissions/', TogglePermissionsView.as_view(), name='toggle-permissions'),
 ]
+       
+    ## Invitations
+    path('accept-invitation/<str:token>/', AcceptInviteView.as_view(), name='accept-invite'),
+]
