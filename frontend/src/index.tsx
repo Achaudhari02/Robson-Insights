@@ -17,6 +17,18 @@ declare module '@tamagui/core' {
 }
 
 const App = () => {
+  const linking = {
+    prefixes: ['http://localhost:8081'], 
+    config: {
+      screens: {
+        Signup: 'signup',
+        Login: 'login',
+        Groups: 'groups',
+        Home: 'home',
+        Results: 'results'
+      },
+    },
+  };
   const [loadedFonts] = useFonts({
     Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
     InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
@@ -27,7 +39,7 @@ const App = () => {
   }
   return (
     <AuthProvider>
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
     <TamaguiProvider config={tamaguiConfig}>
     <AppRoutes /> 
     </TamaguiProvider>

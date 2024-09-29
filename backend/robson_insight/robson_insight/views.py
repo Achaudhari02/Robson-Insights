@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 from .serializers import UserRegistrationSerializer
-from users.models import Invite
+from users.models import Invite, UserProfile, User
 
 
 class LoginView(ObtainAuthToken):
@@ -14,7 +14,15 @@ class LoginView(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "token": token.key,
+            },
+            status=status.HTTP_200_OK
+        )
     
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -30,21 +38,41 @@ class RegisterView(APIView):
         try:
             invite = Invite.objects.get(token=token)
         except Invite.DoesNotExist:
-           return Response(
-            {
-                "error": "Invite not found."
-            },
-            status=status.HTTP_201_CREATED
-        ) 
+            return Response(
+                {"error": "Invite not found."},
+                status=status.HTTP_404_NOT_FOUND
+            ) 
         
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        
+        user, created = User.objects.get_or_create(
+            email=serializer.validated_data['email'],
+            defaults={
+                'username': serializer.validated_data['email'],
+                'first_name': serializer.validated_data['first_name'],
+                'last_name': serializer.validated_data['last_name'],
+                'password': serializer.validated_data['password']
+            }
+        )
+        
+        if not created:
+            if UserProfile.objects.filter(user=user, group=invite.group).exists():
+                return Response(
+                    {"error": "User is already a member of this group."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        UserProfile.objects.create(user=user, group=invite.group)
+        
+        token, created = Token.objects.get_or_create(user=user)
+        
         return Response(
             {
-                "user": serializer.data,
-                "message": "User created successfully."
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "token": token.key,
             },
             status=status.HTTP_201_CREATED
         )
-

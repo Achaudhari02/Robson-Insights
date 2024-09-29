@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { YStack, XStack, Text} from "tamagui";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronLeft } from "@tamagui/lucide-icons";
