@@ -15,7 +15,6 @@ class LoginView(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key}, status=status.HTTP_200_OK)
-  
     
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -23,8 +22,7 @@ class LogoutView(APIView):
     def post(self, request):
         Token.objects.filter(user=request.user).delete()
         return Response({'detail': 'Logout successful'})
-    
-
+ 
 class RegisterView(APIView):
     serializer_class = UserRegistrationSerializer
     
@@ -49,3 +47,4 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
