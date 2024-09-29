@@ -3,7 +3,7 @@ import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { axiosInstance } from '@/lib/axios';
 import { useAuth } from '@/hooks/useAuth';
 import { Select } from '@/components/Select';
-import { Button as TamaguiButton, Sheet, H4, XStack, YStack} from 'tamagui';
+import { Button as TamaguiButton, Sheet, H4, XStack, YStack, Dialog, Input} from 'tamagui';
 import { Menu } from '@tamagui/lucide-icons';
 
 export default function GroupsScreen() {
@@ -14,6 +14,9 @@ export default function GroupsScreen() {
   const [newMember, setNewMember] = useState('');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
+  const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [groupNameError, setGroupNameError] = useState('');
 
   useEffect(() => {
     fetchGroups();
@@ -48,6 +51,35 @@ export default function GroupsScreen() {
     }
   };
 
+  const createGroup = async () => {
+    if (newGroupName.length < 5) {
+      setGroupNameError('Group name must be at least 5 characters');
+      return;
+    }
+    if (newGroupName.length > 100) {
+      setGroupNameError('Group name cannot exceed 100 characters');
+      return;
+    }
+    try {
+      await axiosInstance.post(
+        'users/create-group/',
+        { group_name: newGroupName },
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      setCreateGroupModalOpen(false);
+      setNewGroupName('');
+      fetchGroups();
+    } catch (error) {
+      console.error('Error creating group:', error);
+      setGroupNameError('Failed to create group');
+    }
+  };
+
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
@@ -64,7 +96,7 @@ export default function GroupsScreen() {
 
   const removeMember = async (username : string) => {
     try {
-      await axiosInstance.post(`users/remove-user-from-group/`, 
+      await axiosInstance.post(`users/remove-user-from-group/`,
         { username, group_id: Number(selectedGroup) },
         { headers: { 'Authorization': `Token ${user.token}` } }
       );
@@ -76,17 +108,27 @@ export default function GroupsScreen() {
 
 
   return (
+    <View style={{ flex: 1 }}>
+      <XStack >
+        <TamaguiButton
+          style={styles.groupJoinRequestsButton}
+          icon={<Menu />}
+          size="$4"
+          circular
+          onPress={() => setSidebarOpen(true)}
+        />
+        <TamaguiButton
+          size="$4"
+          backgroundColor="$blue10"
+          color="white"
+          borderRadius="$2"
+          margin="$2"
+          onPress={() => setCreateGroupModalOpen(true)}
+        >
+          Create Group
+        </TamaguiButton>
+      </XStack>
     <View style={styles.container}>
-
-    <XStack position="absolute" top={10} right={10}>
-      <TamaguiButton
-        icon={Menu}
-        size="$4"
-        circular
-        onPress={() => setSidebarOpen(true)}
-      />
-    </XStack>
-
     <Select
       items={groups}
       value={selectedGroup}
@@ -156,6 +198,52 @@ export default function GroupsScreen() {
 
       </>
     )}
+    </View>
+    <Dialog open={isCreateGroupModalOpen} onOpenChange={setCreateGroupModalOpen}>
+    <Dialog.Portal>
+      <Dialog.Overlay
+        key="overlay"
+        animation="quick"
+        opacity={0.5}
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+        backgroundColor="black"
+      />
+      <Dialog.Content
+        key="content"
+        bordered
+        elevate
+        style={styles.dialogContent}
+      >
+        <Dialog.Title>Create Group</Dialog.Title>
+        <Input
+          placeholder="Group Name"
+          value={newGroupName}
+          onChangeText={(text) => {
+            setNewGroupName(text);
+            if (text.length >= 5) {
+              setGroupNameError('');
+            }
+          }}
+          style={styles.input}
+        />
+        {groupNameError ? (
+          <Text style={styles.errorText}>{groupNameError}</Text>
+        ) : null}
+        <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+          <TamaguiButton onPress={() => setCreateGroupModalOpen(false)}>
+            Cancel
+          </TamaguiButton>
+          <TamaguiButton
+            onPress={createGroup}
+            disabled={newGroupName.length < 5}
+          >
+            Submit
+          </TamaguiButton>
+        </XStack>
+      </Dialog.Content>
+    </Dialog.Portal>
+    </Dialog>
   </View>
   );
 
@@ -170,9 +258,11 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: 'center'
   },
-  username: {
-    flex: 1,
-    marginRight: 10,
+  groupJoinRequestsButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
   },
   row: {
     flexDirection: 'row',
@@ -195,5 +285,20 @@ const styles = StyleSheet.create({
   },
   spacer: {
     width: 10,
+  },
+  username: {
+    flex: 1,
+    marginRight: 10,
+  },
+  dialogContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+    alignSelf: 'center',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 5,
   },
 });
