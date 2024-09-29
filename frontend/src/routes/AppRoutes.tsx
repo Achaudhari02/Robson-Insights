@@ -9,6 +9,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
 import GroupsScreen from '@/screens/GroupsScreen';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import SignUpScreen from '@/screens/SignupScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,18 +49,17 @@ export const AppRoutes = () => {
       if (!user) {
         navigation.navigate('Login');
       }
+    } else {
+      navigation.navigate('Loading');
     }
   }, [user, loading]);
 
   return (
     <Stack.Navigator>
-      {loading ? (
         <Stack.Screen name="Loading" component={() => <View><Text>Loading...</Text></View>} />
-      ) : user ? (
           <Stack.Screen name="Home" component={BottomTabs} options={{ headerShown: false }} />
-      ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
-      )}
+        <Stack.Screen name="Signup" component={SignUpScreen} />
     </Stack.Navigator>
   );
 };
