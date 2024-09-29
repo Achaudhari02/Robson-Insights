@@ -15,11 +15,10 @@ urlpatterns = [
     path('create-group/', CreateGroup.as_view(), name = 'create-group'),
     path('groups/<int:pk>/change-admin/', ChangeGroupAdminView.as_view(), name='change-group-admin'),
     path('toggle-permissions/', TogglePermissionsView.as_view(), name='toggle-permissions'),
-    path('groups/<int:group_pk>/change-admin/', ChangeGroupAdminView.as_view(), name='change-group-admin'),
-       
+     
     ## Invitations
     path('invitations/', InviteListView.as_view(), name='invite-list'),
     path('create-invitation/<int:group_pk>/', InviteCreateView.as_view(), name='create-invite'),
     path('accept-invitation/<str:token>/', AcceptInviteView.as_view(), name='accept-invite'),
+    path('get-invitation/<str:token>/', GetInviteView.as_view(), name='get-invite'),
 ]
-

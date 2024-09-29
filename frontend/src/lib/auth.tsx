@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext } from "react";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {axiosInstance} from "./axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { axiosInstance } from "./axios";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const storedUser = await AsyncStorage.getItem('user');
+        const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
@@ -20,39 +20,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     loadUser();
   }, []);
-  
+
   const loginFn = async (email: string, password: string) => {
-
-    try {
-      setLoading(true);
-      const userCredential = await axiosInstance.post('/login/',{
-        username: email,
-        password: password
-      })
-      const userData = { email, token: userCredential.data.token };
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      setLoading(false);
-    } catch (error) {
-      throw new Error("Error logging in");
-    }
-
+    setLoading(true);
+    const userCredential = await axiosInstance.post("/login/", {
+      username: email,
+      password: password,
+    });
+    const userData = { email: userCredential.data.email, token: userCredential.data.token, firstName: userCredential.data.firstName, lastName: userCredential.data.lastName };
+    await AsyncStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+    setLoading(false);
   };
 
-  const registerFn = async (email: string, password: string) => {
+  const registerFn = async (registerData: RegisterData) => {
     setLoading(true);
-    setUser({ email, token: "fake" }); 
+    const userCredential = await axiosInstance.post(`/register/${registerData.token}/`, {
+      email: registerData.email,
+      username: registerData.email, 
+      password: registerData.password,
+      first_name: registerData.firstName,
+      last_name: registerData.lastName,
+    });
+    const userData = { email: userCredential.data.email, token: userCredential.data.token, firstName: userCredential.data.firstName, lastName: userCredential.data.lastName };
+    await AsyncStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
     setLoading(false);
   };
 
   const logoutFn = async () => {
-    console.log("user gang", user)
-    await axiosInstance.post('/logout/',{}, {
-      headers: {
-        Authorization: `Token ${user?.token}`
+    console.log("user gang", user);
+    await axiosInstance.post(
+      "/logout/",
+      {},
+      {
+        headers: {
+          Authorization: `Token ${user?.token}`,
+        },
       }
-    })
-    await AsyncStorage.removeItem('user');
+    );
+    await AsyncStorage.removeItem("user");
     setUser(null);
   };
 
@@ -70,13 +77,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 type User = {
   email: string;
   token: string;
+  firstName: string;
+  lastName: string;
+};
+
+type RegisterData = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  token: string;
 };
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
   loginFn: (email: string, password: string) => Promise<void>;
-  registerFn: (email: string, password: string) => Promise<void>;
+  registerFn: (registerData: RegisterData) => Promise<void>;
   logoutFn: () => void;
 };
 

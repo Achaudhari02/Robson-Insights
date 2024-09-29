@@ -8,7 +8,7 @@ type CustomSelectProps = SelectProps & {
   items: any[];
 };
 
-export function Select(props: CustomSelectProps) {
+export const Select = (props: CustomSelectProps) => {
   const [val, setVal] = React.useState(String(props.defaultValue))
   return (
     <XStack ai="center" gap="$4">

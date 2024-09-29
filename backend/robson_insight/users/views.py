@@ -160,7 +160,21 @@ class RemoveUserFromGroup(APIView):
             return Response({'error': 'User is not in this group'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class GetInviteView(APIView):
+    permission_classes = [permissions.AllowAny]
 
+    def get(self, request, token):
+        try:
+            invite = Invite.objects.get(token=token)
+            return Response({
+                "email": invite.email,
+                "group": invite.group.name
+            }, status=status.HTTP_200_OK)
+        except Invite.DoesNotExist:
+            return Response({"error": "Invite not found."}, status=status.HTTP_404_NOT_FOUND)
+             
+             
 class ChangeGroupAdminView(APIView):
     permission_classes = [IsAuthenticated, IsGroupAdmin]
 
@@ -227,51 +241,7 @@ class ChangeGroupAdminView(APIView):
 
         return Response(
             {'success': f'User {new_admin_user.username} is now the admin of group {group.name}.'},
-            status=status.HTTP_200_OK
-        ) 
-      
-      
-class TogglePermissionsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        username = request.data.get('username')
-        group_id = request.data.get('group_id')
-        toggle_add = request.data.get('toggle_add', False)
-        toggle_view = request.data.get('toggle_view', False)
-
-        try:
-            current_admin = request.user.userprofile
-            if not current_admin.is_admin:
-                return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
-
-            group = Group.objects.get(id=group_id)
-            if current_admin.group != group:
-                return Response({"error": "You can only modify users in your own group."}, status=status.HTTP_403_FORBIDDEN)
-
-            target_user = User.objects.get(username=username)
-            target_user_profile = UserProfile.objects.get(user=target_user, group=group)
-
-            if toggle_add:
-                target_user_profile.can_add = not target_user_profile.can_add
-            if toggle_view:
-                target_user_profile.can_view = not target_user_profile.can_view
-
-            target_user_profile.save()
-
-            return Response({"success": f"Permissions updated for {target_user.username}."}, status=status.HTTP_200_OK)
-
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        except UserProfile.DoesNotExist:
-            return Response({"error": "User profile not found in this group."}, status=status.HTTP_404_NOT_FOUND)
-        except Group.DoesNotExist:
-            return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        )
-        
+            status=status.HTTP_200_OK        )
         
 class InviteCreateView(generics.CreateAPIView):
     serializer_class = SmallInviteSerializer
@@ -284,7 +254,7 @@ class InviteCreateView(generics.CreateAPIView):
         token = signer.sign(email)
         invite = serializer.save(token=token, group=group, email=email)
         
-        invite_url = f"TODO: Add frontend URL here/{token}/"
+        invite_url = f"http://localhost:8081/signup?token={token}/"
         
         if not User.objects.filter(email=email).exists():
             send_mail(
@@ -333,7 +303,52 @@ class AcceptInviteView(APIView):
         return Response(
             {"message": "You have successfully joined the group."},
             status=status.HTTP_200_OK
-        )
+        ) 
+      
+      
+class TogglePermissionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        username = request.data.get('username')
+        group_id = request.data.get('group_id')
+        toggle_add = request.data.get('toggle_add', False)
+        toggle_view = request.data.get('toggle_view', False)
+
+        try:
+            current_admin = request.user.userprofile
+            if not current_admin.is_admin:
+                return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
+
+            group = Group.objects.get(id=group_id)
+            if current_admin.group != group:
+                return Response({"error": "You can only modify users in your own group."}, status=status.HTTP_403_FORBIDDEN)
+
+            target_user = User.objects.get(username=username)
+            target_user_profile = UserProfile.objects.get(user=target_user, group=group)
+
+            if toggle_add:
+                target_user_profile.can_add = not target_user_profile.can_add
+            if toggle_view:
+                target_user_profile.can_view = not target_user_profile.can_view
+
+            target_user_profile.save()
+
+            return Response({"success": f"Permissions updated for {target_user.username}."}, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found in this group."}, status=status.HTTP_404_NOT_FOUND)
+        except Group.DoesNotExist:
+            return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
+        
+
+
         
         
 class InviteListView(generics.ListAPIView):
@@ -344,3 +359,5 @@ class InviteListView(generics.ListAPIView):
         email = self.request.user.email
         return Invite.objects.filter(email=email)
     
+        
+        
