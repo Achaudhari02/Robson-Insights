@@ -1,66 +1,101 @@
-import { useAuth } from '@/hooks/useAuth';
-import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, Button, Text } from 'react-native';
+import { useAuth } from "@/hooks/useAuth";
+import React, { useEffect, useState } from "react";
+import { YStack, XStack, Text} from "tamagui";
+import { useNavigation } from "@react-navigation/native";
+import { ChevronLeft } from "@tamagui/lucide-icons";
+import { Pressable } from "react-native";
+import {Button, TextField} from "@/components";
+import { Formik } from "formik";
+import * as Yup from "yup";
 
-const LoginScreen = ({navigation}) => {
-  const {loginFn} = useAuth();
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+const LoginScreen = () => {
+  const { loginFn } = useAuth();
+  const navigation = useNavigation();
 
-  const handleLogin = async () => {
-    await loginFn(email, password);
-    navigation.navigate('Home');
+
+  useEffect(() => {
+    navigation.setOptions({
+      header: () => <LoginHeader />,
+    });
+  }, [navigation]);
+
+  const LoginHeader = () => {
+    return (
+      <YStack
+        paddingTop="$6"
+        paddingHorizontal="$4"
+        height="$10"
+        justifyContent="center"
+        alignItems="center"
+        borderBottomWidth={0}
+        elevation={0}
+        shadowOpacity={0}
+        backgroundColor="$background"
+      >
+        <XStack width="100%" justifyContent="space-between" alignItems="center">
+          <Pressable onPress={() => navigation.navigate('Signup')}>
+            <ChevronLeft size="$2" color="black" />
+          </Pressable>{" "}
+          <Text
+            fontSize="$6"
+            fontWeight="bold"
+            style={{ flex: 1, textAlign: "center" }}
+          >
+            Already have an account?
+          </Text>
+          <YStack width="$4" />
+        </XStack>
+      </YStack>
+    );
   };
 
-  function handleKeyPress(e) {
-    if (e.key === 'Enter') {
-      handleLogin();
-    }
-  }
+  const validationSchema = Yup.object().shape({
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+  });
+
+
+  const handleLogin = async (values) => {
+    await loginFn(values.email, values.password);
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username or Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        onKeyPress={handleKeyPress}
-      />
-      <Button title="Login" onPress={handleLogin} />
-    </View>
+    <Formik
+    initialValues={{ email: "", password: "" }}
+    validationSchema={validationSchema}
+    onSubmit={handleLogin}
+  >
+    {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+    <YStack flex={1} paddingHorizontal="$4" paddingTop="$2" background="$background">
+      <YStack width="100%" space="$4">
+        <TextField
+          value={values.email}
+          onChangeText={handleChange("email")}
+          onBlur={handleBlur("email")}
+          placeholder="Email"
+          helperText={touched.email && errors.email ? errors.email : ""}
+        />
+        <TextField
+           value={values.password}
+           onChangeText={handleChange("password")}
+           onBlur={handleBlur("password")}
+           placeholder="Password"
+           secureTextEntry
+           helperText={touched.password && errors.password ? errors.password : ""}
+        />
+         <YStack height="40%" />
+        <Button
+          onPress={handleSubmit}
+          alignSelf="center"
+          disabled={!values.email || !values.password || errors.email || errors.password}
+          >
+            Login
+        </Button>
+      </YStack>
+    </YStack>
+      )}
+       </Formik>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
-  },
-});
 
 export default LoginScreen;

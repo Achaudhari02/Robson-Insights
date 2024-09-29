@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { axiosInstance } from '@/lib/axios';
 import { useAuth } from '@/hooks/useAuth';
-import { Select } from '@/components/Select';
-import { Button as TamaguiButton, Sheet, H4, XStack, YStack, Dialog, Input} from 'tamagui';
+import { Select } from '@/components';
+import { Button as TamaguiButton, Sheet, H4, XStack, YStack} from 'tamagui';
 import { Menu } from '@tamagui/lucide-icons';
 
 export default function GroupsScreen() {

@@ -49,8 +49,6 @@ export const AppRoutes = () => {
       if (!user) {
         navigation.navigate('Login');
       }
-    } else {
-      navigation.navigate('Loading');
     }
   }, [user, loading]);
 
