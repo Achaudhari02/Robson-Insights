@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import UserProfile, Group
+from .models import UserProfile, Group, Invite
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -15,4 +15,18 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
+        fields = '__all__'
+        
+        
+class SmallInviteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Invite
+        fields = ['email']
+        
+        
+class InviteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Invite
         fields = '__all__'

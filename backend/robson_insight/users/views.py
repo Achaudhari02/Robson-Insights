@@ -1,18 +1,18 @@
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from django.db import transaction
-
 from django.core.exceptions import ValidationError
+from django.core.signing import Signer
+from django.core.mail import send_mail
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import UserProfile, Group
-from .permissions import IsGroupAdmin
-
-from .serializers import UserProfileSerializer, GroupSerializer
-from .models import UserProfile, Group
+from robson_insight import settings
+from .serializers import UserProfileSerializer, GroupSerializer, InviteSerializer, SmallInviteSerializer
+from .models import UserProfile, Group, Invite
 from .permissions import IsInGroup, IsGroupAdmin
 
 
@@ -57,7 +57,7 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GroupSerializer
     
     def get_queryset(self):
-        pk = self.kwargs.get('pk')
+        pk = self.kwargs.get('group_pk')
         queryset = Group.objects.filter(pk=pk)
         return queryset
 
@@ -67,7 +67,7 @@ class UserProfileInGroupListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     
     def get_queryset(self):
-        group_pk = self.kwargs.get('pk')
+        group_pk = self.kwargs.get('group_pk')
         queryset = UserProfile.objects.filter(group=group_pk)
         return queryset
 
@@ -138,7 +138,7 @@ class RemoveUserFromGroup(APIView):
 class ChangeGroupAdminView(APIView):
     permission_classes = [IsAuthenticated, IsGroupAdmin]
 
-    def post(self, request, pk):
+    def post(self, request, group_pk):
         new_admin_username = request.data.get('username')
 
         if not new_admin_username:
@@ -148,7 +148,7 @@ class ChangeGroupAdminView(APIView):
             )
 
         try:
-            group = Group.objects.get(pk=pk)
+            group = Group.objects.get(pk=group_pk)
             new_admin_user = User.objects.get(username__iexact=new_admin_username)
             new_admin_profile = UserProfile.objects.get(user=new_admin_user, group=group)
         except Group.DoesNotExist:
@@ -166,6 +166,12 @@ class ChangeGroupAdminView(APIView):
                 {'error': 'User is not a member of the group.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
         current_admin_profile = UserProfile.objects.get(user=request.user, group=group, is_admin=True)
 
@@ -187,11 +193,18 @@ class ChangeGroupAdminView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response(
             {'success': f'User {new_admin_user.username} is now the admin of group {group.name}.'},
             status=status.HTTP_200_OK
         ) 
+      
+      
 class TogglePermissionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -230,3 +243,78 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        )
+        
+        
+class InviteCreateView(generics.CreateAPIView):
+    serializer_class = SmallInviteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGroupAdmin]
+
+    def perform_create(self, serializer):
+        group = Group.objects.get(pk=self.kwargs['group_pk'])
+        email = serializer.validated_data['email']
+        signer = Signer()
+        token = signer.sign(email)
+        invite = serializer.save(token=token, group=group, email=email)
+        
+        invite_url = f"TODO: Add frontend URL here/{token}/"
+        
+        if not User.objects.filter(email=email).exists():
+            send_mail(
+                'Robson Insights Invitation',
+                invite_url,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False
+            )
+        else:
+            send_mail(
+                'Robson Insights Invitation',
+                'You have been invited to a new group in robson insights',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False
+            )
+        
+class AcceptInviteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, token):
+        try:
+            invite = Invite.objects.get(token=token)
+        except Invite.DoesNotExist:
+            return Response(
+                {"error": "Invite not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        if (invite.is_expired()):
+            invite.delete()
+            return Response(
+            {"error": "This invite has expired."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+        UserProfile.objects.create(
+            user=request.user,
+            group=invite.group,
+            is_admin=False
+        )
+        
+        invite.delete()
+        
+        return Response(
+            {"message": "You have successfully joined the group."},
+            status=status.HTTP_200_OK
+        )
+        
+        
+class InviteListView(generics.ListAPIView):
+    permissions = [permissions.IsAuthenticated]
+    serializer_class = InviteSerializer
+    
+    def get_queryset(self):
+        email = self.request.user.email
+        return Invite.objects.filter(email=email)
+    
