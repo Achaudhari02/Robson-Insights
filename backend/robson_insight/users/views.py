@@ -9,6 +9,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import APIException
 
 from robson_insight import settings
 from .serializers import UserProfileSerializer, GroupSerializer, InviteSerializer, SmallInviteSerializer
@@ -257,21 +258,24 @@ class InviteCreateView(generics.CreateAPIView):
         invite_url = f"http://localhost:8081/signup?token={token}"
         
         if not User.objects.filter(email=email).exists():
-            send_mail(
-                'Robson Insights Invitation',
-                invite_url,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False
-            )
+            subject = 'Robson Insights Invitation'
+            message = invite_url
         else:
+            subject = 'Robson Insights Invitation'
+            message = 'You have been invited to a new group in robson insights'
+
+        try:
             send_mail(
-                'Robson Insights Invitation',
-                'You have been invited to a new group in robson insights',
+                subject,
+                message,
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False
             )
+        except Exception as e:
+            # If email sending fails, delete the created invite and re-raise the exception
+            invite.delete()
+            raise APIException(f"Failed to send invitation email: {str(e)}")
         
 class AcceptInviteView(APIView):
     permission_classes = [permissions.IsAuthenticated]

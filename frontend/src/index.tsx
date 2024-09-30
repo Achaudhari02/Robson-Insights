@@ -1,11 +1,12 @@
 import React from 'react';
-import {registerRootComponent} from 'expo';
+import { registerRootComponent } from 'expo';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from '@/lib/auth';
-import { AppRoutes } from '@/routes'; 
-import { TamaguiProvider, createTamagui} from 'tamagui'
+import { AppRoutes } from '@/routes';
+import { TamaguiProvider, createTamagui, Theme } from 'tamagui'
 import { config } from '@tamagui/config/v3'
 import { useFonts } from 'expo-font'
+import { ToastProvider, ToastViewport } from '@tamagui/toast'
 
 
 const tamaguiConfig = createTamagui(config)
@@ -13,12 +14,12 @@ const tamaguiConfig = createTamagui(config)
 // TypeScript types across all Tamagui APIs
 type Conf = typeof tamaguiConfig
 declare module '@tamagui/core' {
-  interface TamaguiCustomConfig extends Conf {}
+  interface TamaguiCustomConfig extends Conf { }
 }
 
 const App = () => {
   const linking = {
-    prefixes: ['http://localhost:8081'], 
+    prefixes: ['http://localhost:8081'],
     config: {
       screens: {
         Signup: 'signup',
@@ -39,11 +40,16 @@ const App = () => {
   }
   return (
     <AuthProvider>
-    <NavigationContainer linking={linking}>
-    <TamaguiProvider config={tamaguiConfig}>
-    <AppRoutes /> 
-    </TamaguiProvider>
-    </NavigationContainer>
+      <NavigationContainer linking={linking}>
+        <TamaguiProvider config={tamaguiConfig}>
+          <Theme name="light">
+            <ToastProvider>
+              <AppRoutes />
+              <ToastViewport />
+            </ToastProvider>
+          </Theme>
+        </TamaguiProvider>
+      </NavigationContainer>
     </AuthProvider>
   );
 }
