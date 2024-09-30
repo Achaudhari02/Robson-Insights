@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Select } from '@/components';
 import { Button as TamaguiButton, Sheet, H4, XStack, YStack, Dialog, Input} from 'tamagui';
 import { Menu } from '@tamagui/lucide-icons';
+import { useToastController, useToastState, Toast } from '@tamagui/toast';
 
 
 export default function GroupsScreen() {
@@ -18,6 +19,8 @@ export default function GroupsScreen() {
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [groupNameError, setGroupNameError] = useState('');
+  const toast = useToastController();
+  const currentToast = useToastState();
 
   useEffect(() => {
     fetchGroups();
@@ -90,8 +93,14 @@ export default function GroupsScreen() {
       );
       setNewMember('');
       fetchGroupUsers(selectedGroup);
+      toast.show('Member added successfully', {
+        message: `${newMember} has been invited to the group.`,
+      });
     } catch (error) {
       console.error('Error adding member:', error);
+      toast.show('Failed to add member', {
+        message: 'An error occurred while inviting the member.',
+      });
     }
   };
 
@@ -172,6 +181,26 @@ export default function GroupsScreen() {
           />
           <Button title="Add Member" onPress={addMember} />
         </View>
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
 
         <Sheet
         modal

@@ -56,7 +56,7 @@ const LoginScreen = () => {
 
 
   const handleLogin = async (values) => {
-    await loginFn(values.email, values.password);
+    await loginFn(values.email.toLowerCase(), values.password);
   };
 
   return (
