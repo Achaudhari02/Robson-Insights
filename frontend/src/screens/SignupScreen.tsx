@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { axiosInstance } from "@/lib/axios";
 
 const SignUpScreen = ({ route }) => {
-  const { registerFn } = useAuth();
+  const { registerFn, error } = useAuth();
   const navigation = useNavigation();
   const { token } = route.params;
   const [initialEmail, setInitialEmail] = useState("");
@@ -49,19 +49,13 @@ const SignUpScreen = ({ route }) => {
         shadowOpacity={0}
         backgroundColor="$background"
       >
-        <XStack width="100%" justifyContent="space-between" alignItems="center">
-          <Pressable onPress={() => navigation.navigate("Login")}>
-            <ChevronLeft size="$2" color="black" />
-          </Pressable>{" "}
-          <Text
-            fontSize="$6"
-            fontWeight="bold"
-            style={{ flex: 1, textAlign: "center" }}
-          >
-            Sign Up
-          </Text>
-          <YStack width="$4" />
-        </XStack>
+        <Text
+          fontSize="$6"
+          fontWeight="bold"
+          style={{ textAlign: "center" }}
+        >
+          Sign Up
+        </Text>
       </YStack>
     );
   };
@@ -124,6 +118,11 @@ const SignUpScreen = ({ route }) => {
             />
           </YStack>
           <YStack height="20%" />
+          {error ? (
+              <Text color="red" textAlign="center">
+                {error}
+              </Text>
+            ) : null}
           <Button
             disabled={!values.email || !values.password || !values.firstName || !values.lastName || errors.email || errors.password || errors.firstName || errors.lastName}
             onPress={handleSubmit}

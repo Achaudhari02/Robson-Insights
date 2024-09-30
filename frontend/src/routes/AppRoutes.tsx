@@ -58,12 +58,8 @@ const AppStack = () => {
 };
 
 export const AppRoutes = () => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) {
-    return <View><Text>Loading...</Text></View>;
-  }
 
-  console.log(user);
   return user ? <AppStack /> : <AuthStack />;
 };
