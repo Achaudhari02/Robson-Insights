@@ -75,7 +75,7 @@ const SignUpScreen = ({ route }) => {
 
   const handleSignup = async (values) => {
     await registerFn({
-      email: values.email,
+      email: values.email.toLowerCase(),
       password: values.password,
       firstName: values.firstName,
       lastName: values.lastName,

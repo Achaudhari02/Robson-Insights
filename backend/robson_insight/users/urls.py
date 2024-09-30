@@ -9,7 +9,7 @@ urlpatterns = [
     path('<int:pk>/', UserProfileDetailView.as_view()),
     path('groups/', GroupListCreateView.as_view()),
     path('groups/<int:group_pk>/', GroupDetailView.as_view()),
-    path('get-groups-users/<int:group_pk>', UserProfileInGroupListView.as_view()),
+    path('get-groups-users/<int:group_pk>/', UserProfileInGroupListView.as_view()),
     path('add-user-to-group/', AddUserToGroupView.as_view(), name='add-user-to-group'),
     path('remove-user-from-group/', RemoveUserFromGroup.as_view(), name='remove-user-from-group'),
     path('create-group/', CreateGroup.as_view(), name = 'create-group'),

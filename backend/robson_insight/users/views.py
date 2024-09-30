@@ -9,6 +9,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import APIException
 
 from robson_insight import settings
 from .serializers import UserProfileSerializer, GroupSerializer, InviteSerializer, SmallInviteSerializer
@@ -254,24 +255,27 @@ class InviteCreateView(generics.CreateAPIView):
         token = signer.sign(email)
         invite = serializer.save(token=token, group=group, email=email)
         
-        invite_url = f"http://localhost:8081/signup?token={token}/"
+        invite_url = f"http://localhost:8081/signup?token={token}"
         
         if not User.objects.filter(email=email).exists():
-            send_mail(
-                'Robson Insights Invitation',
-                invite_url,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False
-            )
+            subject = 'Robson Insights Invitation'
+            message = invite_url
         else:
+            subject = 'Robson Insights Invitation'
+            message = 'You have been invited to a new group in robson insights'
+
+        try:
             send_mail(
-                'Robson Insights Invitation',
-                'You have been invited to a new group in robson insights',
+                subject,
+                message,
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False
             )
+        except Exception as e:
+            # If email sending fails, delete the created invite and re-raise the exception
+            invite.delete()
+            raise APIException(f"Failed to send invitation email: {str(e)}")
         
 class AcceptInviteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -316,12 +320,12 @@ class TogglePermissionsView(APIView):
         toggle_view = request.data.get('toggle_view', False)
 
         try:
-            current_admin = request.user.userprofile
-            if not current_admin.is_admin:
+            current_admin_profile = UserProfile.objects.get(user=request.user)
+            if not current_admin_profile.is_admin:
                 return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
 
             group = Group.objects.get(id=group_id)
-            if current_admin.group != group:
+            if current_admin_profile.group != group:
                 return Response({"error": "You can only modify users in your own group."}, status=status.HTTP_403_FORBIDDEN)
 
             target_user = User.objects.get(username=username)
@@ -344,7 +348,6 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
         
         
 
