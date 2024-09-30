@@ -320,12 +320,12 @@ class TogglePermissionsView(APIView):
         toggle_view = request.data.get('toggle_view', False)
 
         try:
-            current_admin = request.user.userprofile
-            if not current_admin.is_admin:
+            current_admin_profile = UserProfile.objects.get(user=request.user)
+            if not current_admin_profile.is_admin:
                 return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
 
             group = Group.objects.get(id=group_id)
-            if current_admin.group != group:
+            if current_admin_profile.group != group:
                 return Response({"error": "You can only modify users in your own group."}, status=status.HTTP_403_FORBIDDEN)
 
             target_user = User.objects.get(username=username)
@@ -348,7 +348,6 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
         
         
 
