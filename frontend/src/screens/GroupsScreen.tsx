@@ -178,15 +178,7 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedGroup(value)}
         />
 
-        <View style={styles.row}>
-          <TextInput
-            style={styles.input}
-            value={newMember}
-            onChangeText={setNewMember}
-            placeholder="Enter username"
-          />
-          <Button title="Add Member" onPress={addMember} />
-        </View>
+       
         {currentToast && !currentToast.isHandledNatively && (
         <Toast
           key={currentToast.id}
@@ -240,29 +232,6 @@ export default function GroupsScreen() {
               />
               <Button title="Add Member" onPress={addMember} />
             </View>
-            {currentToast && !currentToast.isHandledNatively && (
-              <Toast
-                key={currentToast.id}
-                duration={currentToast.duration}
-                enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-                exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-                y={0}
-                opacity={1}
-                scale={1}
-                animation="100ms"
-                viewportName={currentToast.viewportName}
-              >
-                <YStack>
-                  <Toast.Title>{currentToast.title}</Toast.Title>
-                  {!!currentToast.message && (
-                    <Toast.Description>
-                      {currentToast.message}
-                    </Toast.Description>
-                  )}
-                </YStack>
-              </Toast>
-            )}
-
             <Sheet
               modal
               open={isSidebarOpen}
