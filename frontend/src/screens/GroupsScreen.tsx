@@ -84,8 +84,8 @@ export default function GroupsScreen() {
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
-      await axiosInstance.post(`users/add-user-to-group/`,
-        { username: newMember, group_id: Number(selectedGroup) },
+      await axiosInstance.post(`users/create-invitation/${selectedGroup}/`,
+        { email: newMember, group_id: Number(selectedGroup) },
         { headers: { 'Authorization': `Token ${user.token}` } }
       );
       setNewMember('');
@@ -121,7 +121,7 @@ export default function GroupsScreen() {
 
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <XStack >
         <TamaguiButton
           style={styles.groupJoinRequestsButton}
@@ -274,7 +274,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 20,
     maxWidth: 600,
-    alignSelf: 'center'
+    alignSelf: 'center',
+    backgroundColor: 'white',
   },
   groupJoinRequestsButton: {
     position: 'absolute',
