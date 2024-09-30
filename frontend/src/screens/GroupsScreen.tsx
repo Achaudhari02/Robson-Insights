@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Text, CheckBox } from 'react-native';
 import { axiosInstance } from '@/lib/axios';
 import { useAuth } from '@/hooks/useAuth';
 import { Select } from '@/components';
@@ -107,6 +107,18 @@ export default function GroupsScreen() {
     }
   };
 
+  const handleCheckBoxChange = async (username, newValue) => {
+    try {
+      await axiosInstance.post('users/toggle-permissions/',
+        { username: username, group_id: Number(selectedGroup), toggle_view: newValue},
+        { headers: { Authorization: `Token ${user.token}` } }
+      );
+      fetchGroupUsers(selectedGroup);
+      } catch (error) {
+      console.error('Error updating permissions:', error);
+    }
+  };
+
 
   return (
     <View style={{ flex: 1 }}>
@@ -143,6 +155,11 @@ export default function GroupsScreen() {
           <View key={user.id} style={styles.row}>
             <Text style={styles.username}>{user.username}</Text>
             <Button title="Remove" onPress={() => removeMember(user.username)} />
+            <Text>{"Viewing permissions"}</Text>
+            <CheckBox
+              value={user.can_add}
+              onValueChange={(newValue) => handleCheckBoxChange(user.username, newValue)}
+            />
           </View>
         ))}
 
