@@ -109,13 +109,13 @@ export default function GroupsScreen() {
       );
       setNewMember("");
       fetchGroupUsers(selectedGroup);
-      toast.show("Member added successfully", {
+      toast.show('Member added successfully', {
         message: `${newMember} has been invited to the group.`,
       });
     } catch (error) {
-      console.error("Error adding member:", error);
-      toast.show("Failed to add member", {
-        message: "An error occurred while inviting the member.",
+      console.error('Error adding member:', error);
+      toast.show('Failed to add member', {
+        message: 'An error occurred while inviting the member.',
       });
     }
   };
@@ -151,8 +151,8 @@ export default function GroupsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white" }}>
-      <XStack>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <XStack >
         <TamaguiButton
           style={styles.groupJoinRequestsButton}
           icon={<Menu />}
@@ -178,6 +178,35 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedGroup(value)}
         />
 
+        <View style={styles.row}>
+          <TextInput
+            style={styles.input}
+            value={newMember}
+            onChangeText={setNewMember}
+            placeholder="Enter username"
+          />
+          <Button title="Add Member" onPress={addMember} />
+        </View>
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
         {selectedGroup && (
           <>
             <Text style={styles.subtitle}>Group Members:</Text>
@@ -338,8 +367,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 20,
     maxWidth: 600,
-    alignSelf: "center",
-    backgroundColor: "white",
+    alignSelf: 'center',
+    backgroundColor: 'white',
   },
   groupJoinRequestsButton: {
     position: "absolute",
