@@ -254,7 +254,7 @@ class InviteCreateView(generics.CreateAPIView):
         token = signer.sign(email)
         invite = serializer.save(token=token, group=group, email=email)
         
-        invite_url = f"http://localhost:8081/signup?token={token}/"
+        invite_url = f"http://localhost:8081/signup?token={token}"
         
         if not User.objects.filter(email=email).exists():
             send_mail(
