@@ -2,6 +2,10 @@
 
 The Robson Insights app is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
 
+
+
+# Release Notes
+
 ## Version 0.2.0
 ### Features
 - Group/Hospital creation added to groups tab
@@ -16,7 +20,6 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 - No easy way for admins to add users in mass to a group 
 - User Interface for Groups tab  is not friendly to non-mobile users
 
-# Release Notes
 ## Version 0.1.0
 ### Features
 - Robson Classification Quiz
