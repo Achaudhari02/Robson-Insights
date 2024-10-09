@@ -4,16 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 
 const questions = [
-  { question: 'Was this a multiple pregnancy?', key: 'mp' },
+  { question: 'Was this a multiple pregnancy? (twins, triplets, etc.)', key: 'mp' },
   { question: 'Was this a transverse or oblique lie?', key: 'lie' },
   { question: 'Was this a breech pregnancy?', key: 'bp' },
   { question: 'Was the gestational age <37 weeks?', key: 'ga' },
   { question: 'Was this a multiparous woman?', key: 'mw' },
   { question: 'Were there previous uterine scars?', key: 'us' },
   { question: 'Was the labor induced or the cesarean section started before labor?', key: 'li' },
-  { question: 'Was this a cesarean section?', key: 'cs' }, 
+  { question: 'Was this a cesarean section?', key: 'cs' },
 ];
 
+const robsonClassification = {
+  1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
+  2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
+  3: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
+  4: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
+  5: "Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.",
+  6: "Nulliparous women with a single, breech pregnancy.",
+  7: "Multiparous women with a single, breech pregnancy.",
+  8: "Women with multiple pregnancies (twins, triplets, etc.).",
+  9: "Women with a single pregnancy in a transverse or oblique lie.",
+  10: "Women with a preterm, single, cephalic pregnancy."
+};
 const HomeScreen = ({ navigation}) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -36,16 +48,16 @@ const HomeScreen = ({ navigation}) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);
 
-    if (currentQuestionIndex < questions.length - 2) { 
+    if (currentQuestionIndex < questions.length - 2) {
       computeResult(newAnswers, true).then((tempResult) => {
         if (tempResult) {
-          setCurrentQuestionIndex(questions.length - 1); 
+          setCurrentQuestionIndex(questions.length - 1);
         } else {
           setCurrentQuestionIndex(currentQuestionIndex + 1);
         }
       });
     } else {
-      computeResult(newAnswers, false); 
+      computeResult(newAnswers, false);
     }
   };
 
@@ -66,10 +78,10 @@ const HomeScreen = ({ navigation}) => {
     }
 
     if (isEarlyComputation) {
-      return result; 
+      return result;
     } else {
       setResult(result);
-      setCurrentQuestionIndex(0); 
+      setCurrentQuestionIndex(0);
 
       try {
           await axiosInstance.post('/survey/entries/', {
@@ -90,6 +102,7 @@ const HomeScreen = ({ navigation}) => {
       return (
         <View>
           <Text style={styles.text}>Result: {result}</Text>
+          <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
           <Button title="Restart Quiz" onPress={() => {setResult(""); setAnswers({}); setCurrentQuestionIndex(0);}} />
         </View>
       );
@@ -120,8 +133,8 @@ const HomeScreen = ({ navigation}) => {
 const styles = StyleSheet.create({
   buttonsContainer: {
     flexDirection: 'column',
-    alignItems: 'center', 
-    width: '100%', 
+    alignItems: 'center',
+    width: '100%',
   },
   individualButton: {
     marginTop: 10,
