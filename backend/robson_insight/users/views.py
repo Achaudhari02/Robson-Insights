@@ -40,8 +40,7 @@ class GroupListCreateView(generics.ListCreateAPIView):
     serializer_class = GroupSerializer
 
     def get_queryset(self):
-        queryset = Group.objects.all()
-        return queryset
+        return Group.objects.filter(userprofile__user=self.request.user)
 
     def perform_create(self, serializer):
         group = serializer.save()
