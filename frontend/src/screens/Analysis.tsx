@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
-import { Svg, G, Rect, Text as SvgText } from 'react-native-svg';
+import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 const Analysis = ({ data }) => {
 
@@ -37,7 +37,6 @@ const Analysis = ({ data }) => {
     10: "Moderate to high (around 20-50%)"
   };
 
-
   const xScale = d3Scale
     .scaleLinear()
     .domain([0, d3Array.max(data, (d) => d.responses)])
@@ -49,8 +48,8 @@ const Analysis = ({ data }) => {
     .range([0, chartHeight])
     .padding(0.2);
 
-  const csectionColor = '#ff7f0e';
-  const nonCsectionColor = '#1f77b4';
+  const csectionColor = '#FF5A5F';
+  const nonCsectionColor = '#00A699';
   const labelPadding = 10;
   const totalPatients = data.reduce((sum, d) => sum + d.responses, 0);
   const [selectedBar, setSelectedBar] = useState(null);
@@ -64,23 +63,44 @@ const Analysis = ({ data }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Analysis Page</Text>
-      <Text> Tap on bars for more information </Text>
-      <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+      <Text style={styles.subtitle}>Tap on bars for more information</Text>
+
+      <View style={styles.legendContainer}>
+        <View style={styles.legendItem}>
           <Svg width={20} height={20}>
-            <Rect width={20} height={20} fill={csectionColor} />
+            <Rect width={20} height={20} fill="url(#csectionLegendGradient)" rx={5} ry={5} />
           </Svg>
-          <Text style={{ marginLeft: 5 }}>C-Section</Text>
+          <Text style={styles.legendText}>C-Section</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={styles.legendItem}>
           <Svg width={20} height={20}>
-            <Rect width={20} height={20} fill={nonCsectionColor} />
+            <Rect width={20} height={20} fill="url(#nonCsectionLegendGradient)" rx={5} ry={5} />
           </Svg>
-          <Text style={{ marginLeft: 5 }}>Non-C-Section</Text>
+          <Text style={styles.legendText}>Non-C-Section</Text>
         </View>
       </View>
 
       <Svg width={svgWidth} height={svgHeight}>
+      <Defs>
+        <LinearGradient id="csectionGradient" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#FF8A8D"/>
+          <Stop offset="100%" stopColor="#FD8B5A"/>
+        </LinearGradient>
+        <LinearGradient id="nonCsectionGradient" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#66C2B5" />
+          <Stop offset="100%" stopColor="#50A0A4" />
+        </LinearGradient>
+        <LinearGradient id="csectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#FF8A8D" />
+          <Stop offset="100%" stopColor="#FD8B5A" />
+        </LinearGradient>
+        <LinearGradient id="nonCsectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#66C2B5" />
+          <Stop offset="100%" stopColor="#50A0A4" />
+        </LinearGradient>
+      </Defs>
+
+
         <G x={margin.left} y={margin.top}>
           {data.map((d, index) => {
             const csectionCount = d.csectionCount;
@@ -95,7 +115,7 @@ const Analysis = ({ data }) => {
                   <Rect
                     width={csectionWidth}
                     height={yScale.bandwidth()}
-                    fill={csectionColor}
+                    fill="url(#csectionGradient)"
                     onPress={() => setSelectedBar({ data: d })}
                   />
                 )}
@@ -105,7 +125,7 @@ const Analysis = ({ data }) => {
                     x={csectionCount > 0 ? csectionWidth : 0}
                     width={nonCsectionWidth}
                     height={yScale.bandwidth()}
-                    fill={nonCsectionColor}
+                    fill="url(#nonCsectionGradient)"
                     onPress={() => setSelectedBar({ data: d })}
                   />
                 )}
@@ -113,10 +133,12 @@ const Analysis = ({ data }) => {
                 {csectionCount > 0 && (
                   <SvgText
                     x={csectionWidth / 2}
-                    y={yScale.bandwidth() / 2 - 5 + labelPadding}
+                    y={yScale.bandwidth() / 2}
                     fontSize={12}
-                    fill="#fff"
+                    fill="#000"
                     textAnchor="middle"
+                    fontFamily="Avenir Next"
+                    alignmentBaseline="middle"
                   >
                     {csectionCount}
                   </SvgText>
@@ -125,21 +147,26 @@ const Analysis = ({ data }) => {
                 {nonCsectionCount > 0 && (
                   <SvgText
                     x={(csectionCount > 0 ? csectionWidth : 0) + nonCsectionWidth / 2}
-                    y={yScale.bandwidth() / 2 - 5 + labelPadding}
+                    y={yScale.bandwidth() / 2}
                     fontSize={12}
-                    fill="#fff"
+                    fill="#000"
                     textAnchor="middle"
+                    fontFamily="Avenir Next"
+                    alignmentBaseline="middle"
                   >
                     {nonCsectionCount}
                   </SvgText>
                 )}
 
+                {/* Category Labels */}
                 <SvgText
                   x={-10}
-                  y={yScale.bandwidth() / 2 - 5 + labelPadding}
+                  y={yScale.bandwidth() / 2}
                   fontSize={12}
                   fill="#000"
                   textAnchor="end"
+                  fontFamily="Avenir Next"
+                  alignmentBaseline="middle"
                 >
                   {'Group ' + d.classification}
                 </SvgText>
@@ -153,6 +180,7 @@ const Analysis = ({ data }) => {
             fontSize={12}
             fill="gray"
             textAnchor="middle"
+            fontFamily="Avenir Next"
           >
             Tap on bars for more information.
           </SvgText>
@@ -164,7 +192,7 @@ const Analysis = ({ data }) => {
             fill="#000"
             textAnchor="middle"
             fontWeight="bold"
-            fontFamily="Arial"
+            fontFamily="Avenir Next"
             transform={`rotate(-90, ${-margin.left + 20}, ${(svgHeight - margin.top - margin.bottom) / 2})`}
           >
             Classification Category
@@ -175,7 +203,7 @@ const Analysis = ({ data }) => {
             y={svgHeight - margin.bottom + 10}
             fontSize={16}
             fill="#000"
-            fontFamily="Arial"
+            fontFamily="Avenir Next"
             textAnchor="middle"
           >
             Number of Patients
@@ -228,12 +256,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5', // Light gray background
     paddingTop: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     marginBottom: 10,
+    fontFamily: 'Avenir Next',
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 20,
+    fontFamily: 'Avenir Next',
+    color: 'gray',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    elevation: 2, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  legendText: {
+    marginLeft: 5,
+    fontFamily: 'Avenir Next',
   },
   modalBackground: {
     flex: 1,
@@ -242,19 +299,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    width: '80%',
+    width: '85%',
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
+    elevation: 5, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+    fontFamily: 'Avenir Next',
+    color: '#FF5A5F',
   },
   modalText: {
     fontSize: 16,
     marginBottom: 5,
+    fontFamily: 'Avenir Next',
+    color: '#484848',
   },
   boldText: {
     fontWeight: 'bold',
@@ -262,10 +328,15 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 15,
     alignSelf: 'flex-end',
+    backgroundColor: '#FF5A5F',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
   closeButtonText: {
     fontSize: 16,
-    color: 'blue',
+    color: 'white',
+    fontFamily: 'Avenir Next',
   },
 });
 
