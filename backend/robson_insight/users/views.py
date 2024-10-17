@@ -348,11 +348,7 @@ class TogglePermissionsView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        
-
-
-        
-        
+    
 class InviteListView(generics.ListAPIView):
     permissions = [permissions.IsAuthenticated]
     serializer_class = InviteSerializer
@@ -360,6 +356,9 @@ class InviteListView(generics.ListAPIView):
     def get_queryset(self):
         email = self.request.user.email
         return Invite.objects.filter(email=email)
+    
+    
+
     
         
         
