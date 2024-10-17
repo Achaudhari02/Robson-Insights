@@ -4,7 +4,7 @@ import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
 import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-const Analysis = ({ data }) => {
+const BarChart = ({ data }) => {
 
   const svgWidth = 400;
   const svgHeight = 300;
@@ -340,4 +340,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Analysis;
+export default BarChart;

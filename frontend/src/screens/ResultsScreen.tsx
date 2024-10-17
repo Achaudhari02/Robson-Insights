@@ -3,7 +3,8 @@ import { axiosInstance } from '@/lib/axios';
 import { format } from 'date-fns';
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, ScrollView, StyleSheet, Switch } from 'react-native';
-import Analysis from '@/screens/Analysis';
+import BarChart from '@/component/BarChart';
+import PieChart from '@/components/PieChart';
 
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
@@ -180,21 +181,13 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.switchContainer}>
-        <Text>{isAnalysisView ? 'Analysis View' : 'Table View'}</Text>
-        <Switch
-          value={isAnalysisView}
-          onValueChange={(value) => setIsAnalysisView(value)}
-        />
-      </View>
-      {isAnalysisView ? (
-        <Analysis data={processResultsForAnalysis()} />
-      ) : (
-        <ScrollView style={styles.container}>
-          {renderTableHeader()}
-          {results.map(renderTableRow)}
-        </ScrollView>
-      )}
+      <ScrollView style={styles.container}>
+        <BarChart data={processResultsForAnalysis()} />
+        <PieChart data={processResultsForAnalysis()} />
+        {renderTableHeader()}
+        {results.map(renderTableRow)}
+      </ScrollView>
+
     </View>
   );
 };
