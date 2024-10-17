@@ -49,6 +49,22 @@ const HomeScreen = ({ navigation}) => {
     }
   };
 
+  const handleExport = () => {
+    const header = 'Question,Answer';
+    const rows = questions.map(q => {
+      const answer = answers[q.key] === 'y'; 
+      return `${q.question},${answer}`; 
+    });
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'questions_answers.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const computeResult = async (answers, isEarlyComputation) => {
     let result = "";
     if (answers.mp === 'y') result = '8';
@@ -88,9 +104,10 @@ const HomeScreen = ({ navigation}) => {
   const renderContent = () => {
     if (result.length > 0) {
       return (
-        <View>
+        <View style={styles.results}>
           <Text style={styles.text}>Result: {result}</Text>
           <Button title="Restart Quiz" onPress={() => {setResult(""); setAnswers({}); setCurrentQuestionIndex(0);}} />
+          <Button title="Download Results" onPress={() => handleExport()} />
         </View>
       );
     } else {
@@ -137,6 +154,11 @@ const styles = StyleSheet.create({
   text: {
     marginBottom: 20,
     fontSize: 18,
+  },
+  results: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
   },
 });
 

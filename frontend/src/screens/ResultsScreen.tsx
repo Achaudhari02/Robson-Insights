@@ -3,6 +3,7 @@ import { axiosInstance } from '@/lib/axios';
 import { format } from 'date-fns';
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, ScrollView, StyleSheet } from 'react-native';
+import { Linking } from 'react-native';
 
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
@@ -54,7 +55,6 @@ const ResultsScreen = ({ navigation}) => {
     return csection ? 'Yes' : 'No';
   };
 
-  console.log("results", results)
   const renderTableHeader = () => (
     <View style={styles.tableRow}>
       <Text style={styles.columnHeader}>ID</Text>
@@ -75,11 +75,42 @@ const ResultsScreen = ({ navigation}) => {
     </View>
   );
 
+  const handleExport = async () => {
+    try {
+      const response = await axiosInstance.get('survey/download-survey-csv', {headers: {
+        'Authorization': `Token ${user.token}`},
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data], { type: 'text/csv' });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'survey_data.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+    }
+};
+
+
   return (
-    <ScrollView style={styles.container}>
-      {renderTableHeader()}
-      {results.map(renderTableRow)}
-    </ScrollView>
+    <View>
+      <View style={styles.export}>
+        <Button
+          onPress={() => handleExport()}
+          title="Download as CSV"
+        />
+        </View>
+        <ScrollView style={styles.container}>
+          {renderTableHeader()}
+          {results.map(renderTableRow)}
+        </ScrollView>
+    </View>
   );
 };
 
@@ -103,6 +134,11 @@ const styles = StyleSheet.create({
     cell: {
       marginHorizontal: 5,
     },
+    export: {
+      marginLeft: 10,
+      marginTop: 20,
+      alignSelf: 'flex-start',
+    }
   });
   
 
