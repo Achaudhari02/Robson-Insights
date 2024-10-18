@@ -560,17 +560,23 @@ export default function GroupsScreen() {
           >
             Create Configuration
         </TamaguiButton>
+
         <XStack flexDirection="row" justifyContent="center" alignItems="center">
           <Text style={styles.subtitle2}>Configurations</Text>
           <View>
-            <TamaguiButton
-              icon={<Info />}
-              size="$4"
-              circular
-              backgroundColor="$colorTransparent"
-              marginLeft="$2"
-              onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
-            />
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
+                onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
             {configurationsTooltipVisible && (
             <View style={styles.tooltip}>
               <View style={styles.arrow} />
@@ -617,22 +623,13 @@ export default function GroupsScreen() {
             {configurationGroups.map((group) => (
               <View key={group.id} style={styles.row}>
                 <Text style={styles.username}>{group.name}</Text>
-                <Button
-                  title="Remove"
-                  onPress={() => removeGroup(group.name)}
-                />
+                <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
               </View>
             ))}
-
-            <View style={styles.row}>
-              <TextInput
-                style={styles.input}
-                value={newGroup}
-                onChangeText={setNewGroup}
-                placeholder="Enter group name"
-              />
-              <Button title="Add Group" onPress={addGroup} />
-            </View>
           </>
         )}
       </View>
