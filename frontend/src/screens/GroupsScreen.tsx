@@ -26,7 +26,7 @@ export default function GroupsScreen() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
+  const [groupName, setGroupName] = useState("");
   const [groupNameError, setGroupNameError] = useState("");
   const toast = useToastController();
   const currentToast = useToastState();
@@ -71,18 +71,18 @@ export default function GroupsScreen() {
   };
 
   const createGroup = async () => {
-    if (newGroupName.length < 5) {
+    if (groupName.length < 5) {
       setGroupNameError("Group name must be at least 5 characters");
       return;
     }
-    if (newGroupName.length > 100) {
+    if (groupName.length > 100) {
       setGroupNameError("Group name cannot exceed 100 characters");
       return;
     }
     try {
       await axiosInstance.post(
         "users/create-group/",
-        { group_name: newGroupName },
+        { group_name: groupName },
         {
           headers: {
             Authorization: `Token ${user.token}`,
@@ -91,7 +91,7 @@ export default function GroupsScreen() {
         }
       );
       setCreateGroupModalOpen(false);
-      setNewGroupName("");
+      setGroupName("");
       fetchGroups();
     } catch (error) {
       console.error("Error creating group:", error);
@@ -99,6 +99,37 @@ export default function GroupsScreen() {
     }
   };
 
+  const updateGroupName = async () => {
+    if (groupName.length < 5) {
+      setGroupNameError("Group name must be at least 5 characters");
+      return;
+    }
+    if (groupName.length > 100) {
+      setGroupNameError("Group name cannot exceed 100 characters");
+      return;
+    }
+    try {
+      await axiosInstance.patch(
+        `users/groups/${selectedGroup}/update/`,
+        { name: groupName },
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setGroupName("");
+      fetchGroups();
+      toast.show('Group name updated successfully', {
+        message: `The group name has been updated to ${groupName}.`,
+      });
+    } catch (error) {
+      console.error("Error updating group name:", error);
+      setGroupNameError("Failed to update group name");
+    }
+  };
+  
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
@@ -222,7 +253,25 @@ export default function GroupsScreen() {
                 </Checkbox>
               </View>
             ))}
-
+            <View style={styles.row}>
+              <Input
+                placeholder="New Group Name"
+                value={groupName}
+                onChangeText={(text) => {
+                  setGroupName(text);
+                  if (text.length >= 5) {
+                    setGroupNameError("");
+                  }
+                }}
+                style={styles.input}
+              />
+              <TamaguiButton onPress={updateGroupName} disabled={groupName.length < 5}>
+                Update Name
+              </TamaguiButton>
+            </View>
+            {groupNameError ? (
+              <Text style={styles.errorText}>{groupNameError}</Text>
+            ) : null}
             <View style={styles.row}>
               <TextInput
                 style={styles.input}
@@ -301,9 +350,9 @@ export default function GroupsScreen() {
             <Dialog.Title>Create Group</Dialog.Title>
             <Input
               placeholder="Group Name"
-              value={newGroupName}
+              value={groupName}
               onChangeText={(text) => {
-                setNewGroupName(text);
+                setGroupName(text);
                 if (text.length >= 5) {
                   setGroupNameError("");
                 }
@@ -319,7 +368,7 @@ export default function GroupsScreen() {
               </TamaguiButton>
               <TamaguiButton
                 onPress={createGroup}
-                disabled={newGroupName.length < 5}
+                disabled={groupName.length < 5}
               >
                 Submit
               </TamaguiButton>

@@ -87,7 +87,15 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get('group_pk')
         queryset = Group.objects.filter(pk=pk)
         return queryset
+    
+class GroupUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
+    def get_object(self):
+        group_pk = self.kwargs.get('group_pk')
+        return Group.objects.get(pk=group_pk)
 
 class UserProfileInGroupListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsInGroup]
