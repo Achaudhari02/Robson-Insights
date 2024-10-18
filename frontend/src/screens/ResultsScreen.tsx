@@ -2,9 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import { format } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, Switch } from 'react-native';
-import BarChart from '@/component/BarChart';
-import PieChart from '@/components/PieChart';
+import { View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import {BarChart, PieChart} from '@/components';
 
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
@@ -183,11 +182,12 @@ const ResultsScreen = ({ navigation }) => {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <BarChart data={processResultsForAnalysis()} />
+        <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: processResultsForAnalysis() })}>
         <PieChart data={processResultsForAnalysis()} />
+        </TouchableOpacity>
         {renderTableHeader()}
         {results.map(renderTableRow)}
       </ScrollView>
-
     </View>
   );
 };
@@ -221,6 +221,17 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
 });
 

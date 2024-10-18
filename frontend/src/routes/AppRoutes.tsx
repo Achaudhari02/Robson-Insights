@@ -9,6 +9,7 @@ import ResultsScreen from '@/screens/ResultsScreen';
 import GroupsScreen from '@/screens/GroupsScreen';
 import { MaterialIcons } from '@expo/vector-icons';
 import SignUpScreen from '@/screens/SignupScreen';
+import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,7 +35,7 @@ const BottomTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Results" component={ResultsScreen} />
+      <Tab.Screen name="Results" component={ResultsStack} /> 
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
@@ -45,6 +46,15 @@ const AuthStack = () => {
     <Stack.Navigator>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignUpScreen} />
+    </Stack.Navigator>
+  );
+};
+
+const ResultsStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Results" options={{ headerShown: false }} component={ResultsScreen} />
+      <Stack.Screen name="PieChartAnalysis" options={{ headerShown: false }} component={PieChartAnalysisScreen} />
     </Stack.Navigator>
   );
 };
