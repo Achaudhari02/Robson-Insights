@@ -26,7 +26,12 @@ class SmallInviteSerializer(serializers.ModelSerializer):
         
         
 class InviteSerializer(serializers.ModelSerializer):
-    
+    group_name = serializers.CharField(source='group.name', read_only=True)
+    group_members = serializers.SerializerMethodField()
+
     class Meta:
         model = Invite
-        fields = '__all__'
+        fields = ['id', 'token', 'email', 'created_on', 'group_name', 'group_members']
+
+    def get_group_members(self, obj):
+        return obj.group.userprofile_set.values_list('user__username', flat=True)
