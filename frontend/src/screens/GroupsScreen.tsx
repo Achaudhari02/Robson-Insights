@@ -38,6 +38,8 @@ export default function GroupsScreen() {
   const [configurationNameError, setConfigurationNameError] = useState("");
   const [groupsTooltipVisible, setGroupsTooltipVisible] = useState(false);
   const [configurationsTooltipVisible, setConfigurationsTooltipVisible] = useState(false);
+  const [groupsInfoLabelVisible, setGroupsInfoLabelVisible] = useState(true);
+  const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const toast = useToastController();
   const currentToast = useToastState();
 
@@ -302,14 +304,19 @@ export default function GroupsScreen() {
         <XStack flexDirection="row" justifyContent="center" alignItems="center">
           <Text style={styles.subtitle2}>Groups</Text>
           <View>
-            <TamaguiButton
-              icon={<Info />}
-              size="$4"
-              circular
-              backgroundColor="$colorTransparent"
-              marginLeft="$2"
-              onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
-            />
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
+                onHoverIn={() => setGroupsInfoLabelVisible(false)}
+                onHoverOut={() => setGroupsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: groupsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
             {groupsTooltipVisible && (
             <View style={styles.tooltip}>
               <View style={styles.arrow} />
@@ -655,17 +662,23 @@ export default function GroupsScreen() {
           >
             Create Configuration
         </TamaguiButton>
+
         <XStack flexDirection="row" justifyContent="center" alignItems="center">
           <Text style={styles.subtitle2}>Configurations</Text>
           <View>
-            <TamaguiButton
-              icon={<Info />}
-              size="$4"
-              circular
-              backgroundColor="$colorTransparent"
-              marginLeft="$2"
-              onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
-            />
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
+                onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
             {configurationsTooltipVisible && (
             <View style={styles.tooltip}>
               <View style={styles.arrow} />
@@ -844,6 +857,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     padding: 10,
     marginTop: 20,
+    marginLeft: -50,
     borderRadius: 5,
     width: 300,
   },
@@ -852,6 +866,7 @@ const styles = StyleSheet.create({
     top: 35,
     right: '100%',
     marginTop: -10,
+    marginLeft: -50,
     borderWidth: 5,
     borderColor: 'transparent',
     borderRightColor: '#333',
