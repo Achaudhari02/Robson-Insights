@@ -41,8 +41,13 @@ class EntryFilterListView(generics.ListAPIView):
         filter_pk = self.kwargs.get('pk')
         try:
             user_filter = Filter.objects.get(pk=filter_pk, user=self.request.user)
-            groups_in_filter = user_filter.groups.all()
+            # only gettign groups the user has can_view permission for
+            user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
+            allowed_groups = user_profiles.values_list('group', flat=True)
+
+            groups_in_filter = user_filter.groups.filter(id__in=allowed_groups)
             return Entry.objects.filter(group__in=groups_in_filter)
+        
         except Filter.DoesNotExist:
             return Entry.objects.none()
     
@@ -63,14 +68,22 @@ class FilterConfigurationListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Filter.objects.filter(user=self.request.user)
+        user_filters = Filter.objects.filter(user=self.request.user)
+        # removing groups user does not have can_view permission for 
+        user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
+        allowed_groups = user_profiles.values_list('group', flat=True)
+        return user_filters.filter(groups__in=allowed_groups)    
+        #return Filter.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         groups = serializer.validated_data.get('groups', [])
 
         user_groups = Group.objects.filter(userprofile__user=self.request.user)
+        
+        user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
+        allowed_groups = user_profiles.values_list('group', flat=True)
 
-        if not all(group in user_groups for group in groups):
+        if not all(group in allowed_groups for group in groups):
             raise PermissionDenied("You can only add groups you belong to.")
 
         serializer.save(user=self.request.user)
