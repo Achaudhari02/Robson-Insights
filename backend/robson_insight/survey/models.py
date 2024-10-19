@@ -57,6 +57,7 @@ class Filter(models.Model):
     groups = models.ManyToManyField(
         to=Group,
         related_name='filters',
+        blank=True,
     )
     
     def __str__(self):
