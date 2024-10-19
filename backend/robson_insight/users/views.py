@@ -357,8 +357,15 @@ class InviteListView(generics.ListAPIView):
         email = self.request.user.email
         return Invite.objects.filter(email=email)
     
-    
+        
+class UserGroupsCanView(generics.ListAPIView):
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    
+    def get_queryset(self):
+        user = self.request.user
+        user_profile = UserProfile.objects.filter(user=user, can_view=True)
         
-        
+        if user_profile.exists():
+            return Group.objects.filter(userprofile__in=user_profile)
+        return Group.objects.none()
