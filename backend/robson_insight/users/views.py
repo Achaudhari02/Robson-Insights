@@ -319,7 +319,7 @@ class TogglePermissionsView(APIView):
         toggle_view = request.data.get('toggle_view', False)
 
         try:
-            current_admin_profile = UserProfile.objects.get(user=request.user)
+            current_admin_profile = UserProfile.objects.get(user=request.user,group=group)
             if not current_admin_profile.is_admin:
                 return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
 
