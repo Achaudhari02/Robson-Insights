@@ -42,6 +42,7 @@ export default function GroupsScreen() {
   const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const toast = useToastController();
   const currentToast = useToastState();
+  const [checkedGroups, setCheckedGroups] = useState({});
 
   useEffect(() => {
     fetchGroups();
@@ -63,6 +64,8 @@ export default function GroupsScreen() {
     }
   }, [selectedConfiguration]);
 
+
+
   const fetchGroups = async () => {
     try {
       const response = await axiosInstance.get("users/groups/", {
@@ -80,14 +83,17 @@ export default function GroupsScreen() {
 
   const fetchConfigurations = async () => {
     try {
-      const response = await axiosInstance.get("users/configurations/", {
-        headers: { Authorization: `Token ${user.token}` },
+      const response = await axiosInstance.get("survey/filters/", {
+        headers: { 
+          Authorization: `Token ${user.token}`,
+          "Content-Type": "application/json",
+        },
       });
       const configurationData = response.data.map((configuration) => ({
         label: configuration.name,
         value: configuration.id,
       }));
-      setGroups(configurationData);
+      setConfigurations(configurationData);
     } catch (error) {
       console.error("Error fetching configurations:", error);
     }
@@ -109,13 +115,24 @@ export default function GroupsScreen() {
 
   const fetchConfigurationGroups = async (configurationId) => {
     try {
-      const response = await axiosInstance.get(
-        `users/get-configurations-groups/${configurationId}/`,
+      const response1 = await axiosInstance.get(
+        `users/groups-can-view/`,
         {
           headers: { Authorization: `Token ${user.token}` },
         }
       );
-      setConfigurationGroups(response.data);
+      const response2 = await axiosInstance.get(
+        `survey/filters/${configurationId}/`,
+        {
+          headers: { Authorization: `Token ${user.token}` },
+        }
+      );
+      setConfigurationGroups(response1.data);
+      const initialCheckedState = response1.data.reduce((acc, group) => {
+        acc[group.id] = response2.data.includes(group.id);
+        return acc;
+      }, {});
+      setCheckedGroups(initialCheckedState);
     } catch (error) {
       console.error("Error fetching configuration groups:", error);
     }
@@ -161,8 +178,8 @@ export default function GroupsScreen() {
     }
     try {
       await axiosInstance.post(
-        "users/create-configuration/",
-        { configuration_name: newConfigurationName },
+        "survey/create-configuration/",
+        {configuration_name: newConfigurationName},
         {
           headers: {
             Authorization: `Token ${user.token}`,
@@ -200,14 +217,18 @@ export default function GroupsScreen() {
     }
   };
 
-  const addGroup = async () => {
-    if (!newGroup || !selectedConfiguration) return;
+  const addGroup = async (id: Number) => {
+    if (!selectedConfiguration) return;
     try {
-      //post request here
+      await axiosInstance.post(
+        `survey/add-group-to-configuration/`,
+        { group_id: id, configuration_id: Number(selectedConfiguration)},
+        { headers: { Authorization: `Token ${user.token}` } }
+      );
       setNewGroup("");
       fetchConfigurationGroups(selectedConfiguration);
       toast.show('Group added successfully', {
-        message: `${newGroup} has been added to the configuration.`,
+        message: `$Group has been added to the configuration.`,
       });
     } catch (error) {
       console.error('Error adding group:', error);
@@ -230,16 +251,20 @@ export default function GroupsScreen() {
     }
   };
 
-  const removeGroup = async (group: string) => {
+  const removeGroup = async (group: Number) => {
     try {
-      //post request here
+        await axiosInstance.post(
+          `survey/remove-group-from-configuration/`,
+          { group_id: group, configuration_id: Number(selectedConfiguration)},
+          { headers: { Authorization: `Token ${user.token}` } }
+        );
       fetchConfigurationGroups(selectedConfiguration);
     } catch (error) {
       console.error("Error removing group:", error);
     }
   };
 
-  const handleCheckBoxChange = async (username, newValue) => {
+  const handleUserCheckBoxChange = async (username, newValue) => {
     try {
       await axiosInstance.post(
         "users/toggle-permissions/",
@@ -254,6 +279,18 @@ export default function GroupsScreen() {
     } catch (error) {
       console.error("Error updating permissions:", error);
     }
+  };
+
+  const handleGroupCheckBoxChange = (id) => {
+    if (checkedGroups[id]) {
+      removeGroup(id);
+    } else {
+      addGroup(id);
+    }
+    setCheckedGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   return (
@@ -343,9 +380,9 @@ export default function GroupsScreen() {
                 />
                 <Text>{"Viewing permissions"}</Text>
                 <Checkbox
-                  defaultChecked={user.can_view}
+                  checked={user.can_view}
                   onCheckedChange={(newValue) =>
-                    handleCheckBoxChange(user.username, newValue)
+                    handleUserCheckBoxChange(user.username, newValue)
                   }
                 >
                   <Checkbox.Indicator>
@@ -537,22 +574,13 @@ export default function GroupsScreen() {
             {configurationGroups.map((group) => (
               <View key={group.id} style={styles.row}>
                 <Text style={styles.username}>{group.name}</Text>
-                <Button
-                  title="Remove"
-                  onPress={() => removeGroup(group.name)}
-                />
+                <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
               </View>
             ))}
-
-            <View style={styles.row}>
-              <TextInput
-                style={styles.input}
-                value={newGroup}
-                onChangeText={setNewGroup}
-                placeholder="Enter group name"
-              />
-              <Button title="Add Group" onPress={addGroup} />
-            </View>
           </>
         )}
       </View>
