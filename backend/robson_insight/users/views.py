@@ -366,7 +366,7 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-     
+
 class InviteListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = InviteSerializer
@@ -374,7 +374,7 @@ class InviteListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return Invite.objects.filter(email=user)
-
+        
 class UserGroupsCanView(generics.ListAPIView):
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -382,7 +382,7 @@ class UserGroupsCanView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         user_profile = UserProfile.objects.filter(user=user, can_view=True)
-    
-    if user_profile.exists():
-        return Group.objects.filter(userprofile__in=user_profile)
-    return Group.objects.none()
+        
+        if user_profile.exists():
+            return Group.objects.filter(userprofile__in=user_profile)
+        return Group.objects.none()
