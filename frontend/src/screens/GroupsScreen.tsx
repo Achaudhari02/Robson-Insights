@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, Button, StyleSheet, Text } from "react-native";
+import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { Select } from "@/components";
@@ -16,6 +17,7 @@ import {
 import { Menu, Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
 import { Check } from "@tamagui/lucide-icons";
+import Papa from 'papaparse';
 
 
 export default function GroupsScreen() {
@@ -32,7 +34,7 @@ export default function GroupsScreen() {
   const [joinRequests, setJoinRequests] = useState([]);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [isCreateConfigurationModalOpen, setCreateConfigurationModalOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
+  const [groupName, setGroupName] = useState("");
   const [newConfigurationName, setNewConfigurationName] = useState("");
   const [groupNameError, setGroupNameError] = useState("");
   const [configurationNameError, setConfigurationNameError] = useState("");
@@ -42,6 +44,7 @@ export default function GroupsScreen() {
   const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const toast = useToastController();
   const currentToast = useToastState();
+  const [file, setFile] = useState(null);
   const [checkedGroups, setCheckedGroups] = useState({});
 
   useEffect(() => {
@@ -139,18 +142,18 @@ export default function GroupsScreen() {
   };
 
   const createGroup = async () => {
-    if (newGroupName.length < 5) {
+    if (groupName.length < 5) {
       setGroupNameError("Group name must be at least 5 characters");
       return;
     }
-    if (newGroupName.length > 100) {
+    if (groupName.length > 100) {
       setGroupNameError("Group name cannot exceed 100 characters");
       return;
     }
     try {
       await axiosInstance.post(
         "users/create-group/",
-        { group_name: newGroupName },
+        { group_name: groupName },
         {
           headers: {
             Authorization: `Token ${user.token}`,
@@ -159,7 +162,7 @@ export default function GroupsScreen() {
         }
       );
       setCreateGroupModalOpen(false);
-      setNewGroupName("");
+      setGroupName("");
       fetchGroups();
     } catch (error) {
       console.error("Error creating group:", error);
@@ -196,6 +199,38 @@ export default function GroupsScreen() {
     }
   };
 
+  const updateGroupName = async () => {
+    if (groupName.length < 5) {
+      setGroupNameError("Group name must be at least 5 characters");
+      return;
+    }
+    if (groupName.length > 100) {
+      setGroupNameError("Group name cannot exceed 100 characters");
+      return;
+    }
+    try {
+      await axiosInstance.patch(
+        `users/groups/${selectedGroup}/update/`,
+        { name: groupName },
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setGroupName("");
+      fetchGroups();
+      toast.show('Group name updated successfully', {
+        message: `The group name has been updated to ${groupName}.`,
+      });
+    } catch (error) {
+      console.error("Error updating group name:", error);
+      setGroupNameError("Failed to update group name");
+    }
+  };
+  
+
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
@@ -216,6 +251,11 @@ export default function GroupsScreen() {
       });
     }
   };
+
+  const massAddMembers = async (newMembers) => {
+    if (!newMembers || !selectedGroup) return;
+  };
+
 
   const addGroup = async (id: Number) => {
     if (!selectedConfiguration) return;
@@ -251,6 +291,41 @@ export default function GroupsScreen() {
     }
   };
 
+  const handleFileUpload = async () => {
+      try {
+        const csv = await DocumentPicker.getDocumentAsync({type: "text/csv", copyToCacheDirectory: false});
+        let emails = [];
+        Papa.parse(await (await fetch(csv.assets[0].uri)).blob(), {
+          complete: (results) => {
+            const data = results.data;
+            const isHeader = !isEmail(data[0][0]);
+    
+            for (let i = (isHeader ? 1 : 0); i < data.length; i++) {
+              const email = data[i][0].trim().toLowerCase();
+
+              if (isEmail(email)) {
+                alert(email);
+                emails.push(email);
+              }
+            }
+
+            alert(JSON.stringify(emails));
+            massAddMembers(emails);
+          },
+          header: false,
+        });
+      } catch (e) {
+        console.log(e);
+      }
+  };
+
+  const isEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+
+  const handleCheckBoxChange = async (username, newValue) => {
   const removeGroup = async (group: Number) => {
     try {
         await axiosInstance.post(
@@ -391,7 +466,25 @@ export default function GroupsScreen() {
                 </Checkbox>
               </View>
             ))}
-
+            <View style={styles.row}>
+              <Input
+                placeholder="New Group Name"
+                value={groupName}
+                onChangeText={(text) => {
+                  setGroupName(text);
+                  if (text.length >= 5) {
+                    setGroupNameError("");
+                  }
+                }}
+                style={styles.input}
+              />
+              <TamaguiButton onPress={updateGroupName} disabled={groupName.length < 5}>
+                Update Name
+              </TamaguiButton>
+            </View>
+            {groupNameError ? (
+              <Text style={styles.errorText}>{groupNameError}</Text>
+            ) : null}
             <View style={styles.row}>
               <TextInput
                 style={styles.input}
@@ -400,6 +493,9 @@ export default function GroupsScreen() {
                 placeholder="Enter username"
               />
               <Button title="Add Member" onPress={addMember} />
+            </View>
+            <View style={styles.row}>
+              <Button title="Add Members from CSV" onPress={handleFileUpload} />
             </View>
             <Sheet
               modal
@@ -473,9 +569,9 @@ export default function GroupsScreen() {
             <br />
             <Input
               placeholder="Group Name"
-              value={newGroupName}
+              value={groupName}
               onChangeText={(text) => {
-                setNewGroupName(text);
+                setGroupName(text);
                 if (text.length >= 5) {
                   setGroupNameError("");
                 }
@@ -491,7 +587,7 @@ export default function GroupsScreen() {
               </TamaguiButton>
               <TamaguiButton
                 onPress={createGroup}
-                disabled={newGroupName.length < 5}
+                disabled={groupName.length < 5}
               >
                 Submit
               </TamaguiButton>
@@ -712,4 +808,4 @@ const styles = StyleSheet.create({
     borderRightColor: '#333',
     borderStyle: 'solid',
   },
-});
+})};

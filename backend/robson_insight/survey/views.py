@@ -41,7 +41,6 @@ class EntryFilterListView(generics.ListAPIView):
     serializer_class = EntrySerializer
     
     def get_queryset(self):
-        
         filter_pk = self.kwargs.get('pk')
         try:
             user_filter = Filter.objects.get(pk=filter_pk, user=self.request.user)
@@ -54,6 +53,36 @@ class EntryFilterListView(generics.ListAPIView):
         
         except Filter.DoesNotExist:
             return Entry.objects.none()
+
+class DownloadSurveyCSVView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EntrySerializer
+
+    def get(self, request):
+        try:
+            current_profile = UserProfile.objects.get(user=request.user)
+            user_group = current_profile.group
+            queryset = Entry.objects.filter(user__group=user_group)
+            model = queryset.model
+            model_fields = model._meta.fields + model._meta.many_to_many
+            field_names = [field.name for field in model_fields]
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="survey_data.csv"'
+
+            writer = csv.writer(response, delimiter=";")
+            writer.writerow(field_names)
+
+            for row in queryset:
+                values = []
+                for field in field_names:
+                    values.append(getattr(row, field))
+                writer.writerow(values)
+
+            return response
+            
+        except Exception as e:
+           return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
 class EntryDetailView(generics.RetrieveAPIView):

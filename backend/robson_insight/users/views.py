@@ -16,14 +16,12 @@ from .serializers import *
 from .models import UserProfile, Group, Invite
 from .permissions import IsInGroup, IsGroupAdmin
 
-
 class UserProfileListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = UserProfileSerializer
 
     def get_queryset(self):
         return UserProfile.objects.all()
-
 
 class UserProfileDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -33,7 +31,6 @@ class UserProfileDetailView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         queryset = UserProfile.objects.filter(pk=pk)
         return queryset
-
 
 class GroupListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -86,7 +83,15 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get('group_pk')
         queryset = Group.objects.filter(pk=pk)
         return queryset
+    
+class GroupUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
+    def get_object(self):
+        group_pk = self.kwargs.get('group_pk')
+        return Group.objects.get(pk=group_pk)
 
 class UserProfileInGroupListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsInGroup]
@@ -96,7 +101,6 @@ class UserProfileInGroupListView(generics.ListAPIView):
         group_pk = self.kwargs.get('group_pk')
         queryset = UserProfile.objects.filter(group=group_pk)
         return queryset
-
 
 class AddUserToGroupView(APIView):
     permission_classes = [IsAuthenticated]
@@ -212,7 +216,6 @@ class ChangeGroupAdminView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
         current_admin_profile = UserProfile.objects.get(user=request.user, group=group, is_admin=True)
 
         if current_admin_profile.user != request.user:
@@ -276,7 +279,6 @@ class InviteCreateView(generics.CreateAPIView):
             # If email sending fails, delete the created invite and re-raise the exception
             invite.delete()
             raise APIException(f"Failed to send invitation email: {str(e)}")
-        
         
 class MassInviteCreateView(APIView):
     serializer_class = MassInviteSerializer
@@ -355,7 +357,17 @@ class AcceptInviteView(APIView):
             status=status.HTTP_200_OK
         ) 
       
-      
+class RejectInviteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, token):
+        try:
+            invite = Invite.objects.get(token=token, email=request.user.email)
+            invite.delete()
+            return Response({"message": "Invitation rejected successfully."}, status=status.HTTP_200_OK)
+        except Invite.DoesNotExist:
+            return Response({"error": "Invite not found."}, status=status.HTTP_404_NOT_FOUND)
+              
 class TogglePermissionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -394,16 +406,14 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    
+
 class InviteListView(generics.ListAPIView):
-    permissions = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = InviteSerializer
     
     def get_queryset(self):
-        email = self.request.user.email
-        return Invite.objects.filter(email=email)
-    
+        user = self.request.user
+        return Invite.objects.filter(email=user)
         
 class UserGroupsCanView(generics.ListAPIView):
     serializer_class = GroupSerializer
