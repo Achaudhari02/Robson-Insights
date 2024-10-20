@@ -324,8 +324,6 @@ export default function GroupsScreen() {
     return emailRegex.test(email);
   };
 
-
-  const handleCheckBoxChange = async (username, newValue) => {
   const removeGroup = async (group: Number) => {
     try {
         await axiosInstance.post(
@@ -808,4 +806,4 @@ const styles = StyleSheet.create({
     borderRightColor: '#333',
     borderStyle: 'solid',
   },
-})};
+});
