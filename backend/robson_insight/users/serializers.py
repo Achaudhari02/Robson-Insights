@@ -1,3 +1,4 @@
+from django.core.signing import Signer
 from rest_framework import serializers
 
 from .models import UserProfile, Group, Invite
@@ -30,4 +31,16 @@ class InviteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invite
         fields = '__all__'
+        
+        
+class MassInviteSerializer(serializers.Serializer):
+    emails = serializers.ListField(
+        child=serializers.EmailField(),
+        allow_empty=False,
+        write_only=True
+    )
     
+    def validate_emails(self, emails):
+        if len(emails) != len(set(emails)):
+            raise serializers.ValidationError("Duplicate emails are not allowed.")
+        return emails

@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import APIException
 
 from robson_insight import settings
-from .serializers import UserProfileSerializer, GroupSerializer, InviteSerializer, SmallInviteSerializer
+from .serializers import *
 from .models import UserProfile, Group, Invite
 from .permissions import IsInGroup, IsGroupAdmin
 
@@ -276,6 +276,52 @@ class InviteCreateView(generics.CreateAPIView):
             # If email sending fails, delete the created invite and re-raise the exception
             invite.delete()
             raise APIException(f"Failed to send invitation email: {str(e)}")
+        
+        
+class MassInviteCreateView(APIView):
+    serializer_class = MassInviteSerializer
+    permission_classes = [IsAuthenticated, IsGroupAdmin]
+
+    def post(self, request, *args, **kwargs):
+        group_pk = kwargs.get('group_pk')
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            emails = serializer.validated_data['emails']
+            group = Group.objects.get(pk=group_pk)
+            signer = Signer()
+            created_invites = []
+            try:
+                for email in emails:
+                    token = signer.sign(email).split(':')[1]
+                    invite = Invite.objects.create(token=token, group=group, email=email)
+                    created_invites.append(invite)
+                    
+                    invite_url = f"http://localhost:8081/signup?token={token}"
+                    subject = 'Robson Insights Invitation'
+                    message = invite_url if not User.objects.filter(email=email).exists() else 'You have been invited to a new group.'
+
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False
+                    )
+                
+                return Response(
+                    {'success': f'Invitations sent to {len(emails)} users.'},
+                    status=status.HTTP_201_CREATED
+                )
+            except Exception as e:
+                for invite in created_invites:
+                    invite.delete()
+                return Response(
+                    {'error': str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
         
 class AcceptInviteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
