@@ -9,6 +9,7 @@ urlpatterns = [
     path('<int:pk>/', UserProfileDetailView.as_view()),
     path('groups/', GroupListCreateView.as_view()),
     path('groups/<int:group_pk>/', GroupDetailView.as_view()),
+    path('groups/<int:group_pk>/update/', GroupUpdateView.as_view(), name='update-group'),
     path('get-groups-users/<int:group_pk>/', UserProfileInGroupListView.as_view()),
     path('add-user-to-group/', AddUserToGroupView.as_view(), name='add-user-to-group'),
     path('remove-user-from-group/', RemoveUserFromGroup.as_view(), name='remove-user-from-group'),
@@ -21,5 +22,6 @@ urlpatterns = [
     path('invitations/', InviteListView.as_view(), name='invite-list'),
     path('create-invitation/<int:group_pk>/', InviteCreateView.as_view(), name='create-invite'),
     path('accept-invitation/<str:token>/', AcceptInviteView.as_view(), name='accept-invite'),
+    path('reject-invitation/<str:token>/', RejectInviteView.as_view(), name='reject-invite'),
     path('get-invitation/<str:token>/', GetInviteView.as_view(), name='get-invite'),
 ]

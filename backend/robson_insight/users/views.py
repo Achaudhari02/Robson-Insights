@@ -83,6 +83,15 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get('group_pk')
         queryset = Group.objects.filter(pk=pk)
         return queryset
+    
+class GroupUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
+
+    def get_object(self):
+        group_pk = self.kwargs.get('group_pk')
+        return Group.objects.get(pk=group_pk)
 
 class UserProfileInGroupListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsInGroup]
@@ -332,7 +341,17 @@ class AcceptInviteView(APIView):
             status=status.HTTP_200_OK
         ) 
       
-      
+class RejectInviteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, token):
+        try:
+            invite = Invite.objects.get(token=token, email=request.user.email)
+            invite.delete()
+            return Response({"message": "Invitation rejected successfully."}, status=status.HTTP_200_OK)
+        except Invite.DoesNotExist:
+            return Response({"error": "Invite not found."}, status=status.HTTP_404_NOT_FOUND)
+              
 class TogglePermissionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -371,19 +390,14 @@ class TogglePermissionsView(APIView):
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
 
-        
-        
 class InviteListView(generics.ListAPIView):
-    permissions = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = InviteSerializer
     
     def get_queryset(self):
-        email = self.request.user.email
-        return Invite.objects.filter(email=email)
-    
+        user = self.request.user
+        return Invite.objects.filter(email=user)
         
 class UserGroupsCanView(generics.ListAPIView):
     serializer_class = GroupSerializer

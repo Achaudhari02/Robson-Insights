@@ -5,6 +5,19 @@ import { PieChart } from '@/components';
 const PieChartAnalysisScreen = ({ route }) => {
   const { data } = route.params; // Access the passed data
 
+  const groupDescriptions = {
+    1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
+    2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
+    3: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
+    4: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
+    5: "Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.",
+    6: "Nulliparous women with a single, breech pregnancy.",
+    7: "Multiparous women with a single, breech pregnancy.",
+    8: "Women with multiple pregnancies (twins, triplets, etc.).",
+    9: "Women with a single pregnancy in a transverse or oblique lie.",
+    10: "Women with a preterm, single, cephalic pregnancy."
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>X Hospital’s February Data</Text>
@@ -26,9 +39,13 @@ const PieChartAnalysisScreen = ({ route }) => {
           </View>
         ))}
       </View>
-      <Text style={styles.description}>
-        Group 1: Nulliparous, single cephalic, ≥37 weeks, in spontaneous labor
-      </Text>
+      <View style={styles.descriptionContainer}>
+        {Object.entries(groupDescriptions).map(([key, description]) => (
+          <Text key={key} style={styles.description}>
+            {`Group ${key}: ${description}`}
+          </Text>
+        ))}
+      </View>
     </ScrollView>
   );
 };
@@ -96,10 +113,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  descriptionContainer: {
+    marginTop: 20,
+  },
   description: {
     fontSize: 14,
-    textAlign: 'center',
-    marginTop: 20,
+    textAlign: 'left',
+    marginBottom: 10,
   },
 });
 

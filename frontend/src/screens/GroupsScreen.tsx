@@ -34,7 +34,7 @@ export default function GroupsScreen() {
   const [joinRequests, setJoinRequests] = useState([]);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [isCreateConfigurationModalOpen, setCreateConfigurationModalOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
+  const [groupName, setGroupName] = useState("");
   const [newConfigurationName, setNewConfigurationName] = useState("");
   const [groupNameError, setGroupNameError] = useState("");
   const [configurationNameError, setConfigurationNameError] = useState("");
@@ -142,18 +142,18 @@ export default function GroupsScreen() {
   };
 
   const createGroup = async () => {
-    if (newGroupName.length < 5) {
+    if (groupName.length < 5) {
       setGroupNameError("Group name must be at least 5 characters");
       return;
     }
-    if (newGroupName.length > 100) {
+    if (groupName.length > 100) {
       setGroupNameError("Group name cannot exceed 100 characters");
       return;
     }
     try {
       await axiosInstance.post(
         "users/create-group/",
-        { group_name: newGroupName },
+        { group_name: groupName },
         {
           headers: {
             Authorization: `Token ${user.token}`,
@@ -162,7 +162,7 @@ export default function GroupsScreen() {
         }
       );
       setCreateGroupModalOpen(false);
-      setNewGroupName("");
+      setGroupName("");
       fetchGroups();
     } catch (error) {
       console.error("Error creating group:", error);
@@ -198,6 +198,38 @@ export default function GroupsScreen() {
       setConfigurationNameError("Failed to create configuration");
     }
   };
+
+  const updateGroupName = async () => {
+    if (groupName.length < 5) {
+      setGroupNameError("Group name must be at least 5 characters");
+      return;
+    }
+    if (groupName.length > 100) {
+      setGroupNameError("Group name cannot exceed 100 characters");
+      return;
+    }
+    try {
+      await axiosInstance.patch(
+        `users/groups/${selectedGroup}/update/`,
+        { name: groupName },
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setGroupName("");
+      fetchGroups();
+      toast.show('Group name updated successfully', {
+        message: `The group name has been updated to ${groupName}.`,
+      });
+    } catch (error) {
+      console.error("Error updating group name:", error);
+      setGroupNameError("Failed to update group name");
+    }
+  };
+  
 
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
@@ -434,7 +466,25 @@ export default function GroupsScreen() {
                 </Checkbox>
               </View>
             ))}
-
+            <View style={styles.row}>
+              <Input
+                placeholder="New Group Name"
+                value={groupName}
+                onChangeText={(text) => {
+                  setGroupName(text);
+                  if (text.length >= 5) {
+                    setGroupNameError("");
+                  }
+                }}
+                style={styles.input}
+              />
+              <TamaguiButton onPress={updateGroupName} disabled={groupName.length < 5}>
+                Update Name
+              </TamaguiButton>
+            </View>
+            {groupNameError ? (
+              <Text style={styles.errorText}>{groupNameError}</Text>
+            ) : null}
             <View style={styles.row}>
               <TextInput
                 style={styles.input}
@@ -519,9 +569,9 @@ export default function GroupsScreen() {
             <br />
             <Input
               placeholder="Group Name"
-              value={newGroupName}
+              value={groupName}
               onChangeText={(text) => {
-                setNewGroupName(text);
+                setGroupName(text);
                 if (text.length >= 5) {
                   setGroupNameError("");
                 }
@@ -537,7 +587,279 @@ export default function GroupsScreen() {
               </TamaguiButton>
               <TamaguiButton
                 onPress={createGroup}
-                disabled={newGroupName.length < 5}
+                disabled={groupName.length < 5}
+              >
+                Submit
+              </TamaguiButton>
+            </XStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5" marginTop="$24">
+          <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            style={{ width: 180 }}
+            onPress={() => setCreateConfigurationModalOpen(true)}
+          >
+            Create Configuration
+        </TamaguiButton>
+
+        <XStack flexDirection="row" justifyContent="center" alignItems="center">
+          <Text style={styles.subtitle2}>Configurations</Text>
+          <View>
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
+                onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
+            {configurationsTooltipVisible && (
+            <View style={styles.tooltip}>
+              <View style={styles.arrow} />
+              <Text style={{ color: 'white' }}>Configurations allow you to organize groups for combined analysis. No need to send any invitations; this is just for you!</Text>
+            </View>
+            )}
+          </View>
+        </XStack>
+        <View style={{width: 42}}/>
+      </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+      <View style={{width: 180}}/>
+      <View style={styles.container}>
+        <Select
+          items={configurations}
+          value={selectedConfiguration}
+          onValueChange={(value) => setSelectedConfiguration(value)}
+        />
+
+       
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
+        {selectedConfiguration && (
+          <>
+            <Text style={styles.subtitle}>Configuration Groups:</Text>
+            {configurationGroups.map((group) => (
+              <View key={group.id} style={styles.row}>
+                <Text style={styles.username}>{group.name}</Text>
+                <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
+              </View>
+            ))}
+          </>
+        )}
+      </View>
+      <View style={{width: 42}}/>
+      </XStack>
+      <Dialog
+        open={isCreateConfigurationModalOpen}
+        onOpenChange={setCreateConfigurationModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            key="content"
+            bordered
+            elevate
+            style={styles.dialogContent}
+          >
+            <Dialog.Title>Create Configuration</Dialog.Title>
+            <br />
+            <Input
+              placeholder="Configuration Name"
+              value={newConfigurationName}
+              onChangeText={(text) => {
+                setNewConfigurationName(text);
+                if (text.length >= 5) {
+                  setConfigurationNameError("");
+                }
+              }}
+              style={styles.input}
+            />
+            {configurationNameError ? (
+              <Text style={styles.errorText}>{configurationNameError}</Text>
+            ) : null}
+            <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+              <TamaguiButton onPress={() => setCreateConfigurationModalOpen(false)}>
+                Cancel
+              </TamaguiButton>
+              <TamaguiButton
+                onPress={createConfiguration}
+                disabled={newConfigurationName.length < 5}
+              >
+                Submit
+              </TamaguiButton>
+            </XStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5" marginTop="$24">
+          <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            style={{ width: 180 }}
+            onPress={() => setCreateConfigurationModalOpen(true)}
+          >
+            Create Configuration
+        </TamaguiButton>
+
+        <XStack flexDirection="row" justifyContent="center" alignItems="center">
+          <Text style={styles.subtitle2}>Configurations</Text>
+          <View>
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
+                onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
+            {configurationsTooltipVisible && (
+            <View style={styles.tooltip}>
+              <View style={styles.arrow} />
+              <Text style={{ color: 'white' }}>Configurations allow you to organize groups for combined analysis. No need to send any invitations; this is just for you!</Text>
+            </View>
+            )}
+          </View>
+        </XStack>
+        <View style={{width: 42}}/>
+      </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+      <View style={{width: 180}}/>
+      <View style={styles.container}>
+        <Select
+          items={configurations}
+          value={selectedConfiguration}
+          onValueChange={(value) => setSelectedConfiguration(value)}
+        />
+
+       
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
+        {selectedConfiguration && (
+          <>
+            <Text style={styles.subtitle}>Configuration Groups:</Text>
+            {configurationGroups.map((group) => (
+              <View key={group.id} style={styles.row}>
+                <Text style={styles.username}>{group.name}</Text>
+                <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
+              </View>
+            ))}
+          </>
+        )}
+      </View>
+      <View style={{width: 42}}/>
+      </XStack>
+      <Dialog
+        open={isCreateConfigurationModalOpen}
+        onOpenChange={setCreateConfigurationModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            key="content"
+            bordered
+            elevate
+            style={styles.dialogContent}
+          >
+            <Dialog.Title>Create Configuration</Dialog.Title>
+            <br />
+            <Input
+              placeholder="Configuration Name"
+              value={newConfigurationName}
+              onChangeText={(text) => {
+                setNewConfigurationName(text);
+                if (text.length >= 5) {
+                  setConfigurationNameError("");
+                }
+              }}
+              style={styles.input}
+            />
+            {configurationNameError ? (
+              <Text style={styles.errorText}>{configurationNameError}</Text>
+            ) : null}
+            <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+              <TamaguiButton onPress={() => setCreateConfigurationModalOpen(false)}>
+                Cancel
+              </TamaguiButton>
+              <TamaguiButton
+                onPress={createConfiguration}
+                disabled={newConfigurationName.length < 5}
               >
                 Submit
               </TamaguiButton>
