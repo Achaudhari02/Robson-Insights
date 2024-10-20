@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import { format } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { Linking, View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import {BarChart, PieChart} from '@/components';
 
 const questions = [
@@ -178,17 +178,46 @@ const ResultsScreen = ({ navigation }) => {
     </View>
   );
 
+  const handleExport = async () => {
+    try {
+      const response = await axiosInstance.get('survey/download-survey-csv', {headers: {
+        'Authorization': `Token ${user.token}`},
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data], { type: 'text/csv' });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'survey_data.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+    }
+};
+
+
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
-        <BarChart data={processResultsForAnalysis()} />
-        <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: processResultsForAnalysis() })}>
-        <PieChart data={processResultsForAnalysis()} />
-        </TouchableOpacity>
-        {renderTableHeader()}
-        {results.map(renderTableRow)}
-      </ScrollView>
-    </View>
+    <View style={styles.export}>
+      <Button
+        onPress={() => handleExport()}
+        title="Download as CSV"
+      />
+      </View>
+    <ScrollView style={styles.container}>
+      <BarChart data={processResultsForAnalysis()} />
+      <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: processResultsForAnalysis() })}>
+      <PieChart data={processResultsForAnalysis()} />
+      </TouchableOpacity>
+      {renderTableHeader()}
+      {results.map(renderTableRow)}
+    </ScrollView>
+  </View>
   );
 };
 
@@ -233,6 +262,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
+  export: {
+    marginLeft: 10,
+    marginTop: 20,
+    alignSelf: 'flex-start',
+  }
 });
 
 export default ResultsScreen;

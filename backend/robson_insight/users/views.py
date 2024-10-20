@@ -16,14 +16,12 @@ from .serializers import UserProfileSerializer, GroupSerializer, InviteSerialize
 from .models import UserProfile, Group, Invite
 from .permissions import IsInGroup, IsGroupAdmin
 
-
 class UserProfileListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = UserProfileSerializer
 
     def get_queryset(self):
         return UserProfile.objects.all()
-
 
 class UserProfileDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -33,7 +31,6 @@ class UserProfileDetailView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         queryset = UserProfile.objects.filter(pk=pk)
         return queryset
-
 
 class GroupListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -104,7 +101,6 @@ class UserProfileInGroupListView(generics.ListAPIView):
         group_pk = self.kwargs.get('group_pk')
         queryset = UserProfile.objects.filter(group=group_pk)
         return queryset
-
 
 class AddUserToGroupView(APIView):
     permission_classes = [IsAuthenticated]
@@ -220,7 +216,6 @@ class ChangeGroupAdminView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
         current_admin_profile = UserProfile.objects.get(user=request.user, group=group, is_admin=True)
 
         if current_admin_profile.user != request.user:
@@ -284,6 +279,35 @@ class InviteCreateView(generics.CreateAPIView):
             # If email sending fails, delete the created invite and re-raise the exception
             invite.delete()
             raise APIException(f"Failed to send invitation email: {str(e)}")
+        
+class MassInviteCreateView(generics.GenericAPIView):
+    serializer_class = SmallInviteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGroupAdmin]
+
+    def perform_create(self, request):
+        emails = request.data.get('emails')
+        if not emails:
+            return Response({"detail": "No emails provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        results = {"success": [], "failures": []}
+
+        for email in emails:
+            email_data = {"email": email}
+            request.data.update(email_data)
+
+            try:
+                invite_view = InviteCreateView.as_view()
+                response = invite_view(request, group_pk=self.kwargs['group_pk'])
+
+                if response.status_code in [status.HTTP_201_CREATED, status.HTTP_200_OK]:
+                    results["success"].append(email)
+                else:
+                    results["failures"].append({"email": email, "error": response.data})
+            except Exception as e:
+                results["failures"].append({"email": email, "error": str(e)})
+
+        return Response(results, status=status.HTTP_207_MULTI_STATUS)
+
         
 class AcceptInviteView(APIView):
     permission_classes = [permissions.IsAuthenticated]

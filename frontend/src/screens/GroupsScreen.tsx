@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, Button, StyleSheet, Text } from "react-native";
+import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { Select } from "@/components";
@@ -16,6 +17,7 @@ import {
 import { Menu, Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
 import { Check } from "@tamagui/lucide-icons";
+import Papa from 'papaparse';
 
 
 export default function GroupsScreen() {
@@ -42,6 +44,7 @@ export default function GroupsScreen() {
   const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const toast = useToastController();
   const currentToast = useToastState();
+  const [file, setFile] = useState(null);
   const [checkedGroups, setCheckedGroups] = useState({});
 
   useEffect(() => {
@@ -249,6 +252,11 @@ export default function GroupsScreen() {
     }
   };
 
+  const massAddMembers = async (newMembers) => {
+    if (!newMembers || !selectedGroup) return;
+  };
+
+
   const addGroup = async (id: Number) => {
     if (!selectedConfiguration) return;
     try {
@@ -283,6 +291,41 @@ export default function GroupsScreen() {
     }
   };
 
+  const handleFileUpload = async () => {
+      try {
+        const csv = await DocumentPicker.getDocumentAsync({type: "text/csv", copyToCacheDirectory: false});
+        let emails = [];
+        Papa.parse(await (await fetch(csv.assets[0].uri)).blob(), {
+          complete: (results) => {
+            const data = results.data;
+            const isHeader = !isEmail(data[0][0]);
+    
+            for (let i = (isHeader ? 1 : 0); i < data.length; i++) {
+              const email = data[i][0].trim().toLowerCase();
+
+              if (isEmail(email)) {
+                alert(email);
+                emails.push(email);
+              }
+            }
+
+            alert(JSON.stringify(emails));
+            massAddMembers(emails);
+          },
+          header: false,
+        });
+      } catch (e) {
+        console.log(e);
+      }
+  };
+
+  const isEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+
+  const handleCheckBoxChange = async (username, newValue) => {
   const removeGroup = async (group: Number) => {
     try {
         await axiosInstance.post(
@@ -450,6 +493,9 @@ export default function GroupsScreen() {
                 placeholder="Enter username"
               />
               <Button title="Add Member" onPress={addMember} />
+            </View>
+            <View style={styles.row}>
+              <Button title="Add Members from CSV" onPress={handleFileUpload} />
             </View>
             <Sheet
               modal
@@ -1034,4 +1080,4 @@ const styles = StyleSheet.create({
     borderRightColor: '#333',
     borderStyle: 'solid',
   },
-});
+})};
