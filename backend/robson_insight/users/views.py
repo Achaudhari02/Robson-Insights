@@ -252,6 +252,7 @@ class InviteCreateView(generics.CreateAPIView):
         email = serializer.validated_data['email']
         signer = Signer()
         token = signer.sign(email)
+        token = token.split(':')[1]
         invite = serializer.save(token=token, group=group, email=email)
         
         invite_url = f"http://localhost:8081/signup?token={token}"
