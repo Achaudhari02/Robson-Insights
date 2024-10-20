@@ -1,6 +1,6 @@
 from django.db import models
 
-from users.models import UserProfile
+from users.models import Group, User
     
     
 class Entry(models.Model):
@@ -23,8 +23,14 @@ class Entry(models.Model):
     user = models.ForeignKey(
         null=True,
         blank=True,
-        to=UserProfile,
+        to=User,
         on_delete=models.SET_NULL,
+    )
+    group = models.ForeignKey(
+        to=Group,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     csection = models.BooleanField(
         default=False,
@@ -34,10 +40,29 @@ class Entry(models.Model):
     )
     
     def __str__(self):
-        return f'{self.classification} {self.user}'
+        return f'{self.pk} {self.classification} {self.user}'
     
     class Meta:
         verbose_name_plural = "Entries"
+        
+        
+class Filter(models.Model):
+    name = models.CharField(
+        max_length=100,
+    )
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+    )
+    groups = models.ManyToManyField(
+        to=Group,
+        related_name='filters',
+        blank=True,
+    )
+    
+    def __str__(self):
+        group_names = ', '.join([group.name for group in self.groups.all()])
+        return f'{self.user.username} - Groups: {group_names} {self.pk}'
 
     
 

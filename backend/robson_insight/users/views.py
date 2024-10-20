@@ -37,8 +37,7 @@ class GroupListCreateView(generics.ListCreateAPIView):
     serializer_class = GroupSerializer
 
     def get_queryset(self):
-        queryset = Group.objects.all()
-        return queryset
+        return Group.objects.filter(userprofile__user=self.request.user)
 
     def perform_create(self, serializer):
         group = serializer.save()
@@ -247,6 +246,7 @@ class InviteCreateView(generics.CreateAPIView):
         email = serializer.validated_data['email']
         signer = Signer()
         token = signer.sign(email)
+        token = token.split(':')[1]
         invite = serializer.save(token=token, group=group, email=email)
         
         invite_url = f"http://localhost:8081/signup?token={token}"
@@ -343,7 +343,7 @@ class TogglePermissionsView(APIView):
         toggle_view = request.data.get('toggle_view', False)
 
         try:
-            current_admin_profile = UserProfile.objects.get(user=request.user)
+            current_admin_profile = UserProfile.objects.get(user=request.user,group=group)
             if not current_admin_profile.is_admin:
                 return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -383,3 +383,16 @@ class InviteListView(generics.ListAPIView):
     def get_queryset(self):
         email = self.request.user.email
         return Invite.objects.filter(email=email)
+    
+        
+class UserGroupsCanView(generics.ListAPIView):
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        user_profile = UserProfile.objects.filter(user=user, can_view=True)
+        
+        if user_profile.exists():
+            return Group.objects.filter(userprofile__in=user_profile)
+        return Group.objects.none()

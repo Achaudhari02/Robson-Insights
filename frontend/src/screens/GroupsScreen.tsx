@@ -14,28 +14,45 @@ import {
   Input,
   Checkbox,
 } from "tamagui";
-import { Menu } from "@tamagui/lucide-icons";
+import { Menu, Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
 import { Check } from "@tamagui/lucide-icons";
 import Papa from 'papaparse';
 
+
 export default function GroupsScreen() {
   const [groups, setGroups] = useState([]);
+  const [configurations, setConfigurations] = useState([]);
   const [groupUsers, setGroupUsers] = useState([]);
+  const [configurationGroups, setConfigurationGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedConfiguration, setSelectedConfiguration] = useState(null);
   const { user, logoutFn } = useAuth();
   const [newMember, setNewMember] = useState("");
+  const [newGroup, setNewGroup] = useState("");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const [isCreateConfigurationModalOpen, setCreateConfigurationModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [newConfigurationName, setNewConfigurationName] = useState("");
   const [groupNameError, setGroupNameError] = useState("");
+  const [configurationNameError, setConfigurationNameError] = useState("");
+  const [groupsTooltipVisible, setGroupsTooltipVisible] = useState(false);
+  const [configurationsTooltipVisible, setConfigurationsTooltipVisible] = useState(false);
+  const [groupsInfoLabelVisible, setGroupsInfoLabelVisible] = useState(true);
+  const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const toast = useToastController();
   const currentToast = useToastState();
   const [file, setFile] = useState(null);
+  const [checkedGroups, setCheckedGroups] = useState({});
 
   useEffect(() => {
     fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    fetchConfigurations();
   }, []);
 
   useEffect(() => {
@@ -43,6 +60,14 @@ export default function GroupsScreen() {
       fetchGroupUsers(selectedGroup);
     }
   }, [selectedGroup]);
+
+  useEffect(() => {
+    if (selectedConfiguration) {
+      fetchConfigurationGroups(selectedConfiguration);
+    }
+  }, [selectedConfiguration]);
+
+
 
   const fetchGroups = async () => {
     try {
@@ -59,6 +84,24 @@ export default function GroupsScreen() {
     }
   };
 
+  const fetchConfigurations = async () => {
+    try {
+      const response = await axiosInstance.get("survey/filters/", {
+        headers: { 
+          Authorization: `Token ${user.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const configurationData = response.data.map((configuration) => ({
+        label: configuration.name,
+        value: configuration.id,
+      }));
+      setConfigurations(configurationData);
+    } catch (error) {
+      console.error("Error fetching configurations:", error);
+    }
+  };
+
   const fetchGroupUsers = async (groupId) => {
     try {
       const response = await axiosInstance.get(
@@ -70,6 +113,31 @@ export default function GroupsScreen() {
       setGroupUsers(response.data);
     } catch (error) {
       console.error("Error fetching group users:", error);
+    }
+  };
+
+  const fetchConfigurationGroups = async (configurationId) => {
+    try {
+      const response1 = await axiosInstance.get(
+        `users/groups-can-view/`,
+        {
+          headers: { Authorization: `Token ${user.token}` },
+        }
+      );
+      const response2 = await axiosInstance.get(
+        `survey/filters/${configurationId}/`,
+        {
+          headers: { Authorization: `Token ${user.token}` },
+        }
+      );
+      setConfigurationGroups(response1.data);
+      const initialCheckedState = response1.data.reduce((acc, group) => {
+        acc[group.id] = response2.data.includes(group.id);
+        return acc;
+      }, {});
+      setCheckedGroups(initialCheckedState);
+    } catch (error) {
+      console.error("Error fetching configuration groups:", error);
     }
   };
 
@@ -102,6 +170,35 @@ export default function GroupsScreen() {
     }
   };
 
+  const createConfiguration = async () => {
+    if (newConfigurationName.length < 5) {
+      setConfigurationNameError("Configuration name must be at least 5 characters");
+      return;
+    }
+    if (newConfigurationName.length > 100) {
+      setConfigurationNameError("Group name cannot exceed 100 characters");
+      return;
+    }
+    try {
+      await axiosInstance.post(
+        "survey/create-configuration/",
+        {configuration_name: newConfigurationName},
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setCreateConfigurationModalOpen(false);
+      setNewConfigurationName("");
+      fetchConfigurations();
+    } catch (error) {
+      console.error("Error creating configuration:", error);
+      setConfigurationNameError("Failed to create configuration");
+    }
+  };
+
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
     try {
@@ -127,6 +224,27 @@ export default function GroupsScreen() {
     if (!newMembers || !selectedGroup) return;
   };
 
+
+  const addGroup = async (id: Number) => {
+    if (!selectedConfiguration) return;
+    try {
+      await axiosInstance.post(
+        `survey/add-group-to-configuration/`,
+        { group_id: id, configuration_id: Number(selectedConfiguration)},
+        { headers: { Authorization: `Token ${user.token}` } }
+      );
+      setNewGroup("");
+      fetchConfigurationGroups(selectedConfiguration);
+      toast.show('Group added successfully', {
+        message: `$Group has been added to the configuration.`,
+      });
+    } catch (error) {
+      console.error('Error adding group:', error);
+      toast.show('Failed to add group', {
+        message: 'An error occurred while inviting the group.',
+      });
+    }
+  };
 
   const removeMember = async (username: string) => {
     try {
@@ -176,6 +294,20 @@ export default function GroupsScreen() {
 
 
   const handleCheckBoxChange = async (username, newValue) => {
+  const removeGroup = async (group: Number) => {
+    try {
+        await axiosInstance.post(
+          `survey/remove-group-from-configuration/`,
+          { group_id: group, configuration_id: Number(selectedConfiguration)},
+          { headers: { Authorization: `Token ${user.token}` } }
+        );
+      fetchConfigurationGroups(selectedConfiguration);
+    } catch (error) {
+      console.error("Error removing group:", error);
+    }
+  };
+
+  const handleUserCheckBoxChange = async (username, newValue) => {
     try {
       await axiosInstance.post(
         "users/toggle-permissions/",
@@ -192,27 +324,65 @@ export default function GroupsScreen() {
     }
   };
 
+  const handleGroupCheckBoxChange = (id) => {
+    if (checkedGroups[id]) {
+      removeGroup(id);
+    } else {
+      addGroup(id);
+    }
+    setCheckedGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <XStack >
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+          <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            style={{ width: 180 }}
+            onPress={() => setCreateGroupModalOpen(true)}
+          >
+            Create Group
+        </TamaguiButton>
+        <XStack flexDirection="row" justifyContent="center" alignItems="center">
+          <Text style={styles.subtitle2}>Groups</Text>
+          <View>
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
+                onHoverIn={() => setGroupsInfoLabelVisible(false)}
+                onHoverOut={() => setGroupsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: groupsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
+            {groupsTooltipVisible && (
+            <View style={styles.tooltip}>
+              <View style={styles.arrow} />
+              <Text style={{ color: 'white' }}>Groups allow you to organize users. Users must accept your invitation.</Text>
+            </View>
+            )}
+          </View>
+        </XStack>
         <TamaguiButton
-          style={styles.groupJoinRequestsButton}
           icon={<Menu />}
           size="$4"
           circular
           onPress={() => setSidebarOpen(true)}
         />
-        <TamaguiButton
-          size="$4"
-          backgroundColor="$blue10"
-          color="white"
-          borderRadius="$2"
-          margin="$2"
-          onPress={() => setCreateGroupModalOpen(true)}
-        >
-          Create Group
-        </TamaguiButton>
       </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+      <View style={{width: 180}}/>
       <View style={styles.container}>
         <Select
           items={groups}
@@ -253,9 +423,9 @@ export default function GroupsScreen() {
                 />
                 <Text>{"Viewing permissions"}</Text>
                 <Checkbox
-                  defaultChecked={user.can_view}
+                  checked={user.can_view}
                   onCheckedChange={(newValue) =>
-                    handleCheckBoxChange(user.username, newValue)
+                    handleUserCheckBoxChange(user.username, newValue)
                   }
                 >
                   <Checkbox.Indicator>
@@ -324,6 +494,8 @@ export default function GroupsScreen() {
           </>
         )}
       </View>
+      <View style={{width: 42}}/>
+      </XStack>
       <Dialog
         open={isCreateGroupModalOpen}
         onOpenChange={setCreateGroupModalOpen}
@@ -344,6 +516,7 @@ export default function GroupsScreen() {
             style={styles.dialogContent}
           >
             <Dialog.Title>Create Group</Dialog.Title>
+            <br />
             <Input
               placeholder="Group Name"
               value={newGroupName}
@@ -372,7 +545,144 @@ export default function GroupsScreen() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5" marginTop="$24">
+          <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            style={{ width: 180 }}
+            onPress={() => setCreateConfigurationModalOpen(true)}
+          >
+            Create Configuration
+        </TamaguiButton>
+
+        <XStack flexDirection="row" justifyContent="center" alignItems="center">
+          <Text style={styles.subtitle2}>Configurations</Text>
+          <View>
+            <View style={{flexDirection: "row", alignItems: "center"}}>
+              <TamaguiButton
+                icon={<Info />}
+                size="$4"
+                circular
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
+                onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
+              />
+              <Text style={{opacity: configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}}>learn more</Text>
+            </View>
+            {configurationsTooltipVisible && (
+            <View style={styles.tooltip}>
+              <View style={styles.arrow} />
+              <Text style={{ color: 'white' }}>Configurations allow you to organize groups for combined analysis. No need to send any invitations; this is just for you!</Text>
+            </View>
+            )}
+          </View>
+        </XStack>
+        <View style={{width: 42}}/>
+      </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+      <View style={{width: 180}}/>
+      <View style={styles.container}>
+        <Select
+          items={configurations}
+          value={selectedConfiguration}
+          onValueChange={(value) => setSelectedConfiguration(value)}
+        />
+
+       
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
+        {selectedConfiguration && (
+          <>
+            <Text style={styles.subtitle}>Configuration Groups:</Text>
+            {configurationGroups.map((group) => (
+              <View key={group.id} style={styles.row}>
+                <Text style={styles.username}>{group.name}</Text>
+                <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
+              </View>
+            ))}
+          </>
+        )}
+      </View>
+      <View style={{width: 42}}/>
+      </XStack>
+      <Dialog
+        open={isCreateConfigurationModalOpen}
+        onOpenChange={setCreateConfigurationModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            key="content"
+            bordered
+            elevate
+            style={styles.dialogContent}
+          >
+            <Dialog.Title>Create Configuration</Dialog.Title>
+            <br />
+            <Input
+              placeholder="Configuration Name"
+              value={newConfigurationName}
+              onChangeText={(text) => {
+                setNewConfigurationName(text);
+                if (text.length >= 5) {
+                  setConfigurationNameError("");
+                }
+              }}
+              style={styles.input}
+            />
+            {configurationNameError ? (
+              <Text style={styles.errorText}>{configurationNameError}</Text>
+            ) : null}
+            <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+              <TamaguiButton onPress={() => setCreateConfigurationModalOpen(false)}>
+                Cancel
+              </TamaguiButton>
+              <TamaguiButton
+                onPress={createConfiguration}
+                disabled={newConfigurationName.length < 5}
+              >
+                Submit
+              </TamaguiButton>
+            </XStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
     </View>
+    
   );
 }
 
@@ -383,12 +693,6 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: 'center',
     backgroundColor: 'white',
-  },
-  groupJoinRequestsButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 1,
   },
   row: {
     flexDirection: "row",
@@ -428,4 +732,30 @@ const styles = StyleSheet.create({
     color: "red",
     marginTop: 5,
   },
-});
+  subtitle2: {
+    fontSize: 24,
+  },
+  tooltip: {
+    position: 'absolute',
+    left: '100%',
+    top: '50%',
+    transform: [{ translateY: -50 }],
+    backgroundColor: '#333',
+    padding: 10,
+    marginTop: 20,
+    marginLeft: -50,
+    borderRadius: 5,
+    width: 300,
+  },
+  arrow: {
+    position: 'absolute',
+    top: 35,
+    right: '100%',
+    marginTop: -10,
+    marginLeft: -50,
+    borderWidth: 5,
+    borderColor: 'transparent',
+    borderRightColor: '#333',
+    borderStyle: 'solid',
+  },
+})};

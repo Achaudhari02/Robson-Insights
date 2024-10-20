@@ -30,3 +30,4 @@ class InviteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invite
         fields = '__all__'
+    
