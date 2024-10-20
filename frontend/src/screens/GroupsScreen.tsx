@@ -325,7 +325,6 @@ export default function GroupsScreen() {
   };
 
 
-  const handleCheckBoxChange = async (username, newValue) => {
   const removeGroup = async (group: Number) => {
     try {
         await axiosInstance.post(
@@ -808,4 +807,4 @@ const styles = StyleSheet.create({
     borderRightColor: '#333',
     borderStyle: 'solid',
   },
-})};
+});

@@ -64,7 +64,7 @@ const AppStack = () => {
   
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={BottomTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };
