@@ -21,6 +21,7 @@ urlpatterns = [
     ## Invitations
     path('invitations/', InviteListView.as_view(), name='invite-list'),
     path('create-invitation/<int:group_pk>/', InviteCreateView.as_view(), name='create-invite'),
+    path('mass-invite/<int:group_pk>/', MassInviteCreateView.as_view()),
     path('accept-invitation/<str:token>/', AcceptInviteView.as_view(), name='accept-invite'),
     path('reject-invitation/<str:token>/', RejectInviteView.as_view(), name='reject-invite'),
     path('get-invitation/<str:token>/', GetInviteView.as_view(), name='get-invite'),
