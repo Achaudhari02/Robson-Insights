@@ -180,7 +180,7 @@ const ResultsScreen = ({ navigation }) => {
 
   const handleExport = async () => {
     try {
-      const response = await axiosInstance.get('survey/download-survey-csv', {headers: {
+      const response = await axiosInstance.get('survey/download-survey-csv/', {headers: {
         'Authorization': `Token ${user.token}`},
         responseType: 'blob'
       });
@@ -198,7 +198,7 @@ const ResultsScreen = ({ navigation }) => {
     } catch (error) {
         console.error('Error exporting CSV:', error);
     }
-};
+  };
 
 
   return (
