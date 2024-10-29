@@ -12,4 +12,5 @@ urlpatterns = [
     path('create-configuration/', CreateConfiguration.as_view(), name = 'create-configuration'),
     path('remove-group-from-configuration/', RemoveGroupFromConfiguration.as_view()),
     path('add-group-to-configuration/', AddGroupToConfiguration.as_view()),
+    path('download-survey-csv/', DownloadSurveyCSVView.as_view()),
 ]
