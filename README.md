@@ -81,9 +81,11 @@ Navigate to the backend directory, set up the Python virtual environment, and in
 cd backend
 python -m venv env
 source env/bin/activate  # On Windows use `env\Scripts\activate`
-pip install ... //required packages
+pip install -r requirements.txt //required packages
 ```
 Start the backend server:
-```python manage.py runserver```
+```
+cd robson_insight
+python manage.py runserver
 
 The backend is built using Django and Django REST Framework. It listens for requests as specified by Django's output in the console.
