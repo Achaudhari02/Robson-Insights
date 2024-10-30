@@ -1,9 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { Linking, View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { Linking, View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from 'react-native';
 import {BarChart, PieChart} from '@/components';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
@@ -95,11 +98,14 @@ const ResultsScreen = ({ navigation }) => {
       csection: false,
       date: '2023-10-02T13:00:00Z',
     },
-    // Add more dummy data if needed
   ]);
 
   const { user, logoutFn } = useAuth();
-  const [isAnalysisView, setIsAnalysisView] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [allResults, setAllResults] = useState([...results]);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
+  const [reportGenerated, setReportGenerated] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -149,6 +155,27 @@ const ResultsScreen = ({ navigation }) => {
     }));
   };
 
+  const handleSubmit = () => {
+    if (!startDate || !endDate) {
+      window.alert('Please select both start and end dates.');
+      return;
+    }
+    if (startDate > endDate) {
+      window.alert('Start date cannot be after end date.');
+      return;
+    }
+    setModalVisible(false);
+    const filteredResults = allResults.filter((result) => {
+      const resultDate = new Date(result.date);
+      return resultDate >= startDate && resultDate <= endDate;
+    });
+    setResults(filteredResults);
+    setReportGenerated(true);
+    navigation.setOptions({
+      title: `Report from ${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`,
+    });
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return format(date, 'MM/dd/yy');
@@ -166,6 +193,42 @@ const ResultsScreen = ({ navigation }) => {
       <Text style={styles.columnHeader}>C-Section</Text>
       <Text style={styles.columnHeader}>Date</Text>
     </View>
+  );
+
+  const renderModal = () => (
+    <Modal
+      visible={modalVisible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Select Date Range</Text>
+          <DatePicker
+            selected={startDate}
+            onChange={(update) => setDateRange(update)}
+            startDate={startDate}
+            endDate={endDate}
+            selectsRange
+            dateFormat="yyyy-MM-dd"
+            maxDate={new Date()}
+            showYearDropdown
+            showMonthDropdown
+            dropdownMode="select"
+            className="date-picker"
+          />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 
   const renderTableRow = (result) => (
@@ -200,14 +263,32 @@ const ResultsScreen = ({ navigation }) => {
     }
 };
 
-
   return (
     <View style={{ flex: 1 }}>
-    <View style={styles.export}>
-      <Button
-        onPress={() => handleExport()}
-        title="Download as CSV"
-      />
+      {renderModal()}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          onPress={handleExport}
+          style={styles.compactButton}>
+          <Text style={styles.buttonText}>Download as CSV</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.compactButton}
+          onPress={() => {
+            if (reportGenerated) {
+              setResults(allResults);
+              setReportGenerated(false);
+              setDateRange([null, null]);
+              navigation.setOptions({
+                title: 'Results',
+              });
+            } else {
+              setModalVisible(true);
+            }
+          }}>
+          <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
+        </TouchableOpacity>
       </View>
     <ScrollView style={styles.container}>
       <BarChart data={processResultsForAnalysis()} />
@@ -241,32 +322,65 @@ const styles = StyleSheet.create({
   cell: {
     marginHorizontal: 5,
   },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-  },
-  buttonContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  modalContainer: {
+  modalBackground: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
     backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 25,
+    alignItems: 'center',
+    elevation: 10,
   },
   modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '600',
     marginBottom: 20,
   },
-  export: {
-    marginLeft: 10,
+  modalButtons: {
+    flexDirection: 'row',
     marginTop: 20,
-    alignSelf: 'flex-start',
-  }
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    marginHorizontal: 5,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  'date-picker': {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 15,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginTop: 20,
+  },
+  compactButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
 });
 
 export default ResultsScreen;
