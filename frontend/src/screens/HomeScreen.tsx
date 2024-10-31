@@ -26,11 +26,12 @@ const robsonClassification = {
   9: "Women with a single pregnancy in a transverse or oblique lie.",
   10: "Women with a preterm, single, cephalic pregnancy."
 };
-const HomeScreen = ({ navigation}) => {
+
+const HomeScreen = ({ navigation }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState("");
-  const {user, logoutFn} = useAuth();
+  const { user, logoutFn } = useAuth();
 
   useEffect(() => {
     navigation.setOptions({
@@ -42,7 +43,6 @@ const HomeScreen = ({ navigation}) => {
       ),
     });
   }, [navigation]);
-
 
   const handleAnswer = (answer) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
@@ -64,8 +64,8 @@ const HomeScreen = ({ navigation}) => {
   const handleExport = () => {
     const header = 'Question,Answer';
     const rows = questions.map(q => {
-      const answer = answers[q.key] === 'y'; 
-      return `${q.question},${answer}`; 
+      const answer = answers[q.key] === 'y';
+      return `${q.question},${answer}`;
     });
     const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -98,19 +98,33 @@ const HomeScreen = ({ navigation}) => {
     } else {
       setResult(result);
       setCurrentQuestionIndex(0);
-
-      try {
-          await axiosInstance.post('/survey/entries/', {
-            classification: result,
-            csection: answers.cs === 'y'
-          }, {headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Token ${user.token}`
-          }});
-      } catch (error) {
-        console.error('Error submitting survey results:', error);
-      }
+      // Removed submission logic
     }
+  };
+
+  const handleSubmitAndRestart = async () => {
+    try {
+      await axiosInstance.post('/survey/entries/', {
+        classification: result,
+        csection: answers.cs === 'y'
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${user.token}`
+        }
+      });
+    } catch (error) {
+      console.error('Error submitting survey results:', error);
+    }
+    setResult("");
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+  };
+
+  const handleDiscardAndRestart = () => {
+    setResult("");
+    setAnswers({});
+    setCurrentQuestionIndex(0);
   };
 
   const renderContent = () => {
@@ -119,23 +133,32 @@ const HomeScreen = ({ navigation}) => {
         <View style={styles.results}>
           <Text style={styles.text}>Result: {result}</Text>
           <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
-          <Button title="Restart Quiz" onPress={() => {setResult(""); setAnswers({}); setCurrentQuestionIndex(0);}} />
-          <Button title="Download Results" onPress={() => handleExport()} />
+          <View style={styles.buttonsContainer}>
+            <View style={styles.individualButton}>
+              <Button title="Submit Result and Restart Quiz" onPress={handleSubmitAndRestart} />
+            </View>
+            <View style={styles.individualButton}>
+              <Button title="Discard Result and Restart Quiz" onPress={handleDiscardAndRestart} />
+            </View>
+          </View>
+          <View style={styles.individualButton}>
+            <Button title="Download Results" onPress={() => handleExport()} />
+          </View>
         </View>
       );
     } else {
       return (
         <View>
-        <Text style={styles.text}>{questions[currentQuestionIndex].question}</Text>
-        <View style={styles.buttonsContainer}>
-          <View style={styles.individualButton}>
-            <Button title="Yes" onPress={() => handleAnswer('y')} />
-          </View>
-          <View style={styles.individualButton}>
-            <Button title="No" onPress={() => handleAnswer('n')} />
+          <Text style={styles.text}>{questions[currentQuestionIndex].question}</Text>
+          <View style={styles.buttonsContainer}>
+            <View style={styles.individualButton}>
+              <Button title="Yes" onPress={() => handleAnswer('y')} />
+            </View>
+            <View style={styles.individualButton}>
+              <Button title="No" onPress={() => handleAnswer('n')} />
+            </View>
           </View>
         </View>
-      </View>
       );
     }
   };
