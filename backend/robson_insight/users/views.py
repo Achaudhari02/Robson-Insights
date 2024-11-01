@@ -374,25 +374,18 @@ class TogglePermissionsView(APIView):
     def post(self, request):
         username = request.data.get('username')
         group_id = request.data.get('group_id')
-        toggle_add = request.data.get('toggle_add', False)
         toggle_view = request.data.get('toggle_view', False)
 
         try:
+            group = Group.objects.get(id=group_id)
             current_admin_profile = UserProfile.objects.get(user=request.user,group=group)
             if not current_admin_profile.is_admin:
                 return Response({"error": "You are not authorized to toggle permissions."}, status=status.HTTP_403_FORBIDDEN)
 
-            group = Group.objects.get(id=group_id)
-            if current_admin_profile.group != group:
-                return Response({"error": "You can only modify users in your own group."}, status=status.HTTP_403_FORBIDDEN)
-
             target_user = User.objects.get(username=username)
             target_user_profile = UserProfile.objects.get(user=target_user, group=group)
 
-            if toggle_add:
-                target_user_profile.can_add = not target_user_profile.can_add
-            if toggle_view:
-                target_user_profile.can_view = not target_user_profile.can_view
+            target_user_profile.can_view = toggle_view
 
             target_user_profile.save()
 
