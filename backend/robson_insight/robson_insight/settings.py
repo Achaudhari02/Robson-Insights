@@ -96,9 +96,9 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'garrettmeek123@gmail.com'
-EMAIL_HOST_PASSWORD = 'wpautsaqtmyptqjq'
-DEFAULT_FROM_EMAIL = 'garrettmeek123@gmail.com'
+EMAIL_HOST_USER = 'robsoninsights@gmail.com'
+EMAIL_HOST_PASSWORD = '51f6p87kMaqr'
+DEFAULT_FROM_EMAIL = 'robsoninsights@gmail.com'
 
 
 # Database
