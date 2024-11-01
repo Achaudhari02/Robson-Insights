@@ -254,6 +254,20 @@ export default function GroupsScreen() {
 
   const massAddMembers = async (newMembers) => {
     if (!newMembers || !selectedGroup) return;
+    try {
+      await axiosInstance.post(
+        `users/mass-invite/${selectedGroup}/`,
+        { emails: newMembers, group_id: Number(selectedGroup) },
+        { headers: { Authorization: `Token ${user.token}` } }
+      );
+      toast.show('Members added successfully', {
+        message: `$All members have been invited to the group.`,
+      });
+    } catch (error) {
+      toast.show('Failed to add members', {
+        message: `An error occurred while inviting the members. ${error}`,
+      });
+    }
   };
 
 
@@ -304,12 +318,10 @@ export default function GroupsScreen() {
               const email = data[i][0].trim().toLowerCase();
 
               if (isEmail(email)) {
-                alert(email);
                 emails.push(email);
               }
             }
 
-            alert(JSON.stringify(emails));
             massAddMembers(emails);
           },
           header: false,
