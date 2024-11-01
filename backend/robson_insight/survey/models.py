@@ -26,12 +26,7 @@ class Entry(models.Model):
         to=User,
         on_delete=models.SET_NULL,
     )
-    group = models.ForeignKey(
-        to=Group,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
+    groups = models.ManyToManyField(Group, related_name='entries')
     csection = models.BooleanField(
         default=False,
     )

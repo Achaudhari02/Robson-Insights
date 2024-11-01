@@ -104,9 +104,9 @@ const HomeScreen = ({ navigation }) => {
 
   const handleSubmitAndRestart = async () => {
     try {
-      await axiosInstance.post('/survey/entries/', {
+      await axiosInstance.post('survey/entries/', {
         classification: result,
-        csection: answers.cs === 'y'
+        csection: answers.cs === 'y',
       }, {
         headers: {
           'Content-Type': 'application/json',

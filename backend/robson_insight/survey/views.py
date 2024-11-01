@@ -1,5 +1,7 @@
 import csv
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+
 from django.http import HttpResponse
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -10,48 +12,82 @@ from .models import Entry, Filter
 from .permissions import CanReadEntry
 from users.models import Group, UserProfile
 
-
 class EntryListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EntrySerializer
     
     def get_queryset(self):
-        
-        user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
+        user_profiles = UserProfile.objects.filter(
+            user=self.request.user
+        ).filter(Q(can_view=True) | Q(is_admin=True))
         allowed_groups = user_profiles.values_list('group', flat=True)
-        return Entry.objects.filter(group__in=allowed_groups)
+        return Entry.objects.filter(groups__in=allowed_groups).distinct()
     
     def perform_create(self, serializer):
-        group = serializer.validated_data.get('group')
+        # Fetch all user profiles where the user has can_add permissions
+        user_profiles = UserProfile.objects.filter(
+            user=self.request.user
+        ).filter(Q(can_add=True) | Q(is_admin=True))
 
-        try:
-            user_profile = UserProfile.objects.get(user=self.request.user, group=group)
+        if not user_profiles.exists():
+            raise PermissionDenied("You do not have permission to add entries to any group.")
 
-            if not user_profile.can_add:
-                raise PermissionDenied("You do not have permission to add entries to this group.")
-            
-            serializer.save(user=self.request.user)
-        
-        except UserProfile.DoesNotExist:
-            raise PermissionDenied("You are not a member of this group.")
-        
-        
+        # Collect all groups the user can add to
+        allowed_groups = user_profiles.values_list('group', flat=True)
+
+        # Save the entry and associate it with all allowed groups
+        entry = serializer.save(user=self.request.user)
+        entry.groups.set(allowed_groups)
+    
+    
 class EntryFilterListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EntrySerializer
+
+    def get_serializer(self, *args, **kwargs):
+        # Exclude 'groups' field from the serializer
+        kwargs['exclude_groups'] = True
+        return super().get_serializer(*args, **kwargs)
     
     def get_queryset(self):
-        filter_pk = self.kwargs.get('pk')
+        pk = self.kwargs.get('pk')
+        
+        # Determine if the pk is prefixed with 'filter-' or 'group-'
+        if pk.startswith('filter-'):
+            filter_id = pk.split('-')[1]
+            return self.get_entries_by_filter(filter_id)
+        elif pk.startswith('group-'):
+            group_id = pk.split('-')[1]
+            return self.get_entries_by_group(group_id)
+        else:
+            return Entry.objects.none()
+
+    def get_entries_by_filter(self, filter_id):
         try:
-            user_filter = Filter.objects.get(pk=filter_pk, user=self.request.user)
-            # only gettign groups the user has can_view permission for
-            user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
+            user_filter = Filter.objects.get(pk=filter_id, user=self.request.user)
+            user_profiles = UserProfile.objects.filter(
+                user=self.request.user
+            ).filter(Q(can_view=True) | Q(is_admin=True))
             allowed_groups = user_profiles.values_list('group', flat=True)
 
             groups_in_filter = user_filter.groups.filter(id__in=allowed_groups)
-            return Entry.objects.filter(group__in=groups_in_filter)
+            return Entry.objects.filter(groups__in=groups_in_filter).distinct()
         
         except Filter.DoesNotExist:
+            return Entry.objects.none()
+
+    def get_entries_by_group(self, group_id):
+        try:
+            user_profiles = UserProfile.objects.filter(
+                user=self.request.user
+            ).filter(Q(can_view=True) | Q(is_admin=True), group__id=group_id)
+
+            if not user_profiles.exists():
+                raise PermissionDenied("You do not have permission to view entries for this group.")
+
+            return Entry.objects.filter(groups__id=group_id).distinct()
+        
+        except Group.DoesNotExist:
             return Entry.objects.none()
 
 class DownloadSurveyCSVView(generics.ListCreateAPIView):

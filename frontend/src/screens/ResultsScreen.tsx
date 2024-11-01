@@ -2,8 +2,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import { format } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { Linking, View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
-import {BarChart, PieChart} from '@/components';
+import { View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { BarChart, PieChart, Select } from '@/components';
+import {YStack} from 'tamagui';
+
 
 const questions = [
   { question: 'Was this a multiple pregnancy?', key: 'mp' },
@@ -16,90 +18,95 @@ const questions = [
   { question: 'Was this a cesarean section?', key: 'cs' },
 ];
 
-const ResultsScreen = ({ navigation }) => {
-  const [results, setResults] = useState([
-    {
-      id: 1,
-      user: 'User1',
-      classification: '1',
-      csection: true,
-      date: '2023-10-01T12:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 3,
-      user: 'User3',
-      classification: '1',
-      csection: true,
-      date: '2023-10-03T14:00:00Z',
-    },
-    {
-      id: 4,
-      user: 'User4',
-      classification: '3',
-      csection: false,
-      date: '2023-10-04T15:00:00Z',
-    },
-    {
-      id: 5,
-      user: 'User5',
-      classification: '2',
-      csection: true,
-      date: '2023-10-05T16:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '5',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '10',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '7',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '9',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    // Add more dummy data if needed
-  ]);
+// const [results, setResults] = useState([
+//   {
+//     id: 1,
+//     user: 'User1',
+//     classification: '1',
+//     csection: true,
+//     date: '2023-10-01T12:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '2',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 3,
+//     user: 'User3',
+//     classification: '1',
+//     csection: true,
+//     date: '2023-10-03T14:00:00Z',
+//   },
+//   {
+//     id: 4,
+//     user: 'User4',
+//     classification: '3',
+//     csection: false,
+//     date: '2023-10-04T15:00:00Z',
+//   },
+//   {
+//     id: 5,
+//     user: 'User5',
+//     classification: '2',
+//     csection: true,
+//     date: '2023-10-05T16:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '2',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '2',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '5',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '10',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '7',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     user: 'User2',
+//     classification: '9',
+//     csection: false,
+//     date: '2023-10-02T13:00:00Z',
+//   },
+//   // Add more dummy data if needed
+// ]);
 
+const ResultsScreen = ({ navigation }) => {
+  const [results, setResults] = useState([]);
   const { user, logoutFn } = useAuth();
   const [isAnalysisView, setIsAnalysisView] = useState(false);
+  const [filters, setFilters] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [selectedType, setSelectedType] = useState('group');
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -110,22 +117,34 @@ const ResultsScreen = ({ navigation }) => {
   }, [navigation]);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        /*
-        const resp = await axiosInstance.get('/survey/entries/', {
-          headers: {
-            Authorization: `Token ${user.token}`,
-          },
-        });
-        setResults(resp.data);
-        */
-      } catch (error) {
-        console.error('Error fetching survey results:', error);
-      }
-    };
+    // Automatically fetch entries when a default group is set
+    if (selectedId !== null) {
+      fetchEntries();
+    }
 
-    fetchResults();
+  }, [selectedId]);
+
+  useEffect(() => {
+    axiosInstance.get('/survey/filters/', {
+      headers: {
+        Authorization: `Token ${user.token}`,
+      }
+    })
+      .then(response => setFilters(response.data))
+      .catch(error => console.error('Error fetching filters:', error));
+
+    axiosInstance.get('/users/groups/', {
+      headers: {
+        Authorization: `Token ${user.token}`,
+      }
+    })
+      .then(response => {
+        setGroups(response.data); if (response.data.length > 0) {
+          // Set the first group as the default selection
+          setSelectedId(response.data[0].id);
+        }
+      })
+      .catch(error => console.error('Error fetching groups:', error));
   }, []);
 
   const processResultsForAnalysis = () => {
@@ -158,9 +177,32 @@ const ResultsScreen = ({ navigation }) => {
     return csection ? 'Yes' : 'No';
   };
 
+  const handleSelectionChange = (value) => {
+    setSelectedId(value);
+  };
+
+  const handleTypeChange = (value) => {
+    setSelectedType(value);
+    setSelectedId(null);
+  };
+
+  const fetchEntries = () => {
+    const prefix = selectedType === 'group' ? 'group-' : 'filter-';
+    const endpoint = `/survey/entries/filter/${prefix}${selectedId}/`;
+
+    axiosInstance.get(endpoint, {
+      headers: { Authorization: `Token ${user.token}` }
+    })
+      .then(response => {
+        setResults(response.data);
+        // Use the response data for visualizations
+      })
+      .catch(error => console.error(`Error fetching entries for ${selectedType}:`, error));
+  };
+
+
   const renderTableHeader = () => (
     <View style={styles.tableRow}>
-      <Text style={styles.columnHeader}>ID</Text>
       <Text style={styles.columnHeader}>User</Text>
       <Text style={styles.columnHeader}>Classification</Text>
       <Text style={styles.columnHeader}>C-Section</Text>
@@ -170,9 +212,8 @@ const ResultsScreen = ({ navigation }) => {
 
   const renderTableRow = (result) => (
     <View style={styles.tableRow} key={result.id.toString()}>
-      <Text style={styles.cell}>{result.id}</Text>
-      <Text style={styles.cell}>{result.user}</Text>
-      <Text style={styles.cell}>{result.classification}</Text>
+      <Text style={styles.cell}>{result.username}</Text>
+      <Text style={styles.cell}>Group {result.classification}</Text>
       <Text style={styles.cell}>{formatCSection(result.csection)}</Text>
       <Text style={styles.cell}>{formatDate(result.date)}</Text>
     </View>
@@ -180,8 +221,10 @@ const ResultsScreen = ({ navigation }) => {
 
   const handleExport = async () => {
     try {
-      const response = await axiosInstance.get('survey/download-survey-csv/', {headers: {
-        'Authorization': `Token ${user.token}`},
+      const response = await axiosInstance.get('survey/download-survey-csv/', {
+        headers: {
+          'Authorization': `Token ${user.token}`
+        },
         responseType: 'blob'
       });
 
@@ -196,7 +239,7 @@ const ResultsScreen = ({ navigation }) => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Error exporting CSV:', error);
+      console.error('Error exporting CSV:', error);
     }
   };
 
@@ -208,11 +251,31 @@ const ResultsScreen = ({ navigation }) => {
         onPress={() => handleExport()}
         title="Download as CSV"
       />
-      </View>
+    </View>
     <ScrollView style={styles.container}>
+    <YStack gap="$4" padding="$4">
+      <Select
+        value={selectedType}
+        onValueChange={handleTypeChange}
+        items={[
+          { label: 'Group', value: 'group' },
+          { label: 'Filter', value: 'filter' }
+        ]}
+      />
+
+      <Select
+        value={selectedId}
+        onValueChange={handleSelectionChange}
+        items={(selectedType === 'group' ? groups : filters).map(item => ({
+          label: item.name,
+          value: item.id
+        }))}
+      />
+
+    </YStack>
       <BarChart data={processResultsForAnalysis()} />
       <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: processResultsForAnalysis() })}>
-      <PieChart data={processResultsForAnalysis()} />
+        <PieChart data={processResultsForAnalysis()} />
       </TouchableOpacity>
       {renderTableHeader()}
       {results.map(renderTableRow)}

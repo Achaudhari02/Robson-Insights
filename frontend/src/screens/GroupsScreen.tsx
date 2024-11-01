@@ -339,7 +339,7 @@ export default function GroupsScreen() {
 
   const handleUserCheckBoxChange = async (username, newValue) => {
     try {
-      await axiosInstance.post(
+      await axiosInstance.put(
         "users/toggle-permissions/",
         {
           username: username,
@@ -360,6 +360,7 @@ export default function GroupsScreen() {
     } else {
       addGroup(id);
     }
+
     setCheckedGroups((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -642,26 +643,7 @@ export default function GroupsScreen() {
         />
 
        
-        {currentToast && !currentToast.isHandledNatively && (
-        <Toast
-          key={currentToast.id}
-          duration={currentToast.duration}
-          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-          y={0}
-          opacity={1}
-          scale={1}
-          animation="100ms"
-          viewportName={currentToast.viewportName}
-        >
-          <YStack>
-            <Toast.Title>{currentToast.title}</Toast.Title>
-            {!!currentToast.message && (
-              <Toast.Description>{currentToast.message}</Toast.Description>
-            )}
-          </YStack>
-        </Toast>
-      )}
+      
         {selectedConfiguration && (
           <>
             <Text style={styles.subtitle}>Configuration Groups:</Text>

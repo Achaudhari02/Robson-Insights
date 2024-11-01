@@ -12,7 +12,7 @@ class CanReadEntry(permissions.BasePermission):
         try:
             entry = Entry.objects.get(pk=pk)
             user_profile = UserProfile.objects.get(user=request.user, group=entry.group)
-            return user_profile.can_view
+            return user_profile.can_view | user_profile.is_admin
         except Entry.DoesNotExist:
             return False
         except UserProfile.DoesNotExist:
