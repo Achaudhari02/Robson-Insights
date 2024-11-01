@@ -94,7 +94,7 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const computeResult = async (answers) => {
+  const computeResult = (answers) => {
     let result = "";
     setError("");
 
@@ -134,7 +134,9 @@ const HomeScreen = ({ navigation }) => {
     } else {
       setResult(result);
     }
+  };
 
+  const handleSubmitAndRestart = async () => {
     try {
       await axiosInstance.post('/survey/entries/', {
         classification: result || 'Invalid',
@@ -148,6 +150,17 @@ const HomeScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error submitting survey results:', error);
     }
+    setResult("");
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setIsQuizFinished(false);
+  };
+
+  const handleDiscardAndRestart = () => {
+    setResult("");
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setIsQuizFinished(false);
   };
 
   const renderContent = () => {
@@ -169,13 +182,8 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.results}>
             <Text style={styles.text}>Result: {result}</Text>
             <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
-            <Button title="Restart Quiz" onPress={() => {
-              setResult("");
-              setAnswers({});
-              setCurrentQuestionIndex(0);
-              setIsQuizFinished(false);
-            }} />
-            <Button title="Download Results" onPress={() => handleExport()} />
+            <Button title="Restart Quiz and Submit Result" onPress={handleSubmitAndRestart} />
+            <Button title="Restart Quiz and Discard Result" onPress={handleDiscardAndRestart} />
           </View>
         );
       } else {
