@@ -201,6 +201,35 @@ const ResultsScreen = ({ navigation }) => {
 };
 
 
+const [file, setFile] = useState(null);
+
+const handleFileChange = (event) => {
+  setFile(event.target.files[0]);
+};
+
+const handleUpload = async () => {
+  if (!file) {
+    alert("Please select a file before uploading.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await axiosInstance.post('survey/entries/upload/', formData, {
+      headers: {
+        'Authorization': `Token ${user.token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log(response);
+  } catch (e) {
+    console.error("There was an error uploading the file:", e);
+  }
+}
+
+
   return (
     <View style={{ flex: 1 }}>
     <View style={styles.export}>
@@ -208,6 +237,15 @@ const ResultsScreen = ({ navigation }) => {
         onPress={() => handleExport()}
         title="Download as CSV"
       />
+      <View style={styles.import}>
+        <View style={styles.importButtonContainer}>
+          <input type="file" onChange={handleFileChange} accept=".csv, .xlsx" />
+          <Button
+            onPress={() => handleUpload()}
+            title="Import CSV"
+          />
+        </View>
+      </View>
       </View>
     <ScrollView style={styles.container}>
       <BarChart data={processResultsForAnalysis()} />
@@ -266,7 +304,17 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginTop: 20,
     alignSelf: 'flex-start',
-  }
+  },
+  import: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  importButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
 
 export default ResultsScreen;
