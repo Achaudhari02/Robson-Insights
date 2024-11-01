@@ -203,6 +203,7 @@ const ResultsScreen = ({ navigation }) => {
 
 const [file, setFile] = useState(null);
 const [errorMessage, setErrorMessaage] = useState("");
+const [successMessage, setSuccessMessage] = useState("");
 
 const handleFileChange = (event) => {
   setFile(event.target.files[0]);
@@ -224,8 +225,8 @@ const handleUpload = async () => {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log(response);
     setErrorMessaage("");
+    setSuccessMessage(response.data["message"]);
   } catch (e) {
     if (e.response.status == 422) {
       setErrorMessaage("Invalid file format");
@@ -251,7 +252,7 @@ const handleUpload = async () => {
             title="Import CSV"
           />
         </View>
-        <Text style={styles.errorMessage}>{errorMessage}</Text>
+        <Text style={errorMessage.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessage.length == 0 ? successMessage : errorMessage}</Text>
       </View>
       </View>
     <ScrollView style={styles.container}>
@@ -321,6 +322,9 @@ const styles = StyleSheet.create({
   importButtonContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  successMessage: {
+    color: 'green',
   },
   errorMessage: {
     color: 'red',
