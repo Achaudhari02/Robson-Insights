@@ -67,9 +67,23 @@ class EntryListView(generics.ListCreateAPIView):
                 df = pd.read_excel(file, skiprows=start_row, header=None)
             i = 1
             count = 0
+
+            try:
+                if df.iat[0, i][:7] != "Quarter":
+                    raise Exception
+            except:
+                return Response({'error': 'Invalid format'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
             while df.iat[0, i][:7] == "Quarter":
                 date = min(datetime.strptime(re.sub(r'(\d+)(st|nd|rd|th)', r'\1', df.iat[0, i].split("- ")[1]), '%d %B %Y'), datetime.now())
                 j = 2
+
+                try:
+                    if df.iat[j, 0][:5] != "Group":
+                        raise Exception
+                except:
+                    return Response({'error': 'Invalid format'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                
                 while df.iat[j, 0][:5] == "Group":
                     v = df.iat[j, i]
                     if not pd.isna(v):

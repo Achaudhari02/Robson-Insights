@@ -202,6 +202,7 @@ const ResultsScreen = ({ navigation }) => {
 
 
 const [file, setFile] = useState(null);
+const [errorMessage, setErrorMessaage] = useState("");
 
 const handleFileChange = (event) => {
   setFile(event.target.files[0]);
@@ -224,8 +225,13 @@ const handleUpload = async () => {
       },
     });
     console.log(response);
+    setErrorMessaage("");
   } catch (e) {
-    console.error("There was an error uploading the file:", e);
+    if (e.response.status == 422) {
+      setErrorMessaage("Invalid file format");
+    } else {
+      setErrorMessaage("Error uploading file");
+    }
   }
 }
 
@@ -245,6 +251,7 @@ const handleUpload = async () => {
             title="Import CSV"
           />
         </View>
+        <Text style={styles.errorMessage}>{errorMessage}</Text>
       </View>
       </View>
     <ScrollView style={styles.container}>
@@ -315,6 +322,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  errorMessage: {
+    color: 'red',
+  }
 });
 
 export default ResultsScreen;
