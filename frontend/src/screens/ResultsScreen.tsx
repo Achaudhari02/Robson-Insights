@@ -98,6 +98,42 @@ const ResultsScreen = ({ navigation }) => {
       csection: false,
       date: '2023-10-02T13:00:00Z',
     },
+    {
+      id: 2,
+      user: 'User2',
+      classification: '4',
+      csection: false,
+      date: '2023-10-02T13:00:00Z',
+    },
+    {
+      id: 2,
+      user: 'User2',
+      classification: '5',
+      csection: false,
+      date: '2023-10-02T13:00:00Z',
+    },
+    {
+      id: 2,
+      user: 'User2',
+      classification: '6',
+      csection: false,
+      date: '2023-10-02T13:00:00Z',
+    },
+    {
+      id: 2,
+      user: 'User2',
+      classification: '7',
+      csection: false,
+      date: '2023-10-02T13:00:00Z',
+    },
+    {
+      id: 2,
+      user: 'User2',
+      classification: '8',
+      csection: false,
+      date: '2023-10-02T13:00:00Z',
+    },
+    // Add more dummy data if needed
   ]);
 
   const { user, logoutFn } = useAuth();
@@ -110,10 +146,14 @@ const ResultsScreen = ({ navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Button onPress={() => logoutFn()} title="Logout" />
+        <TouchableOpacity onPress={logoutFn} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>Logout</Text>
+        </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, logoutFn]);
+
+
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -186,7 +226,7 @@ const ResultsScreen = ({ navigation }) => {
   };
 
   const renderTableHeader = () => (
-    <View style={styles.tableRow}>
+    <View style={styles.tableHeader}>
       <Text style={styles.columnHeader}>ID</Text>
       <Text style={styles.columnHeader}>User</Text>
       <Text style={styles.columnHeader}>Classification</Text>
@@ -231,8 +271,14 @@ const ResultsScreen = ({ navigation }) => {
     </Modal>
   );
 
-  const renderTableRow = (result) => (
-    <View style={styles.tableRow} key={result.id.toString()}>
+  const renderTableRow = (result, index) => (
+    <View
+      style={[
+        styles.tableRow,
+        index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+      ]}
+      key={`${result.id}-${index}`}
+    >
       <Text style={styles.cell}>{result.id}</Text>
       <Text style={styles.cell}>{result.user}</Text>
       <Text style={styles.cell}>{result.classification}</Text>
@@ -243,9 +289,11 @@ const ResultsScreen = ({ navigation }) => {
 
   const handleExport = async () => {
     try {
-      const response = await axiosInstance.get('survey/download-survey-csv/', {headers: {
-        'Authorization': `Token ${user.token}`},
-        responseType: 'blob'
+      const response = await axiosInstance.get('survey/download-survey-csv/', {
+        headers: {
+          Authorization: `Token ${user.token}`,
+        },
+        responseType: 'blob',
       });
 
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -259,7 +307,7 @@ const ResultsScreen = ({ navigation }) => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Error exporting CSV:', error);
+      console.error('Error exporting CSV:', error);
     }
   };
 
@@ -305,22 +353,79 @@ const ResultsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f7f9fc',
+  },
+  scrollContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+  },
+  headerLogout: {
+    marginRight: 10,
+    backgroundColor: '#007bff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    color: '#fff',
+    fontSize: 14,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  downloadButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 4,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#007bff',
+    paddingVertical: 10,
+    borderRadius: 4,
     marginTop: 20,
-    backgroundColor: 'white',
+  },
+  columnHeader: {
+    flex: 1,
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   tableRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
-  columnHeader: {
-    fontWeight: 'bold',
+  rowEven: {
+    backgroundColor: '#e9f1fb',
+  },
+  rowOdd: {
+    backgroundColor: '#fff',
   },
   cell: {
-    marginHorizontal: 5,
+    flex: 1,
+    textAlign: 'center',
+    color: '#333',
+  },
+  buttonsContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  headerButton: {
+    marginRight: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    backgroundColor: '#007bff',
   },
   modalBackground: {
     flex: 1,
@@ -340,6 +445,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     marginBottom: 20,
+  },
+  headerButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   modalButtons: {
     flexDirection: 'row',

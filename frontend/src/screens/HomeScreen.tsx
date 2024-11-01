@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
 const questions = [
   { question: 'Was this a multiple pregnancy? (twins, triplets, etc.)', key: 'mp' },
@@ -31,15 +31,19 @@ const HomeScreen = ({ navigation }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState("");
+  const [error, setError] = useState("");
+  const [isQuizFinished, setIsQuizFinished] = useState(false);
   const { user, logoutFn } = useAuth();
 
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Button
-          onPress={() => logoutFn()}
-          title="Logout"
-        />
+        <View style={styles.buttonContainer}>
+          <Button
+            onPress={() => logoutFn()}
+            title="Logout"
+          />
+        </View>
       ),
     });
   }, [navigation]);
@@ -48,16 +52,11 @@ const HomeScreen = ({ navigation }) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);
 
-    if (currentQuestionIndex < questions.length - 2) {
-      computeResult(newAnswers, true).then((tempResult) => {
-        if (tempResult) {
-          setCurrentQuestionIndex(questions.length - 1);
-        } else {
-          setCurrentQuestionIndex(currentQuestionIndex + 1);
-        }
-      });
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      computeResult(newAnswers, false);
+      computeResult(newAnswers);
+      setIsQuizFinished(true);
     }
   };
 
@@ -77,35 +76,70 @@ const HomeScreen = ({ navigation }) => {
     document.body.removeChild(link);
   };
 
-  const computeResult = async (answers, isEarlyComputation) => {
+  const AnswerButton = ({ title, onPress }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.answerButton,
+          isHovered && styles.answerButtonHover,
+        ]}
+        onPress={onPress}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <Text style={styles.buttonText}>{title}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const computeResult = (answers) => {
     let result = "";
-    if (answers.mp === 'y') result = '8';
-    if (answers.lie === 'y') result = '9';
-    if (answers.bp === 'y') {
-      result = (answers.mw === 'y' ? '7' : '6');
-    }
-    if (answers.ga === 'y') {
-      result = '10';
-      if (answers.mw === 'y') {
-        result = (answers.us === 'y' ? '5' : (answers.li === 'y' ? '4' : '3'));
-      } else {
-        result = (answers.li === 'y' ? '2' : '1');
-      }
+    setError("");
+
+    if (answers.mw === 'n' && answers.us === 'y') {
+      setError("Invalid response: Nulliparous women cannot have previous uterine scars.");
+      return;
     }
 
-    if (isEarlyComputation) {
-      return result;
+    if (answers.mw === 'y' && answers.us === 'n' && answers.cs === 'y') {
+      setError("Invalid response: Multiparous women who had a cesarean should have previous uterine scars.");
+      return;
+    }
+
+    if (answers.bp === 'y' && answers.lie === 'y') {
+      setError("Invalid response: A fetus cannot be both in breech position and transverse/oblique lie.");
+      return;
+    }
+
+    if (answers.mp === 'y') {
+      result = '8';
+    } else if (answers.lie === 'y') {
+      result = '9';
+    } else if (answers.bp === 'y') {
+      result = (answers.mw === 'y' ? '7' : '6');
+    } else if (answers.ga === 'y') {
+      result = '10';
+    } else if (answers.us === 'y') {
+      result = '5';
+    } else if (answers.mw === 'y') {
+      result = (answers.li === 'y' ? '4' : '3');
+    } else {
+      result = (answers.li === 'y' ? '2' : '1');
+    }
+
+    if (!result) {
+      setError("Your responses do not correspond to any valid classification. Please review your answers.");
     } else {
       setResult(result);
-      setCurrentQuestionIndex(0);
-      // Removed submission logic
     }
   };
 
   const handleSubmitAndRestart = async () => {
     try {
       await axiosInstance.post('/survey/entries/', {
-        classification: result,
+        classification: result || 'Invalid',
         csection: answers.cs === 'y'
       }, {
         headers: {
@@ -119,44 +153,53 @@ const HomeScreen = ({ navigation }) => {
     setResult("");
     setAnswers({});
     setCurrentQuestionIndex(0);
+    setIsQuizFinished(false);
   };
 
   const handleDiscardAndRestart = () => {
     setResult("");
     setAnswers({});
     setCurrentQuestionIndex(0);
+    setIsQuizFinished(false);
   };
 
   const renderContent = () => {
-    if (result.length > 0) {
-      return (
-        <View style={styles.results}>
-          <Text style={styles.text}>Result: {result}</Text>
-          <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
-          <View style={styles.buttonsContainer}>
-            <View style={styles.individualButton}>
-              <Button title="Submit Result and Restart Quiz" onPress={handleSubmitAndRestart} />
-            </View>
-            <View style={styles.individualButton}>
-              <Button title="Discard Result and Restart Quiz" onPress={handleDiscardAndRestart} />
-            </View>
+    if (isQuizFinished) {
+      if (error) {
+        return (
+          <View style={styles.results}>
+            <Text style={styles.text}>Error: {error}</Text>
+            <Button title="Restart Quiz" onPress={() => {
+              setError("");
+              setAnswers({});
+              setCurrentQuestionIndex(0);
+              setIsQuizFinished(false);
+            }} />
           </View>
-          <View style={styles.individualButton}>
-            <Button title="Download Results" onPress={() => handleExport()} />
+        );
+      } else if (result.length > 0) {
+        return (
+          <View style={styles.results}>
+            <Text style={styles.text}>Result: {result}</Text>
+            <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
+            <Button title="Restart Quiz and Submit Result" onPress={handleSubmitAndRestart} />
+            <Button title="Restart Quiz and Discard Result" onPress={handleDiscardAndRestart} />
           </View>
-        </View>
-      );
+        );
+      } else {
+        return (
+          <View style={styles.results}>
+            <Text style={styles.text}>Calculating result...</Text>
+          </View>
+        );
+      }
     } else {
       return (
         <View>
           <Text style={styles.text}>{questions[currentQuestionIndex].question}</Text>
           <View style={styles.buttonsContainer}>
-            <View style={styles.individualButton}>
-              <Button title="Yes" onPress={() => handleAnswer('y')} />
-            </View>
-            <View style={styles.individualButton}>
-              <Button title="No" onPress={() => handleAnswer('n')} />
-            </View>
+            <AnswerButton title="Yes" onPress={() => handleAnswer('y')} />
+            <AnswerButton title="No" onPress={() => handleAnswer('n')} />
           </View>
         </View>
       );
@@ -171,16 +214,6 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  buttonsContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-  },
-  individualButton: {
-    marginTop: 10,
-    width: '80%',
-    alignSelf: 'center',
-  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -189,13 +222,42 @@ const styles = StyleSheet.create({
   },
   text: {
     marginBottom: 20,
-    fontSize: 18,
+    fontSize: 25,
+    textAlign: 'center',
+  },
+  buttonsContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonContainer: {
+    marginRight: 10,
+  },
+  answerButton: {
+    borderColor: '#A9A9A9',
+    borderWidth: 2,
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: 'transparent',
+    marginTop: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  answerButtonHover: {
+    backgroundColor: 'lightblue',
+  },
+  buttonText: {
+    color: '#A9A9A9',
+    textAlign: 'center',
   },
   results: {
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
+    alignItems: 'center',
   },
 });
+
 
 export default HomeScreen;

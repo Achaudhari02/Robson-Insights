@@ -48,10 +48,6 @@ export const BarChart = ({ data }) => {
     .range([0, chartHeight])
     .padding(0.2);
 
-  const csectionColor = '#FF5A5F';
-  const nonCsectionColor = '#00A699';
-  const labelPadding = 10;
-  const totalPatients = data.reduce((sum, d) => sum + d.responses, 0);
   const [selectedBar, setSelectedBar] = useState(null);
 
   const handleCloseModal = (e) => {
@@ -61,10 +57,8 @@ export const BarChart = ({ data }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Analysis Page</Text>
-      <Text style={styles.subtitle}>Tap on bars for more information</Text>
-
+    <View style={styles.card}>
+      <Text style={styles.title}>Cesarean Sections by Group</Text>
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <Svg width={20} height={20}>
@@ -231,7 +225,7 @@ export const BarChart = ({ data }) => {
               </Text>
               <Text style={styles.modalText}>
                 <Text style={styles.boldText}>Percent Patients in Category:</Text>{' '}
-                {((selectedBar.data.responses / totalPatients) * 100).toFixed(2)}%
+                {((selectedBar.data.responses / data.totalPatients) * 100).toFixed(2)}%
               </Text>
               <Text style={styles.modalText}>
                 <Text style={styles.boldText}>Expected C-Section Rate:</Text>{' '}
@@ -253,23 +247,31 @@ export const BarChart = ({ data }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5', // Light gray background
-    paddingTop: 20,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    margin: 15,
+    elevation: 3, // Shadow for Android
+    shadowColor: '#000', // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   title: {
-    fontSize: 24,
-    marginBottom: 10,
-    fontFamily: 'Avenir Next',
+    fontSize: 22,
     fontWeight: 'bold',
+    textAlign: 'left',
+    marginBottom: 10,
+    marginLeft: 5,
+    fontFamily: 'Avenir Next',
   },
   subtitle: {
     fontSize: 14,
-    marginBottom: 20,
+    textAlign: 'left',
+    marginBottom: 10,
+    marginLeft: 5,
     fontFamily: 'Avenir Next',
-    color: 'gray',
   },
   legendContainer: {
     flexDirection: 'row',
@@ -277,16 +279,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 10,
-    elevation: 2, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
+    alignSelf: 'flex-start',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
+    marginHorizontal: 10,
   },
   legendText: {
     marginLeft: 5,
@@ -303,8 +306,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
-    elevation: 5, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
@@ -339,4 +342,3 @@ const styles = StyleSheet.create({
     fontFamily: 'Avenir Next',
   },
 });
-

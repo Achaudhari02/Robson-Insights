@@ -87,7 +87,7 @@ export default function GroupsScreen() {
   const fetchConfigurations = async () => {
     try {
       const response = await axiosInstance.get("survey/filters/", {
-        headers: { 
+        headers: {
           Authorization: `Token ${user.token}`,
           "Content-Type": "application/json",
         },
@@ -229,7 +229,7 @@ export default function GroupsScreen() {
       setGroupNameError("Failed to update group name");
     }
   };
-  
+
 
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
@@ -313,7 +313,7 @@ export default function GroupsScreen() {
           complete: (results) => {
             const data = results.data;
             const isHeader = !isEmail(data[0][0]);
-    
+
             for (let i = (isHeader ? 1 : 0); i < data.length; i++) {
               const email = data[i][0].trim().toLowerCase();
 
@@ -432,7 +432,7 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedGroup(value)}
         />
 
-       
+
         {currentToast && !currentToast.isHandledNatively && (
         <Toast
           key={currentToast.id}
@@ -653,7 +653,7 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedConfiguration(value)}
         />
 
-       
+
         {currentToast && !currentToast.isHandledNatively && (
         <Toast
           key={currentToast.id}
@@ -742,7 +742,7 @@ export default function GroupsScreen() {
         </Dialog.Portal>
       </Dialog>
     </View>
-    
+
   );
 }
 
