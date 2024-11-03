@@ -3,7 +3,7 @@ import { View, TextInput, Button, StyleSheet, Text } from "react-native";
 import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
-import { Select } from "@/components";
+import { Select, Checkbox } from "@/components";
 import {
   Button as TamaguiButton,
   Sheet,
@@ -12,7 +12,6 @@ import {
   YStack,
   Dialog,
   Input,
-  Checkbox,
 } from "tamagui";
 import { Menu, Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
@@ -470,11 +469,8 @@ export default function GroupsScreen() {
                   onCheckedChange={(newValue) =>
                     handleUserCheckBoxChange(user.username, newValue)
                   }
-                >
-                  <Checkbox.Indicator>
-                    <Check />
-                  </Checkbox.Indicator>
-                </Checkbox>
+                />
+                 
               </View>
             ))}
             <View style={styles.row}>

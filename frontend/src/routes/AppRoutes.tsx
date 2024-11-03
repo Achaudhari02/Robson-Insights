@@ -53,9 +53,23 @@ const AuthStack = () => {
 
 const ResultsStack = () => {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Results" options={{ headerShown: false }} component={ResultsScreen} />
-      <Stack.Screen name="PieChartAnalysis" options={{ headerShown: false }} component={PieChartAnalysisScreen} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Results" component={ResultsScreen} />
+      <Stack.Screen 
+        name="PieChartAnalysis" 
+        component={PieChartAnalysisScreen} 
+        options={({ navigation }) => ({
+          headerShown: true,
+          headerTitle: '',
+          headerLeft: () => (
+            <Button
+              onPress={() => navigation.goBack()}
+              title="Close"
+              color="#007BFF"
+            />
+          ),
+        })}
+      />
     </Stack.Navigator>
   );
 };

@@ -1,11 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format, parse, set } from 'date-fns';
+import { format, endOfDay} from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { BarChart, PieChart, Select } from '@/components';
-import {YStack} from 'tamagui';
-import { endOfDay } from 'date-fns';
+import { View, Text, ScrollView, StyleSheet, Modal, TouchableOpacity} from 'react-native';
+import { BarChart, PieChart, Select} from '@/components';
+import {YStack } from 'tamagui';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -15,6 +14,7 @@ const ResultsScreen = ({ navigation }) => {
   const [parsedResults, setParsedResults] = useState([]);
   const { user, logoutFn } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
+  const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [allResults, setAllResults] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
@@ -23,6 +23,7 @@ const ResultsScreen = ({ navigation }) => {
   const [groups, setGroups] = useState([]);
   const [selectedType, setSelectedType] = useState('group');
   const [selectedId, setSelectedId] = useState(null);
+  const [configName, setConfigName] = useState('');
 
   useEffect(() => {
     navigation.setOptions({
@@ -35,7 +36,6 @@ const ResultsScreen = ({ navigation }) => {
   }, [navigation]);
 
   useEffect(() => {
-    // Automatically fetch entries when a default group is set
     if (selectedId !== null) {
       fetchEntries();
     }
@@ -148,20 +148,21 @@ const ResultsScreen = ({ navigation }) => {
       .catch(error => console.error(`Error fetching entries for ${selectedType}:`, error));
   };
 
-
+ 
   const renderTableHeader = () => (
     <View style={styles.tableHeader}>
       <Text style={styles.columnHeader}>ID</Text>
-    <View style={styles.tableRow}>
-      <Text style={styles.columnHeader}>User</Text>
-      <Text style={styles.columnHeader}>Classification</Text>
-      <Text style={styles.columnHeader}>C-Section</Text>
-      <Text style={styles.columnHeader}>Date</Text>
-    </View>
+      <View style={styles.tableRow}>
+        <Text style={styles.columnHeader}>User</Text>
+        <Text style={styles.columnHeader}>Classification</Text>
+        <Text style={styles.columnHeader}>C-Section</Text>
+        <Text style={styles.columnHeader}>Date</Text>
+      </View>
     </View>
   );
 
-  const renderModal = () => (
+
+  const renderReportModal = () => (
     <Modal
       visible={modalVisible}
       animationType="fade"
@@ -239,7 +240,7 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      {renderModal()}
+      {renderReportModal()}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           onPress={handleExport}
@@ -264,35 +265,34 @@ const ResultsScreen = ({ navigation }) => {
           <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
         </TouchableOpacity>
       </View>
-    <ScrollView style={styles.container}>
-    <YStack gap="$4" padding="$4">
-      <Select
-        value={selectedType}
-        onValueChange={handleTypeChange}
-        items={[
-          { label: 'Group', value: 'group' },
-          { label: 'Filter', value: 'filter' }
-        ]}
-      />
-
-      <Select
-        value={selectedId}
-        onValueChange={handleSelectionChange}
-        items={(selectedType === 'group' ? groups : filters).map(item => ({
-          label: item.name,
-          value: item.id
-        }))}
-      />
-
-    </YStack>
-      <BarChart data={parsedResults} />
-      <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: parsedResults })}>
-        <PieChart data={parsedResults} />
-      </TouchableOpacity>
-      {renderTableHeader()}
-      {results.map(renderTableRow)}
-    </ScrollView>
-  </View>
+      <ScrollView style={styles.container}>
+        <YStack gap="$4" padding="$4">
+            <Select
+              value={selectedType}
+              onValueChange={handleTypeChange}
+              items={[
+                { label: 'Group', value: 'group' },
+                { label: 'Filter', value: 'filter' }
+              ]}
+            />
+            
+          <Select
+            value={selectedId}
+            onValueChange={handleSelectionChange}
+            items={(selectedType === 'group' ? groups : filters).map(item => ({
+              label: item.name,
+              value: item.id
+            }))}
+          />
+        </YStack>
+        <BarChart data={parsedResults} />
+        <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: parsedResults })}>
+          <PieChart data={parsedResults} />
+        </TouchableOpacity>
+        {renderTableHeader()}
+        {results.map(renderTableRow)}
+      </ScrollView>
+    </View>
   );
 };
 
@@ -436,6 +436,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
 });
 

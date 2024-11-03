@@ -3,3 +3,4 @@ export * from "./Select";
 export * from "./TextField";
 export * from "./BarChart";
 export * from "./PieChart";
+export * from "./Checkbox";
