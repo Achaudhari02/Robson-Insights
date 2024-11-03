@@ -1,11 +1,6 @@
+import csv
 from django.core.exceptions import PermissionDenied
-from rest_framework import generics, permissions
-
-from .serializers import EntrySerializer, FilterSerializer, FilterIDSerializer
-from .models import Entry, Filter
-from users.models import User
-from .permissions import CanReadEntry
-from users.models import Group, UserProfile
+from django.http import HttpResponse
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
@@ -15,6 +10,11 @@ import os
 from openpyxl import load_workbook
 from datetime import datetime
 import re
+from .serializers import EntrySerializer, FilterSerializer
+from .models import Entry, Filter
+from .permissions import CanReadEntry
+from users.models import Group, UserProfile
+
 
 class EntryListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -141,9 +141,7 @@ class DownloadSurveyCSVView(generics.ListCreateAPIView):
 
     def get(self, request):
         try:
-            current_profile = UserProfile.objects.get(user=request.user)
-            user_group = current_profile.group
-            queryset = Entry.objects.filter(user__group=user_group)
+            queryset = Entry.objects.filter(user__in=UserProfile.objects.filter(group__in=UserProfile.objects.filter(user=request.user, can_view=True).values_list('group', flat=True)).values_list('user', flat=True).distinct())
             model = queryset.model
             model_fields = model._meta.fields + model._meta.many_to_many
             field_names = [field.name for field in model_fields]
