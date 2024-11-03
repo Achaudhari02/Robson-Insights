@@ -87,7 +87,7 @@ export default function GroupsScreen() {
   const fetchConfigurations = async () => {
     try {
       const response = await axiosInstance.get("survey/filters/", {
-        headers: { 
+        headers: {
           Authorization: `Token ${user.token}`,
           "Content-Type": "application/json",
         },
@@ -229,7 +229,7 @@ export default function GroupsScreen() {
       setGroupNameError("Failed to update group name");
     }
   };
-  
+
 
   const addMember = async () => {
     if (!newMember || !selectedGroup) return;
@@ -254,6 +254,20 @@ export default function GroupsScreen() {
 
   const massAddMembers = async (newMembers) => {
     if (!newMembers || !selectedGroup) return;
+    try {
+      await axiosInstance.post(
+        `users/mass-invite/${selectedGroup}/`,
+        { emails: newMembers, group_id: Number(selectedGroup) },
+        { headers: { Authorization: `Token ${user.token}` } }
+      );
+      toast.show('Members added successfully', {
+        message: `$All members have been invited to the group.`,
+      });
+    } catch (error) {
+      toast.show('Failed to add members', {
+        message: `An error occurred while inviting the members. ${error}`,
+      });
+    }
   };
 
 
@@ -299,17 +313,15 @@ export default function GroupsScreen() {
           complete: (results) => {
             const data = results.data;
             const isHeader = !isEmail(data[0][0]);
-    
+
             for (let i = (isHeader ? 1 : 0); i < data.length; i++) {
               const email = data[i][0].trim().toLowerCase();
 
               if (isEmail(email)) {
-                alert(email);
                 emails.push(email);
               }
             }
 
-            alert(JSON.stringify(emails));
             massAddMembers(emails);
           },
           header: false,
@@ -421,7 +433,7 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedGroup(value)}
         />
 
-       
+
         {currentToast && !currentToast.isHandledNatively && (
         <Toast
           key={currentToast.id}
@@ -642,8 +654,27 @@ export default function GroupsScreen() {
           onValueChange={(value) => setSelectedConfiguration(value)}
         />
 
-       
-      
+
+        {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
         {selectedConfiguration && (
           <>
             <Text style={styles.subtitle}>Configuration Groups:</Text>
@@ -712,7 +743,7 @@ export default function GroupsScreen() {
         </Dialog.Portal>
       </Dialog>
     </View>
-    
+
   );
 }
 
