@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
-import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
 
 export const BarChart = ({ data }) => {
 
@@ -36,6 +36,21 @@ export const BarChart = ({ data }) => {
     9: "Extremely high (close to 100%)",
     10: "Moderate to high (around 20-50%)"
   };
+
+  // Recommended C-section rates for each classification (guesses?)
+  const recommendedCSectionRates = {
+    1: 15, 
+    2: 25, 
+    3: 10, 
+    4: 20, 
+    5: 50, 
+    6: 90,
+    7: 90,
+    8: 70, 
+    9: 95, 
+    10: 30 
+  };
+
 
   const xScale = d3Scale
     .scaleLinear()
@@ -72,27 +87,33 @@ export const BarChart = ({ data }) => {
           </Svg>
           <Text style={styles.legendText}>Non-C-Section</Text>
         </View>
+        <View style={styles.legendItem}>
+          <Svg width={20} height={2}>
+            <Line x1="0" y1="1" x2="20" y2="1" stroke="#FF0000" strokeWidth="2" strokeDasharray="4" />
+          </Svg>
+          <Text style={styles.legendText}>Recommended C-Section Rate</Text>
+        </View>
       </View>
 
       <Svg width={svgWidth} height={svgHeight}>
-      <Defs>
-        <LinearGradient id="csectionGradient" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#FF8A8D"/>
-          <Stop offset="100%" stopColor="#FD8B5A"/>
-        </LinearGradient>
-        <LinearGradient id="nonCsectionGradient" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#66C2B5" />
-          <Stop offset="100%" stopColor="#50A0A4" />
-        </LinearGradient>
-        <LinearGradient id="csectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#FF8A8D" />
-          <Stop offset="100%" stopColor="#FD8B5A" />
-        </LinearGradient>
-        <LinearGradient id="nonCsectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#66C2B5" />
-          <Stop offset="100%" stopColor="#50A0A4" />
-        </LinearGradient>
-      </Defs>
+        <Defs>
+          <LinearGradient id="csectionGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#FF8A8D" />
+            <Stop offset="100%" stopColor="#FD8B5A" />
+          </LinearGradient>
+          <LinearGradient id="nonCsectionGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#66C2B5" />
+            <Stop offset="100%" stopColor="#50A0A4" />
+          </LinearGradient>
+          <LinearGradient id="csectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#FF8A8D" />
+            <Stop offset="100%" stopColor="#FD8B5A" />
+          </LinearGradient>
+          <LinearGradient id="nonCsectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#66C2B5" />
+            <Stop offset="100%" stopColor="#50A0A4" />
+          </LinearGradient>
+        </Defs>
 
 
         <G x={margin.left} y={margin.top}>
@@ -152,6 +173,19 @@ export const BarChart = ({ data }) => {
                   </SvgText>
                 )}
 
+
+                {/* Recommended C-Section Rate Line */}
+                <Line
+                  x1={xScale((recommendedCSectionRates[d.classification] / 100) * d.responses)}
+                  x2={xScale((recommendedCSectionRates[d.classification] / 100) * d.responses)}
+                  y1={0}
+                  y2={yScale.bandwidth()}
+                  stroke="#FF0000"
+                  strokeWidth="2"
+                  strokeDasharray="4"
+                />
+
+
                 {/* Category Labels */}
                 <SvgText
                   x={-10}
@@ -167,6 +201,7 @@ export const BarChart = ({ data }) => {
               </G>
             );
           })}
+
 
           <SvgText
             x={chartWidth / 2}

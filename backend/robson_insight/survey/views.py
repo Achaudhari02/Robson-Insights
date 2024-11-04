@@ -217,11 +217,12 @@ class FilterConfigurationListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user_filters = Filter.objects.filter(user=self.request.user)
-        # removing groups user does not have can_view permission for 
+        # Get groups the user has permission to view
         user_profiles = UserProfile.objects.filter(user=self.request.user, can_view=True)
         allowed_groups = user_profiles.values_list('group', flat=True)
-        return user_filters.filter(groups__in=allowed_groups)    
-        #return Filter.objects.filter(user=self.request.user)
+        
+        # Include filters with no groups or with allowed groups
+        return user_filters.filter(Q(groups__in=allowed_groups) | Q(groups__isnull=True)).distinct()
 
     def perform_create(self, serializer):
         groups = serializer.validated_data.get('groups', [])
