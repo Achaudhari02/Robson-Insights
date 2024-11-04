@@ -6,6 +6,7 @@ app_name = 'survey'
 urlpatterns = [
     path('entries/', EntryListView.as_view()),
     path('entries/filter/<str:pk>/', EntryFilterListView.as_view()),
+    path('entries/upload/', EntryListView.as_view(), name='entry-upload'),
     path('entries/<int:pk>/', EntryDetailView.as_view()),
     path('filters/', FilterConfigurationListCreateView.as_view()),
     path('filters/<int:pk>/', FilterConfigurationDetailView.as_view()),
