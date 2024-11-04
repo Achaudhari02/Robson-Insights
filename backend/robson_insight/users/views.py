@@ -3,7 +3,8 @@ from django.db.utils import IntegrityError
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.core.signing import Signer
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -262,23 +263,28 @@ class InviteCreateView(generics.CreateAPIView):
         
         if not User.objects.filter(email=email).exists():
             subject = 'Robson Insights Invitation'
-            message = invite_url
+            context = {'invite_url': invite_url}
+            html_content = render_to_string('email_invite.html', context)
         else:
             subject = 'Robson Insights Invitation'
-            message = 'You have been invited to a new group in robson insights'
+            context = {'invite_url': invite_url}
+            html_content = render_to_string('email_invite.html', context)
 
         try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False
+            # Set up the email with HTML content
+            email_msg = EmailMultiAlternatives(
+                subject=subject,
+                body=invite_url,  # Fallback text for email clients that don't support HTML
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
             )
+            email_msg.attach_alternative(html_content, "text/html")
+            email_msg.send(fail_silently=False)
         except Exception as e:
             # If email sending fails, delete the created invite and re-raise the exception
             invite.delete()
             raise APIException(f"Failed to send invitation email: {str(e)}")
+        
         
 class MassInviteCreateView(APIView):
     serializer_class = MassInviteSerializer
@@ -292,6 +298,7 @@ class MassInviteCreateView(APIView):
             group = Group.objects.get(pk=group_pk)
             signer = Signer()
             created_invites = []
+
             try:
                 for email in emails:
                     token = signer.sign(email).split(':')[1]
@@ -300,25 +307,29 @@ class MassInviteCreateView(APIView):
                     
                     invite_url = f"http://localhost:8081/signup?token={token}"
                     subject = 'Robson Insights Invitation'
-                    message = invite_url if not User.objects.filter(email=email).exists() else 'You have been invited to a new group.'
-
-                    send_mail(
-                        subject,
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [email],
-                        fail_silently=False
+                    context = {'invite_url': invite_url}
+                    html_content = render_to_string('email_invite.html', context)
+                    
+                    # Use EmailMultiAlternatives to send HTML email
+                    email_msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=invite_url,  # Fallback text for email clients that don’t support HTML
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[email],
                     )
+                    email_msg.attach_alternative(html_content, "text/html")
+                    email_msg.send(fail_silently=False)
                 
                 return Response(
                     {'success': f'Invitations sent to {len(emails)} users.'},
                     status=status.HTTP_201_CREATED
                 )
             except Exception as e:
+                # Roll back invites if an error occurs
                 for invite in created_invites:
                     invite.delete()
                 return Response(
-                    {'error': str(e)},
+                    {'error': f"Failed to send invitation emails: {str(e)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

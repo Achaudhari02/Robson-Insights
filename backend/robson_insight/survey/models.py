@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from users.models import Group, User
     
@@ -31,7 +32,7 @@ class Entry(models.Model):
         default=False,
     )
     date = models.DateTimeField(
-        auto_now_add=True,
+        default=timezone.now,
     )
     
     def __str__(self):

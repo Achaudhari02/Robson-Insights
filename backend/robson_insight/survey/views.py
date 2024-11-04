@@ -7,6 +7,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
 
+import pandas as pd
+import os
+from openpyxl import load_workbook
+from datetime import datetime
+import re
 from .serializers import EntrySerializer, FilterSerializer
 from .models import Entry, Filter
 from .permissions import CanReadEntry
@@ -40,6 +45,82 @@ class EntryListView(generics.ListCreateAPIView):
         entry.groups.set(allowed_groups)
     
     
+    def post(self, request, *args, **kwargs):
+        if 'file' in request.FILES:
+            return self.upload_file(request.FILES['file'])
+        else:
+            return super().post(request, *args, **kwargs)
+    
+    def upload_file(self, file):
+        try:
+            _, file_extension = os.path.splitext(file.name)
+            df = pd.DataFrame()
+            if file_extension == '.csv':
+                with open(file, 'r') as file:
+                    lines = file.readlines()
+                    
+                start_row = next(i for i, line in enumerate(lines) if line.strip().lower().startswith("group"))
+                df = pd.read_csv(file, skiprows=start_row, header=None)
+                
+            elif file_extension == '.xlsx':
+                workbook = load_workbook(file, read_only=True)
+                sheet = workbook.active
+                
+                start_row = next(i for i, row in enumerate(sheet.iter_rows(values_only=True)) 
+                                if str(row[0]).strip().lower().startswith("group"))
+                df = pd.read_excel(file, skiprows=start_row, header=None)
+            i = 1
+            count = 0
+
+            try:
+                if df.iat[0, i][:7] != "Quarter":
+                    raise Exception
+            except:
+                return Response({'error': 'Invalid format'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+            while df.iat[0, i][:7] == "Quarter":
+                date = min(datetime.strptime(re.sub(r'(\d+)(st|nd|rd|th)', r'\1', df.iat[0, i].split("- ")[1]), '%d %B %Y'), datetime.now())
+                j = 2
+
+                try:
+                    if df.iat[j, 0][:5] != "Group":
+                        raise Exception
+                except:
+                    return Response({'error': 'Invalid format'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                
+                while df.iat[j, 0][:5] == "Group":
+                    v = df.iat[j, i]
+                    if not pd.isna(v):
+                        for k in range(df.iat[j, i]):
+                            self._create_entry(df.iat[j, 0].split(' ')[1], 'n', date)
+                            count += 1
+                    c = df.iat[j, i + 1]
+                    if not pd.isna(c):
+                        for k in range(df.iat[j, i + 1]):
+                            df.iat[j, 0].split(' ')[1], 'y', date
+                            self._create_entry(df.iat[j, 0].split(' ')[1], 'y', date)
+                            count += 1
+                    j += 1
+                i += 2
+            return Response({"message": f"{count} entries uploaded successfully."}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _create_entry(self, classification, csection, date):
+        try:
+            entry_data = {
+                'classification': classification,
+                'csection': csection,
+                'date': date,
+                'group': None,
+            }
+            serializer = self.get_serializer(data=entry_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 class EntryFilterListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EntrySerializer

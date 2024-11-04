@@ -1,11 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format, parse, set } from 'date-fns';
+import { format, endOfDay } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, TouchableOpacity} from 'react-native';
 import { BarChart, PieChart, Select } from '@/components';
 import {YStack} from 'tamagui';
-import { endOfDay } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -237,6 +236,42 @@ const ResultsScreen = ({ navigation }) => {
     }
   };
 
+const [file, setFile] = useState(null);
+const [errorMessage, setErrorMessaage] = useState("");
+const [successMessage, setSuccessMessage] = useState("");
+
+const handleFileChange = (event) => {
+  setFile(event.target.files[0]);
+};
+
+const handleUpload = async () => {
+  if (!file) {
+    alert("Please select a file before uploading.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await axiosInstance.post('survey/entries/upload/', formData, {
+      headers: {
+        'Authorization': `Token ${user.token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    setErrorMessaage("");
+    setSuccessMessage(response.data["message"]);
+  } catch (e) {
+    if (e.response.status == 422) {
+      setErrorMessaage("Invalid file format");
+    } else {
+      setErrorMessaage("Error uploading file");
+    }
+  }
+}
+
+
   return (
     <View style={{ flex: 1 }}>
       {renderModal()}
@@ -263,6 +298,16 @@ const ResultsScreen = ({ navigation }) => {
           }}>
           <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
         </TouchableOpacity>
+        <View style={styles.import}>
+          <input type="file" style={styles.fileInput} onChange={handleFileChange} accept=".csv, .xlsx" />
+          <TouchableOpacity
+            style={styles.compactButton}
+            onPress={() => handleUpload()}
+          >
+            <Text style={styles.buttonText}>Import CSV</Text>
+          </TouchableOpacity>
+          <Text style={errorMessage.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessage.length == 0 ? successMessage : errorMessage}</Text>
+        </View>
       </View>
     <ScrollView style={styles.container}>
     <YStack gap="$4" padding="$4">
@@ -402,6 +447,21 @@ const styles = StyleSheet.create({
     marginTop: 20,
     justifyContent: 'space-between',
     width: '100%',
+  },
+  import: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fileInput: {
+    width: '55%',
+  },
+  successMessage: {
+    marginLeft: 10,
+    color: 'green',
+  },
+  errorMessage: {
+    marginLeft: 10,
+    color: 'red',
   },
   button: {
     flex: 1,
