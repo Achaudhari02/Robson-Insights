@@ -1,147 +1,27 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format, parse } from 'date-fns';
+import { format, endOfDay } from 'date-fns';
 import React, { useState, useEffect } from 'react';
-import { Linking, View, Text, Button, ScrollView, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, Touchable } from 'react-native';
-import {BarChart, PieChart} from '@/components';
+import { View, Text, ScrollView, StyleSheet, Modal, TouchableOpacity} from 'react-native';
+import { BarChart, PieChart, Select } from '@/components';
+import {YStack} from 'tamagui';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 
-const questions = [
-  { question: 'Was this a multiple pregnancy?', key: 'mp' },
-  { question: 'Was this a transverse or oblique lie?', key: 'lie' },
-  { question: 'Was this a breech pregnancy?', key: 'bp' },
-  { question: 'Was the gestational age <37 weeks?', key: 'ga' },
-  { question: 'Was this a multiparous woman?', key: 'mw' },
-  { question: 'Were there previous uterine scars?', key: 'us' },
-  { question: 'Was the labor induced or the cesarean section started before labor?', key: 'li' },
-  { question: 'Was this a cesarean section?', key: 'cs' },
-];
-
 const ResultsScreen = ({ navigation }) => {
-  const [results, setResults] = useState([
-    {
-      id: 1,
-      user: 'User1',
-      classification: '1',
-      csection: true,
-      date: '2023-10-01T12:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 3,
-      user: 'User3',
-      classification: '1',
-      csection: true,
-      date: '2023-10-03T14:00:00Z',
-    },
-    {
-      id: 4,
-      user: 'User4',
-      classification: '3',
-      csection: false,
-      date: '2023-10-04T15:00:00Z',
-    },
-    {
-      id: 5,
-      user: 'User5',
-      classification: '2',
-      csection: true,
-      date: '2023-10-05T16:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '2',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '5',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '10',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '7',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '9',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '4',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '5',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '6',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '7',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    {
-      id: 2,
-      user: 'User2',
-      classification: '8',
-      csection: false,
-      date: '2023-10-02T13:00:00Z',
-    },
-    // Add more dummy data if needed
-  ]);
-
+  const [results, setResults] = useState([]);
+  const [parsedResults, setParsedResults] = useState([]);
   const { user, logoutFn } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  const [allResults, setAllResults] = useState([...results]);
+  const [allResults, setAllResults] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [reportGenerated, setReportGenerated] = useState(false);
+  const [filters, setFilters] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [selectedType, setSelectedType] = useState('group');
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -151,49 +31,63 @@ const ResultsScreen = ({ navigation }) => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, logoutFn]);
-
-
+  }, [navigation]);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        /*
-        const resp = await axiosInstance.get('/survey/entries/', {
-          headers: {
-            Authorization: `Token ${user.token}`,
-          },
-        });
-        setResults(resp.data);
-        */
-      } catch (error) {
-        console.error('Error fetching survey results:', error);
-      }
-    };
+    // Automatically fetch entries when a default group is set
+    if (selectedId !== null) {
+      fetchEntries();
+    }
 
-    fetchResults();
+  }, [selectedId]);
+
+  useEffect(() => {
+    axiosInstance.get('/survey/filters/', {
+      headers: {
+        Authorization: `Token ${user.token}`,
+      }
+    })
+      .then(response => setFilters(response.data))
+      .catch(error => console.error('Error fetching filters:', error));
+
+    axiosInstance.get('/users/groups/', {
+      headers: {
+        Authorization: `Token ${user.token}`,
+      }
+    })
+      .then(response => {
+        setGroups(response.data); if (response.data.length > 0) {
+          // Set the first group as the default selection
+          setSelectedId(response.data[0].id);
+        }
+      })
+      .catch(error => console.error('Error fetching groups:', error));
   }, []);
 
-  const processResultsForAnalysis = () => {
-    const categoryData = {};
+  useEffect(() => {
+    const processResultsForAnalysis = () => {
+      const categoryData = {};
 
-    results.forEach((result) => {
-      const { classification, csection } = result;
-      if (!categoryData[classification]) {
-        categoryData[classification] = { responses: 0, csectionCount: 0 };
-      }
-      categoryData[classification].responses += 1;
-      if (csection) {
-        categoryData[classification].csectionCount += 1;
-      }
-    });
+      results.forEach((result) => {
+        const { classification, csection } = result;
+        if (!categoryData[classification]) {
+          categoryData[classification] = { responses: 0, csectionCount: 0 };
+        }
+        categoryData[classification].responses += 1;
+        if (csection) {
+          categoryData[classification].csectionCount += 1;
+        }
+      });
 
-    return Object.keys(categoryData).map((classification) => ({
-      classification,
-      responses: categoryData[classification].responses,
-      csectionCount: categoryData[classification].csectionCount,
-    }));
-  };
+      return Object.keys(categoryData).map((classification) => ({
+        classification,
+        responses: categoryData[classification].responses,
+        csectionCount: categoryData[classification].csectionCount,
+      }));
+    };
+
+    setParsedResults(processResultsForAnalysis());
+  }, [results]);
 
   const handleSubmit = () => {
     if (!startDate || !endDate) {
@@ -205,10 +99,14 @@ const ResultsScreen = ({ navigation }) => {
       return;
     }
     setModalVisible(false);
+
+    const adjustedEndDate = endOfDay(endDate);
+
     const filteredResults = allResults.filter((result) => {
       const resultDate = new Date(result.date);
-      return resultDate >= startDate && resultDate <= endDate;
+      return resultDate >= startDate && resultDate <= adjustedEndDate;
     });
+
     setResults(filteredResults);
     setReportGenerated(true);
     navigation.setOptions({
@@ -225,13 +123,40 @@ const ResultsScreen = ({ navigation }) => {
     return csection ? 'Yes' : 'No';
   };
 
+  const handleSelectionChange = (value) => {
+    setSelectedId(value);
+  };
+
+  const handleTypeChange = (value) => {
+    setSelectedType(value);
+    setSelectedId(null);
+  };
+
+  const fetchEntries = () => {
+    const prefix = selectedType === 'group' ? 'group-' : 'filter-';
+    const endpoint = `/survey/entries/filter/${prefix}${selectedId}/`;
+
+    axiosInstance.get(endpoint, {
+      headers: { Authorization: `Token ${user.token}` }
+    })
+      .then(response => {
+        setResults(response.data);
+        setAllResults(response.data);
+        // Use the response data for visualizations
+      })
+      .catch(error => console.error(`Error fetching entries for ${selectedType}:`, error));
+  };
+
+
   const renderTableHeader = () => (
     <View style={styles.tableHeader}>
       <Text style={styles.columnHeader}>ID</Text>
+    <View style={styles.tableRow}>
       <Text style={styles.columnHeader}>User</Text>
       <Text style={styles.columnHeader}>Classification</Text>
       <Text style={styles.columnHeader}>C-Section</Text>
       <Text style={styles.columnHeader}>Date</Text>
+    </View>
     </View>
   );
 
@@ -279,9 +204,8 @@ const ResultsScreen = ({ navigation }) => {
       ]}
       key={`${result.id}-${index}`}
     >
-      <Text style={styles.cell}>{result.id}</Text>
-      <Text style={styles.cell}>{result.user}</Text>
-      <Text style={styles.cell}>{result.classification}</Text>
+      <Text style={styles.cell}>{result.username}</Text>
+      <Text style={styles.cell}>Group {result.classification}</Text>
       <Text style={styles.cell}>{formatCSection(result.csection)}</Text>
       <Text style={styles.cell}>{formatDate(result.date)}</Text>
     </View>
@@ -291,9 +215,9 @@ const ResultsScreen = ({ navigation }) => {
     try {
       const response = await axiosInstance.get('survey/download-survey-csv/', {
         headers: {
-          Authorization: `Token ${user.token}`,
+          'Authorization': `Token ${user.token}`
         },
-        responseType: 'blob',
+        responseType: 'blob'
       });
 
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -307,6 +231,7 @@ const ResultsScreen = ({ navigation }) => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error('Error exporting CSV:', error);
       console.error('Error exporting CSV:', error);
     }
   };
@@ -385,9 +310,29 @@ const handleUpload = async () => {
         </View>
       </View>
     <ScrollView style={styles.container}>
-      <BarChart data={processResultsForAnalysis()} />
-      <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: processResultsForAnalysis() })}>
-      <PieChart data={processResultsForAnalysis()} />
+    <YStack gap="$4" padding="$4">
+      <Select
+        value={selectedType}
+        onValueChange={handleTypeChange}
+        items={[
+          { label: 'Group', value: 'group' },
+          { label: 'Filter', value: 'filter' }
+        ]}
+      />
+
+      <Select
+        value={selectedId}
+        onValueChange={handleSelectionChange}
+        items={(selectedType === 'group' ? groups : filters).map(item => ({
+          label: item.name,
+          value: item.id
+        }))}
+      />
+
+    </YStack>
+      <BarChart data={parsedResults} />
+      <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: parsedResults })}>
+        <PieChart data={parsedResults} />
       </TouchableOpacity>
       {renderTableHeader()}
       {results.map(renderTableRow)}

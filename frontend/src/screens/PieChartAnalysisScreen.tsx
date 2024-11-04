@@ -21,7 +21,7 @@ const PieChartAnalysisScreen = ({ route }) => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>X Hospital’s February Data</Text>
-      <Text style={styles.subHeader}>Cesarean Sections by Group</Text>
+      <Text style={styles.subHeader}>Caesarean Sections by Group</Text>
       <PieChart data={data} />
       <View style={styles.legendContainer}>
         {data.map((item, index) => (

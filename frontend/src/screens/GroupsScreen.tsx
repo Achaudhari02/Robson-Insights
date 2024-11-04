@@ -351,7 +351,7 @@ export default function GroupsScreen() {
 
   const handleUserCheckBoxChange = async (username, newValue) => {
     try {
-      await axiosInstance.post(
+      await axiosInstance.put(
         "users/toggle-permissions/",
         {
           username: username,
@@ -372,6 +372,7 @@ export default function GroupsScreen() {
     } else {
       addGroup(id);
     }
+
     setCheckedGroups((prev) => ({
       ...prev,
       [id]: !prev[id],
