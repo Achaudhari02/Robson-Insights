@@ -318,7 +318,7 @@ const handleUpload = async () => {
         </TouchableOpacity>
 
         <View style={styles.inputContainer}>
-          <input style={styles.emailInput} onChange={handleTextChange}></input>
+          <input placeholder={"Enter email"} style={styles.emailInput} onChange={handleTextChange}></input>
           <TouchableOpacity
             onPress={handleEmail}
             style={styles.compactButton}>
