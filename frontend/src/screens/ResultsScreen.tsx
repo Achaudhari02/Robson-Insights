@@ -289,6 +289,7 @@ const handleUpload = async () => {
     });
     setErrorMessaage("");
     setSuccessMessage(response.data["message"]);
+    fetchEntries();
   } catch (e) {
     if (e.response.status == 422) {
       setErrorMessaage("Invalid file format");
