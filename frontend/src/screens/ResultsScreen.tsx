@@ -239,6 +239,8 @@ const ResultsScreen = ({ navigation }) => {
 const [file, setFile] = useState(null);
 const [errorMessage, setErrorMessaage] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
+const [errorMessageEmail, setErrorMessaageEmail] = useState("");
+const [successMessageEmail, setSuccessMessageEmail] = useState("");
 const [email, setEmail] = useState('');
 
 const handleTextChange = (event) => {
@@ -257,12 +259,16 @@ const handleEmail = async (event) => {
   formData.append('email', email);
 
   try {
-      await axiosInstance.get(`survey/download-survey-csv/?email=${encodeURIComponent(email)}`, {
+      const response = await axiosInstance.get(`survey/download-survey-csv/?email=${encodeURIComponent(email)}`, {
         headers: {
           'Authorization': `Token ${user.token}`,
         },
       });
+      setErrorMessaageEmail("");
+      setSuccessMessageEmail("Sent!");
   } catch (error) {
+      setSuccessMessageEmail("");
+      setErrorMessaageEmail("Email failed to send.");
       console.error("Error sending email:", error);
   }
 };
@@ -291,6 +297,7 @@ const handleUpload = async () => {
     setSuccessMessage(response.data["message"]);
     fetchEntries();
   } catch (e) {
+    setSuccessMessage("");
     if (e.response.status == 422) {
       setErrorMessaage("Invalid file format");
     } else {
@@ -317,6 +324,7 @@ const handleUpload = async () => {
             style={styles.compactButton}>
             <Text style={styles.buttonText}>Email</Text>
           </TouchableOpacity>
+          <Text style={errorMessageEmail.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessageEmail.length == 0 ? successMessageEmail : errorMessageEmail}</Text>
         </View>
 
         <TouchableOpacity
