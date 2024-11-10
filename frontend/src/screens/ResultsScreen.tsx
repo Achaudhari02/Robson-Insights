@@ -322,7 +322,7 @@ const handleUpload = async () => {
           <TouchableOpacity
             onPress={handleEmail}
             style={styles.compactButton}>
-            <Text style={styles.buttonText}>Email</Text>
+            <Text style={styles.buttonText}>Email CSV</Text>
           </TouchableOpacity>
           <Text style={errorMessageEmail.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessageEmail.length == 0 ? successMessageEmail : errorMessageEmail}</Text>
         </View>
@@ -529,6 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     marginTop: 20,
+    marginBottom: 20,
   },
   compactButton: {
     paddingHorizontal: 10,
