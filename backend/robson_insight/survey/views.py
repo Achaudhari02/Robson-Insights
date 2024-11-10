@@ -3,6 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 
 from django.http import HttpResponse
+from django.core.mail import EmailMessage
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
@@ -108,11 +109,14 @@ class EntryListView(generics.ListCreateAPIView):
     
     def _create_entry(self, classification, csection, date):
         try:
+            user = self.request.user
+            groups = UserProfile.objects.filter(user=user).values_list('group__name', flat=True).distinct()
+            print(groups)
             entry_data = {
                 'classification': classification,
                 'csection': csection,
                 'date': date,
-                'group': None,
+                'group': groups,
             }
             serializer = self.get_serializer(data=entry_data)
             serializer.is_valid(raise_exception=True)
@@ -177,27 +181,42 @@ class DownloadSurveyCSVView(generics.ListCreateAPIView):
 
     def get(self, request):
         try:
-            queryset = Entry.objects.filter(user__in=UserProfile.objects.filter(group__in=UserProfile.objects.filter(user=request.user, can_view=True).values_list('group', flat=True)).values_list('user', flat=True).distinct())
+            queryset = Entry.objects.filter(
+                user__in=UserProfile.objects.filter(
+                    group__in=UserProfile.objects.filter(
+                        user=request.user, can_view=True
+                    ).values_list('group', flat=True)
+                ).values_list('user', flat=True).distinct()
+            )
             model = queryset.model
             model_fields = model._meta.fields + model._meta.many_to_many
             field_names = [field.name for field in model_fields]
 
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="survey_data.csv"'
-
-            writer = csv.writer(response, delimiter=";")
+            writer = csv.writer(response, delimiter=",")
             writer.writerow(field_names)
 
             for row in queryset:
-                values = []
-                for field in field_names:
-                    values.append(getattr(row, field))
+                values = [getattr(row, field) for field in field_names]
                 writer.writerow(values)
+
+            recipient_email = request.GET.get('email')
+            if recipient_email:
+                email = EmailMessage(
+                    subject='Survey Data CSV',
+                    body='Please see the attached survey data.',
+                    to=[recipient_email]
+                )
+                email.attach('survey_data.csv', response.getvalue(), 'text/csv')
+                email.send()
+
+                return Response({'message': 'CSV sent to email successfully!'}, status=status.HTTP_200_OK)
 
             return response
             
         except Exception as e:
-           return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
 class EntryDetailView(generics.RetrieveAPIView):

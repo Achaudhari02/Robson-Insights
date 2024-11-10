@@ -239,6 +239,33 @@ const ResultsScreen = ({ navigation }) => {
 const [file, setFile] = useState(null);
 const [errorMessage, setErrorMessaage] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
+const [email, setEmail] = useState('');
+
+const handleTextChange = (event) => {
+  setEmail(event.target.value);
+};
+
+const handleEmail = async (event) => {
+  event.preventDefault();
+  
+  if (!email) {
+      alert("Please provide an email.");
+      return;
+  }
+
+  const formData = new FormData();
+  formData.append('email', email);
+
+  try {
+      await axiosInstance.get(`survey/download-survey-csv/?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': `Token ${user.token}`,
+        },
+      });
+  } catch (error) {
+      console.error("Error sending email:", error);
+  }
+};
 
 const handleFileChange = (event) => {
   setFile(event.target.files[0]);
@@ -282,6 +309,15 @@ const handleUpload = async () => {
           <Text style={styles.buttonText}>Download as CSV</Text>
         </TouchableOpacity>
 
+        <View style={styles.inputContainer}>
+          <input style={styles.emailInput} onChange={handleTextChange}></input>
+          <TouchableOpacity
+            onPress={handleEmail}
+            style={styles.compactButton}>
+            <Text style={styles.buttonText}>Email</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
           style={styles.compactButton}
           onPress={() => {
@@ -298,7 +334,7 @@ const handleUpload = async () => {
           }}>
           <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
         </TouchableOpacity>
-        <View style={styles.import}>
+        <View style={styles.inputContainer}>
           <input type="file" style={styles.fileInput} onChange={handleFileChange} accept=".csv, .xlsx" />
           <TouchableOpacity
             style={styles.compactButton}
@@ -316,7 +352,7 @@ const handleUpload = async () => {
               onValueChange={handleTypeChange}
               items={[
                 { label: 'Group', value: 'group' },
-                { label: 'Filter', value: 'filter' }
+                { label: 'Configuration', value: 'filter' }
               ]}
             />
             
@@ -447,7 +483,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
-  import: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -496,12 +532,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
+  emailInput: {
+    marginRight: 10,
+  }
 });
 
 export default ResultsScreen;
