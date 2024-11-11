@@ -239,6 +239,39 @@ const ResultsScreen = ({ navigation }) => {
 const [file, setFile] = useState(null);
 const [errorMessage, setErrorMessaage] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
+const [errorMessageEmail, setErrorMessaageEmail] = useState("");
+const [successMessageEmail, setSuccessMessageEmail] = useState("");
+const [email, setEmail] = useState('');
+
+const handleTextChange = (event) => {
+  setEmail(event.target.value);
+};
+
+const handleEmail = async (event) => {
+  event.preventDefault();
+  
+  if (!email) {
+      alert("Please provide an email.");
+      return;
+  }
+
+  const formData = new FormData();
+  formData.append('email', email);
+
+  try {
+      const response = await axiosInstance.get(`survey/download-survey-csv/?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': `Token ${user.token}`,
+        },
+      });
+      setErrorMessaageEmail("");
+      setSuccessMessageEmail("Sent!");
+  } catch (error) {
+      setSuccessMessageEmail("");
+      setErrorMessaageEmail("Email failed to send.");
+      console.error("Error sending email:", error);
+  }
+};
 
 const handleFileChange = (event) => {
   setFile(event.target.files[0]);
@@ -262,7 +295,9 @@ const handleUpload = async () => {
     });
     setErrorMessaage("");
     setSuccessMessage(response.data["message"]);
+    fetchEntries();
   } catch (e) {
+    setSuccessMessage("");
     if (e.response.status == 422) {
       setErrorMessaage("Invalid file format");
     } else {
@@ -282,6 +317,16 @@ const handleUpload = async () => {
           <Text style={styles.buttonText}>Download as CSV</Text>
         </TouchableOpacity>
 
+        <View style={styles.inputContainer}>
+          <input placeholder={"Enter email"} style={styles.emailInput} onChange={handleTextChange}></input>
+          <TouchableOpacity
+            onPress={handleEmail}
+            style={styles.compactButton}>
+            <Text style={styles.buttonText}>Email CSV</Text>
+          </TouchableOpacity>
+          <Text style={errorMessageEmail.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessageEmail.length == 0 ? successMessageEmail : errorMessageEmail}</Text>
+        </View>
+
         <TouchableOpacity
           style={styles.compactButton}
           onPress={() => {
@@ -298,7 +343,7 @@ const handleUpload = async () => {
           }}>
           <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
         </TouchableOpacity>
-        <View style={styles.import}>
+        <View style={styles.inputContainer}>
           <input type="file" style={styles.fileInput} onChange={handleFileChange} accept=".csv, .xlsx" />
           <TouchableOpacity
             style={styles.compactButton}
@@ -316,7 +361,7 @@ const handleUpload = async () => {
               onValueChange={handleTypeChange}
               items={[
                 { label: 'Group', value: 'group' },
-                { label: 'Filter', value: 'filter' }
+                { label: 'Configuration', value: 'filter' }
               ]}
             />
             
@@ -447,7 +492,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
-  import: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -484,6 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     marginTop: 20,
+    marginBottom: 20,
   },
   compactButton: {
     paddingHorizontal: 10,
@@ -496,12 +542,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
+  emailInput: {
+    marginRight: 10,
+  }
 });
 
 export default ResultsScreen;

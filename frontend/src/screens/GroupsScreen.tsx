@@ -286,7 +286,7 @@ export default function GroupsScreen() {
     } catch (error) {
       console.error('Error adding group:', error);
       toast.show('Failed to add group', {
-        message: 'An error occurred while inviting the group.',
+        message: 'An error occurred while adding the group.',
       });
     }
   };

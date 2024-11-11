@@ -14,10 +14,10 @@ export const BarChart = ({ data }) => {
 
   const classificationDescription = {
     1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
-    2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-    3: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
-    4: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-    5: "Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.",
+    2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor caesarean.",
+    3: "Multiparous women without previous caesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
+    4: "Multiparous women without previous caesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor caesarean.",
+    5: "Multiparous women with at least one previous caesarean and a term, single, cephalic pregnancy.",
     6: "Nulliparous women with a single, breech pregnancy.",
     7: "Multiparous women with a single, breech pregnancy.",
     8: "Women with multiple pregnancies (twins, triplets, etc.).",
@@ -73,7 +73,7 @@ export const BarChart = ({ data }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Cesarean Sections by Group</Text>
+      <Text style={styles.title}>Caesarean Sections by Group</Text>
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <Svg width={20} height={20}>
