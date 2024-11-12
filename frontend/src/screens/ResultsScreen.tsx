@@ -1,13 +1,21 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+} from 'react-native';
+import { Button as TamaguiButton } from 'tamagui';
+import { BarChart, PieChart, Select } from '@/components';
+import { YStack } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format, endOfDay} from 'date-fns';
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Modal, TouchableOpacity} from 'react-native';
-import { BarChart, PieChart, Select} from '@/components';
-import {YStack } from 'tamagui';
+import { format, endOfDay } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
+import { Menu } from '@tamagui/lucide-icons';
 
 const ResultsScreen = ({ navigation }) => {
   const [results, setResults] = useState([]);
@@ -22,6 +30,21 @@ const ResultsScreen = ({ navigation }) => {
   const [groups, setGroups] = useState([]);
   const [selectedType, setSelectedType] = useState('group');
   const [selectedId, setSelectedId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 25;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [emailModalVisible, setEmailModalVisible] = useState(false);
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [file, setFile] = useState(null);
+  const [errorMessage, setErrorMessaage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessageEmail, setErrorMessaageEmail] = useState('');
+  const [successMessageEmail, setSuccessMessageEmail] = useState('');
+  const [email, setEmail] = useState('');
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [initialSelectedType, setInitialSelectedType] = useState('group');
+  const [initialSelectedId, setInitialSelectedId] = useState(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -37,7 +60,6 @@ const ResultsScreen = ({ navigation }) => {
     if (selectedId !== null) {
       fetchEntries();
     }
-
   }, [selectedId]);
 
   useEffect(() => {
@@ -58,9 +80,10 @@ const ResultsScreen = ({ navigation }) => {
         setGroups(response.data); if (response.data.length > 0) {
           // Set the first group as the default selection
           setSelectedId(response.data[0].id);
+          setInitialSelectedId(response.data[0].id);
         }
       })
-      .catch(error => console.error('Error fetching groups:', error));
+      .catch((error) => console.error('Error fetching groups:', error));
   }, []);
 
   useEffect(() => {
@@ -86,6 +109,13 @@ const ResultsScreen = ({ navigation }) => {
     };
 
     setParsedResults(processResultsForAnalysis());
+  }, [results]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(results.length / entriesPerPage) || 1;
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
   }, [results]);
 
   const handleSubmit = () => {
@@ -135,30 +165,18 @@ const ResultsScreen = ({ navigation }) => {
     const prefix = selectedType === 'group' ? 'group-' : 'filter-';
     const endpoint = `/survey/entries/filter/${prefix}${selectedId}/`;
 
-    axiosInstance.get(endpoint, {
-      headers: { Authorization: `Token ${user.token}` }
-    })
-      .then(response => {
+    axiosInstance
+      .get(endpoint, {
+        headers: { Authorization: `Token ${user.token}` },
+      })
+      .then((response) => {
         setResults(response.data);
         setAllResults(response.data);
-        // Use the response data for visualizations
       })
-      .catch(error => console.error(`Error fetching entries for ${selectedType}:`, error));
+      .catch((error) =>
+        console.error(`Error fetching entries for ${selectedType}:`, error)
+      );
   };
-
- 
-  const renderTableHeader = () => (
-    <View style={styles.tableHeader}>
-      <Text style={styles.columnHeader}>ID</Text>
-      <View style={styles.tableRow}>
-        <Text style={styles.columnHeader}>User</Text>
-        <Text style={styles.columnHeader}>Classification</Text>
-        <Text style={styles.columnHeader}>C-Section</Text>
-        <Text style={styles.columnHeader}>Date</Text>
-      </View>
-    </View>
-  );
-
 
   const renderReportModal = () => (
     <Modal
@@ -184,10 +202,158 @@ const ResultsScreen = ({ navigation }) => {
             className="date-picker"
           />
           <View style={styles.modalButtons}>
-            <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setModalVisible(false)}
+            >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderEmailModal = () => (
+    <Modal
+      visible={emailModalVisible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setEmailModalVisible(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Email CSV</Text>
+          <View style={styles.inputContainer}>
+            <input
+              placeholder={'Enter email'}
+              style={styles.emailInput}
+              onChange={handleTextChange}
+              value={email}
+            ></input>
+          </View>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setEmailModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleEmail}>
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+          <Text
+            style={
+              errorMessageEmail.length === 0
+                ? styles.successMessage
+                : styles.errorMessage
+            }
+          >
+            {errorMessageEmail.length === 0
+              ? successMessageEmail
+              : errorMessageEmail}
+          </Text>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderImportModal = () => (
+    <Modal
+      visible={importModalVisible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setImportModalVisible(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Import CSV</Text>
+          <View style={styles.inputContainer}>
+            <input
+              type="file"
+              style={styles.fileInput}
+              onChange={handleFileChange}
+              accept=".csv, .xlsx"
+            />
+          </View>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                setImportModalVisible(false);
+                setErrorMessaage('');
+                setSuccessMessage('');
+              }}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleUpload}>
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+          <Text
+            style={
+              errorMessage.length === 0
+                ? styles.successMessage
+                : styles.errorMessage
+            }
+          >
+            {errorMessage.length === 0 ? successMessage : errorMessage}
+          </Text>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderFilterModal = () => (
+    <Modal
+      visible={filterModalVisible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setFilterModalVisible(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Filter Data View</Text>
+          <YStack gap="$4" padding="$4">
+            <Select
+              value={selectedType}
+              onValueChange={handleTypeChange}
+              items={[
+                { label: 'Group', value: 'group' },
+                { label: 'Configuration', value: 'filter' },
+              ]}
+            />
+            <Select
+              value={selectedId}
+              onValueChange={handleSelectionChange}
+              items={(selectedType === 'group' ? groups : filters).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+            />
+          </YStack>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setFilterModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                fetchEntries();
+                setIsFilterApplied(true);
+                setFilterModalVisible(false);
+              }}
+            >
               <Text style={styles.buttonText}>Submit</Text>
             </TouchableOpacity>
           </View>
@@ -204,10 +370,17 @@ const ResultsScreen = ({ navigation }) => {
       ]}
       key={`${result.id}-${index}`}
     >
-      <Text style={styles.cell}>{result.username}</Text>
       <Text style={styles.cell}>Group {result.classification}</Text>
       <Text style={styles.cell}>{formatCSection(result.csection)}</Text>
       <Text style={styles.cell}>{formatDate(result.date)}</Text>
+    </View>
+  );
+
+  const renderTableHeader = () => (
+    <View style={[styles.tableRow, styles.rowEven]}>
+      <Text style={styles.columnHeader}>Classification</Text>
+      <Text style={styles.columnHeader}>C-Section</Text>
+      <Text style={styles.columnHeader}>Date</Text>
     </View>
   );
 
@@ -215,9 +388,9 @@ const ResultsScreen = ({ navigation }) => {
     try {
       const response = await axiosInstance.get('survey/download-survey-csv/', {
         headers: {
-          'Authorization': `Token ${user.token}`
+          Authorization: `Token ${user.token}`,
         },
-        responseType: 'blob'
+        responseType: 'blob',
       });
 
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -232,228 +405,427 @@ const ResultsScreen = ({ navigation }) => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      console.error('Error exporting CSV:', error);
     }
   };
 
-const [file, setFile] = useState(null);
-const [errorMessage, setErrorMessaage] = useState("");
-const [successMessage, setSuccessMessage] = useState("");
-const [errorMessageEmail, setErrorMessaageEmail] = useState("");
-const [successMessageEmail, setSuccessMessageEmail] = useState("");
-const [email, setEmail] = useState('');
+  const handleTextChange = (event) => {
+    setEmail(event.target.value);
+  };
 
-const handleTextChange = (event) => {
-  setEmail(event.target.value);
-};
+  const handleEmail = async (event) => {
+    event.preventDefault();
 
-const handleEmail = async (event) => {
-  event.preventDefault();
-  
-  if (!email) {
-      alert("Please provide an email.");
+    if (!email) {
+      alert('Please provide an email.');
       return;
-  }
+    }
 
-  const formData = new FormData();
-  formData.append('email', email);
+    try {
+      await axiosInstance.get(
+        `survey/download-survey-csv/?email=${encodeURIComponent(email)}`,
+        {
+          headers: {
+            Authorization: `Token ${user.token}`,
+          },
+        }
+      );
+      setErrorMessaageEmail('');
+      setSuccessMessageEmail('Sent!');
+    } catch (error) {
+      setSuccessMessageEmail('');
+      setErrorMessaageEmail('Email failed to send.');
+      console.error('Error sending email:', error);
+    }
+  };
 
-  try {
-      const response = await axiosInstance.get(`survey/download-survey-csv/?email=${encodeURIComponent(email)}`, {
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a file before uploading.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axiosInstance.post('survey/entries/upload/', formData, {
         headers: {
           'Authorization': `Token ${user.token}`,
+          'Content-Type': 'multipart/form-data',
         },
       });
-      setErrorMessaageEmail("");
-      setSuccessMessageEmail("Sent!");
-  } catch (error) {
-      setSuccessMessageEmail("");
-      setErrorMessaageEmail("Email failed to send.");
-      console.error("Error sending email:", error);
-  }
-};
-
-const handleFileChange = (event) => {
-  setFile(event.target.files[0]);
-};
-
-const handleUpload = async () => {
-  if (!file) {
-    alert("Please select a file before uploading.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const response = await axiosInstance.post('survey/entries/upload/', formData, {
-      headers: {
-        'Authorization': `Token ${user.token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    setErrorMessaage("");
-    setSuccessMessage(response.data["message"]);
-    fetchEntries();
-  } catch (e) {
-    setSuccessMessage("");
-    if (e.response.status == 422) {
-      setErrorMessaage("Invalid file format");
-    } else {
-      setErrorMessaage("Error uploading file");
+      setErrorMessaage("");
+      setSuccessMessage(response.data["message"]);
+      fetchEntries();
+      setFile(null);
+      setImportModalVisible(false);
+      setErrorMessaage('');
+      setSuccessMessage('');
+    } catch (e) {
+      setSuccessMessage("");
+      if (e.response.status == 422) {
+        setErrorMessaage("Invalid file format");
+      } else {
+        setErrorMessaage("Error uploading file");
+      }
     }
   }
-}
 
+  const renderPagination = () => {
+    const totalPages = Math.ceil(results.length / entriesPerPage) || 1;
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxPageNumbersToShow = 5;
+    let startPage, endPage;
+
+    if (totalPages <= maxPageNumbersToShow) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      if (currentPage <= 3) {
+        startPage = 1;
+        endPage = 4;
+      } else if (currentPage >= totalPages - 2) {
+        startPage = totalPages - 3;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - 1;
+        endPage = currentPage + 1;
+      }
+    }
+
+    if (startPage > 1) {
+      pages.push(
+        <TouchableOpacity
+          key={1}
+          onPress={() => setCurrentPage(1)}
+          style={styles.pageNumber}
+        >
+          <Text
+            style={
+              currentPage === 1
+                ? styles.activePageNumberText
+                : styles.pageNumberText
+            }
+          >
+            1
+          </Text>
+        </TouchableOpacity>
+      );
+      if (startPage > 2) {
+        pages.push(
+          <Text key="start-ellipsis" style={styles.pageNumberText}>
+            ...
+          </Text>
+        );
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <TouchableOpacity
+          key={i}
+          onPress={() => setCurrentPage(i)}
+          style={styles.pageNumber}
+        >
+          <Text
+            style={
+              currentPage === i
+                ? styles.activePageNumberText
+                : styles.pageNumberText
+            }
+          >
+            {i}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(
+          <Text key="end-ellipsis" style={styles.pageNumberText}>
+            ...
+          </Text>
+        );
+      }
+      pages.push(
+        <TouchableOpacity
+          key={totalPages}
+          onPress={() => setCurrentPage(totalPages)}
+          style={styles.pageNumber}
+        >
+          <Text
+            style={
+              currentPage === totalPages
+                ? styles.activePageNumberText
+                : styles.pageNumberText
+            }
+          >
+            {totalPages}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View style={styles.paginationContainer}>
+        {currentPage > 1 && (
+          <TouchableOpacity
+            onPress={() => setCurrentPage(currentPage - 1)}
+            style={styles.pageNumber}
+          >
+            <Text style={styles.pageNumberText}>Previous</Text>
+          </TouchableOpacity>
+        )}
+        {pages}
+        {currentPage < totalPages && (
+          <TouchableOpacity
+            onPress={() => setCurrentPage(currentPage + 1)}
+            style={styles.pageNumber}
+          >
+            <Text style={styles.pageNumberText}>Next</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+  const totalPages = Math.ceil(results.length / entriesPerPage) || 1;
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentEntries = results.slice(indexOfFirstEntry, indexOfLastEntry);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       {renderReportModal()}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={handleExport}
-          style={styles.compactButton}>
-          <Text style={styles.buttonText}>Download as CSV</Text>
-        </TouchableOpacity>
+      {renderEmailModal()}
+      {renderImportModal()}
+      {renderFilterModal()}
 
-        <View style={styles.inputContainer}>
-          <input placeholder={"Enter email"} style={styles.emailInput} onChange={handleTextChange}></input>
-          <TouchableOpacity
-            onPress={handleEmail}
-            style={styles.compactButton}>
-            <Text style={styles.buttonText}>Email CSV</Text>
-          </TouchableOpacity>
-          <Text style={errorMessageEmail.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessageEmail.length == 0 ? successMessageEmail : errorMessageEmail}</Text>
-        </View>
+      <TamaguiButton
+        icon={<Menu />}
+        size="$4"
+        circular
+        onPress={() => setMenuOpen(!menuOpen)}
+        style={{
+          position: 'absolute',
+          top: 5,
+          right: 5,
+          backgroundColor: 'rgba(0, 0, 0, 0)',
+          zIndex: 10,
+        }}
+        hoverStyle={{
+          backgroundColor: 'rgba(0, 0, 0, 0)',
+          borderColor: 'rgba(0, 0, 0, 0)',
+        }}
+      />
 
-        <TouchableOpacity
-          style={styles.compactButton}
-          onPress={() => {
-            if (reportGenerated) {
-              setResults(allResults);
-              setReportGenerated(false);
-              setDateRange([null, null]);
-              navigation.setOptions({
-                title: 'Results',
-              });
-            } else {
-              setModalVisible(true);
-            }
-          }}>
-          <Text style={styles.buttonText}> {reportGenerated ? 'Exit Report' : 'Generate Report'} </Text>
-        </TouchableOpacity>
-        <View style={styles.inputContainer}>
-          <input type="file" style={styles.fileInput} onChange={handleFileChange} accept=".csv, .xlsx" />
+      {menuOpen && (
+        <View style={styles.sideMenu}>
           <TouchableOpacity
-            style={styles.compactButton}
-            onPress={() => handleUpload()}
+            onPress={() => {
+              handleExport();
+              setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
           >
-            <Text style={styles.buttonText}>Import CSV</Text>
+            <Text style={styles.sideMenuItemText}>Download as CSV</Text>
           </TouchableOpacity>
-          <Text style={errorMessage.length == 0 ? styles.successMessage : styles.errorMessage}>{errorMessage.length == 0 ? successMessage : errorMessage}</Text>
-        </View>
-      </View>
-      <ScrollView style={styles.container}>
-        <YStack gap="$4" padding="$4">
-            <Select
-              value={selectedType}
-              onValueChange={handleTypeChange}
-              items={[
-                { label: 'Group', value: 'group' },
-                { label: 'Configuration', value: 'filter' }
+          <TouchableOpacity
+            onPress={() => {
+              setEmailModalVisible(true);
+              setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
+          >
+            <Text style={styles.sideMenuItemText}>Email CSV</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (reportGenerated) {
+                setResults(allResults);
+                setReportGenerated(false);
+                setDateRange([null, null]);
+                navigation.setOptions({
+                  title: 'Results',
+                });
+              } else {
+                setModalVisible(true);
+              }
+              setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
+          >
+            <Text style={styles.sideMenuItemText}>
+              {reportGenerated ? 'Exit Report' : 'Generate Report'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setImportModalVisible(true);
+              setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
+          >
+            <Text style={styles.sideMenuItemText}>Import CSV</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setFilterModalVisible(true);
+              setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
+          >
+            <Text style={styles.sideMenuItemText}>Filter Data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (isFilterApplied) {
+                setSelectedType(initialSelectedType);
+                setSelectedId(initialSelectedId);
+                setIsFilterApplied(false);
+                fetchEntries();
+              }
+              setMenuOpen(false);
+            }}
+            style={[
+              styles.sideMenuItem,
+              !isFilterApplied && styles.disabledMenuItem,
+            ]}
+            disabled={!isFilterApplied}
+          >
+            <Text
+              style={[
+                styles.sideMenuItemText,
+                !isFilterApplied && styles.disabledMenuItemText,
               ]}
-            />
-            
-          <Select
-            value={selectedId}
-            onValueChange={handleSelectionChange}
-            items={(selectedType === 'group' ? groups : filters).map(item => ({
-              label: item.name,
-              value: item.id
-            }))}
-          />
-        </YStack>
+            >
+              Reset Data View
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <ScrollView style={styles.entryContainer}>
         <BarChart data={parsedResults} />
-        <TouchableOpacity onPress={() => navigation.navigate('PieChartAnalysis', { data: parsedResults })}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('PieChartAnalysis', { data: parsedResults })
+          }
+        >
           <PieChart data={parsedResults} />
         </TouchableOpacity>
-        {renderTableHeader()}
-        {results.map(renderTableRow)}
+        <View style={{ paddingHorizontal: 10 }}>
+          {renderTableHeader()}
+          {currentEntries.map(renderTableRow)}
+          {renderPagination()}
+        </View>
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f9fc',
+  burgerMenu: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 25,
   },
-  scrollContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-  },
-  headerLogout: {
-    marginRight: 10,
-    backgroundColor: '#007bff',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    color: '#fff',
-    fontSize: 14,
-  },
-  title: {
+  burgerMenuText: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-    alignSelf: 'center',
+    color: 'white',
   },
-  downloadButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 4,
-    alignSelf: 'center',
-    marginBottom: 20,
+  sideMenu: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '70%',
+    height: '100%',
+    backgroundColor: 'white',
+    zIndex: 9,
+    paddingTop: 50,
+    paddingHorizontal: 20,
   },
-  downloadButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  sideMenuItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#007bff',
-    paddingVertical: 10,
-    borderRadius: 4,
+  sideMenuItemText: {
+    fontSize: 18,
+  },
+  disabledMenuItem: {
+    opacity: 0.5,
+  },
+  disabledMenuItemText: {
+    color: '#999',
+  },
+  closeMenuButton: {
     marginTop: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
   },
-  columnHeader: {
-    flex: 1,
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
+  closeMenuButtonText: {
+    color: '#007BFF',
+    fontSize: 16,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
   },
   rowEven: {
-    backgroundColor: '#e9f1fb',
+    backgroundColor: '#f0f0f0',
   },
   rowOdd: {
     backgroundColor: '#fff',
   },
   cell: {
     flex: 1,
+    margin: 4,
     textAlign: 'center',
-    color: '#333',
   },
-  buttonsContainer: {
-    flexDirection: 'column',
+  columnHeader: {
+    flex: 1,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    margin: 4,
+  },
+  entryContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    marginVertical: 10,
+  },
+  pageNumber: {
+    marginHorizontal: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#eeeeee',
+    borderRadius: 5,
+  },
+  pageNumberText: {
+    fontSize: 16,
+    color: '#007BFF',
+  },
+  activePageNumberText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
   },
   headerButton: {
     marginRight: 10,
@@ -497,14 +869,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fileInput: {
-    width: '55%',
+    width: '100%',
   },
   successMessage: {
-    marginLeft: 10,
+    marginTop: 10,
     color: 'green',
   },
   errorMessage: {
-    marginLeft: 10,
+    marginTop: 10,
     color: 'red',
   },
   button: {
@@ -523,28 +895,19 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 15,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  compactButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#007BFF',
-    borderRadius: 5,
-    alignItems: 'center',
-  },
   buttonText: {
     color: 'white',
     fontWeight: '600',
   },
   emailInput: {
+    width: '100%',
     marginRight: 10,
-  }
+    paddingHorizontal: 5,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+  },
 });
 
 export default ResultsScreen;
