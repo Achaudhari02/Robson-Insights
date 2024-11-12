@@ -4,7 +4,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 
 # Release Notes
 
-## Version 0.3.0
+## Version 0.4.0
 ### Features
 - Added HTML styles to email invite and changed sender email to robsoninsights.gmail.com
 - Added expected C-Section percentages/benchmarks per classification group for comparison
