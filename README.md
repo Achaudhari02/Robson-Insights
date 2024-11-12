@@ -6,6 +6,20 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 
 ## Version 0.3.0
 ### Features
+- Added HTML styles to email invite and changed sender email to robsoninsights.gmail.com
+- Added expected C-Section percentages/benchmarks per classification group for comparison
+- Added ability to create reports based on date-ranges passed in by user
+- Update quiz result page to allow user to discard result
+- ### Bug Fixes
+- Fixed issue where exit button for Detailed Pie Chart screen would not appear
+- Fixed issue where CSV import would not parse correctly
+- Fixed problem with CSV data export where data would be seperated by semicolon
+### Known Issues
+- Bar chart visualization on mobile will overflow off of screen if there are too many entries
+- Groups screen UI is clunky and unintuitive
+
+## Version 0.3.0
+### Features
 - Added Bar Chart Visiulization for Robson results analysis
 - Added Pie Chart Visiulization for Robson results analysis
 - Added export button to chart page to save visualizations
