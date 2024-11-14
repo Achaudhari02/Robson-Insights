@@ -389,6 +389,7 @@ export default function GroupsScreen() {
             margin="$2"
             style={{ width: 180 }}
             onPress={() => setCreateGroupModalOpen(true)}
+            hoverStyle={{ backgroundColor: "$blue10" }}
           >
             Create Group
         </TamaguiButton>
@@ -611,6 +612,7 @@ export default function GroupsScreen() {
             margin="$2"
             style={{ width: 180 }}
             onPress={() => setCreateConfigurationModalOpen(true)}
+            hoverStyle={{ backgroundColor: "$blue10" }}
           >
             Create Configuration
         </TamaguiButton>
