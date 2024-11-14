@@ -389,7 +389,7 @@ export default function GroupsScreen() {
             margin="$2"
             style={{ width: 180 }}
             onPress={() => setCreateGroupModalOpen(true)}
-            hoverStyle={{ backgroundColor: "$blue10" }}
+            hoverStyle={styles.tamaguiButton}
           >
             Create Group
         </TamaguiButton>
@@ -612,7 +612,7 @@ export default function GroupsScreen() {
             margin="$2"
             style={{ width: 180 }}
             onPress={() => setCreateConfigurationModalOpen(true)}
-            hoverStyle={{ backgroundColor: "$blue10" }}
+            hoverStyle={styles.tamaguiButton}
           >
             Create Configuration
         </TamaguiButton>
@@ -817,4 +817,7 @@ const styles = StyleSheet.create({
     borderRightColor: '#333',
     borderStyle: 'solid',
   },
+  tamaguiButton: {
+    backgroundColor: "$blue10",
+  }
 });
