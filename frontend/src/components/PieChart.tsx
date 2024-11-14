@@ -60,6 +60,7 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
 
 const styles = StyleSheet.create({
   card: {
+    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
