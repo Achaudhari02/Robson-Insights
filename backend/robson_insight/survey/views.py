@@ -10,8 +10,11 @@ from rest_framework.authtoken.views import APIView
 
 import pandas as pd
 import os
-from openpyxl import load_workbook
-from datetime import datetime
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Alignment, Font
+from openpyxl.utils import get_column_letter
+
+from datetime import datetime, timedelta
 import re
 from .serializers import EntrySerializer, FilterSerializer
 from .models import Entry, Filter
@@ -111,7 +114,6 @@ class EntryListView(generics.ListCreateAPIView):
         try:
             user = self.request.user
             groups = UserProfile.objects.filter(user=user).values_list('group__name', flat=True).distinct()
-            print(groups)
             entry_data = {
                 'classification': classification,
                 'csection': csection,
@@ -178,7 +180,7 @@ class EntryFilterListView(generics.ListAPIView):
 class DownloadSurveyCSVView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EntrySerializer
-
+    
     def get(self, request):
         try:
             queryset = Entry.objects.filter(
@@ -198,7 +200,9 @@ class DownloadSurveyCSVView(generics.ListCreateAPIView):
             writer.writerow(field_names)
 
             for row in queryset:
-                values = [getattr(row, field) for field in field_names]
+                values = [getattr(row, field) for field in field_names if field != "groups"]
+                group_names = ', '.join(row.groups.values_list('name', flat=True))
+                values.append(group_names)
                 writer.writerow(values)
 
             recipient_email = request.GET.get('email')
@@ -338,3 +342,112 @@ class FilterConfigurationDetailView(generics.ListAPIView):
         group_ids = list(filter_instance.groups.values_list('id', flat=True))
         
         return Response(group_ids)
+
+class GenerateQuarterlyXLSX(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_quarters(self):
+        today = datetime.today()
+        current_year_start = datetime(today.year, 7, 1)
+        last_year_start = current_year_start - timedelta(days=365)
+
+        if today >= current_year_start:
+            start_date = last_year_start
+        else:
+            start_date = last_year_start - timedelta(days=365)
+
+        quarters = [
+            f"Quarter 1: 1st July {start_date.year} - 30th September {start_date.year}",
+            f"Quarter 2: 1st October {start_date.year} - 31st December {start_date.year}",
+            f"Quarter 3: 1st January {start_date.year + 1} - 31st March {start_date.year + 1}",
+            f"Quarter 4: 1st April {start_date.year + 1} - 30th June {start_date.year + 1}",
+        ]
+        return quarters
+
+    def get(self, request):
+        quarters = self.get_quarters()
+
+        group_labels = [
+            "Group 1", "Group 2", "Group 3", "Group 4", "Group 5.1",
+            "Group 5.2", "Group 6", "Group 7", "Group 8", "Group 9", "Group 10"
+        ]
+
+        # Create workbook and sheet
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Quarterly Data"
+
+        # Add headers
+        headers = ["Group Robson"] + quarters + ["Final", ""]
+        subheaders = [""] + ["Vaginal Delivery", "C/Section"] * (len(quarters) + 1)
+
+        ws.append(headers)
+        ws.append(subheaders)
+       
+        ws.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
+        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+        ws["A1"].font = Font(bold=True)
+
+        # Merge each quarter header to span 2 columns
+        for i in range(len(quarters)):
+            # First merge quarter headers for each quarter (e.g., "Quarter 1: Vaginal Delivery" and "Quarter 1: C/Section")
+            ws.merge_cells(start_row=1, start_column=2 + i * 2, end_row=1, end_column=3 + i * 2)
+            ws.cell(row=1, column=2 + i * 2).value = quarters[i]
+            ws.cell(row=1, column=2 + i * 2).alignment = Alignment(horizontal="center", vertical="center")
+            ws.cell(row=1, column=2 + i * 2).font = Font(bold=True)
+
+        # Merge the "Final" header to span 2 columns
+        ws.merge_cells(start_row=1, start_column=len(quarters) * 2 + 2, end_row=1, end_column=len(quarters) * 2 + 3)
+        ws.cell(row=1, column=len(quarters) * 2 + 2).value = "Final"
+        ws.cell(row=1, column=len(quarters) * 2 + 2).alignment = Alignment(horizontal="center", vertical="center")
+        ws.cell(row=1, column=len(quarters) * 2 + 2).font = Font(bold=True)
+
+        # Style subheaders (Vaginal Delivery and C/Section)
+        for col in range(2, len(headers) * 2 + 1):
+            ws.cell(row=2, column=col).alignment = Alignment(horizontal="center", vertical="center")
+
+        # Process data rows
+        row_index = 3
+        for group in group_labels:
+            row = [group]
+            # Leave data cells blank (users will input data)
+            row.extend([0] * (len(quarters) * 2))
+            # Add formulas for "Final" columns
+            vaginal_formula = f"=SUMPRODUCT(B{row_index}:I{row_index}, --ISEVEN(COLUMN(B{row_index}:I{row_index})))"
+            csection_formula = f"=SUMPRODUCT(B{row_index}:I{row_index}, --ISODD(COLUMN(B{row_index}:I{row_index})))"
+            row.extend([vaginal_formula, csection_formula])
+            ws.append(row)
+            row_index += 1
+
+        # Add "No Record" row
+        ws.append(["No Record"] + [0] * (len(quarters) * 2) + [f"=SUMPRODUCT(B14:I14, --ISEVEN(COLUMN(B14:I14)))", f"=SUMPRODUCT(B14:I14, --ISODD(COLUMN(B14:I14)))"])
+        row_index += 1
+
+        # Add "Total" row with dynamic column formulas
+        total_row = ["Total"]
+        for col in range(2, len(headers) + 5):
+            col_letter = get_column_letter(col)
+            total_row.append(f"=SUM({col_letter}3:{col_letter}{row_index - 1})")
+        ws.append(total_row)
+
+        for col in range(2, len(headers) + 5):
+            cell = ws.cell(row=ws.max_row, column=col)
+            cell.font = Font(bold=True)
+
+        # Auto-size columns
+        for col in ws.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2
+
+        # Save the workbook to the response
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="quarterly_survey_data.xlsx"'
+        wb.save(response)
+        return response
