@@ -430,7 +430,7 @@ class GenerateQuarterlyXLSX(APIView):
             total_row.append(f"=SUM({col_letter}3:{col_letter}{row_index - 1})")
         ws.append(total_row)
 
-        for col in range(2, len(headers) + 5):
+        for col in range(1, len(headers) + 5):
             cell = ws.cell(row=ws.max_row, column=col)
             cell.font = Font(bold=True)
 
