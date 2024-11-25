@@ -1,31 +1,28 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
-import { PieChart } from '@/components';
+import { BarChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
 import { useTheme } from '../ThemeContext';
 import { lightTheme, darkTheme } from '../themes';
 
-const PieChartAnalysisScreen = ({ route }) => {
+const BarChartAnalysisScreen = ({ route }) => {
   const { data } = route.params;
+
   const [modalVisible, setModalVisible] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
 
   const groupDescriptions = {
-    1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
-    2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-    3: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
-    4: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-    5: "Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.",
-    6: "Nulliparous women with a single, breech pregnancy.",
-    7: "Multiparous women with a single, breech pregnancy.",
-    8: "Women with multiple pregnancies (twins, triplets, etc.).",
-    9: "Women with a single pregnancy in a transverse or oblique lie.",
-    10: "Women with a preterm, single, cephalic pregnancy."
-  };
-
-  const screenStyle = {
-    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
-    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+    1: 'Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.',
+    2: 'Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.',
+    3: 'Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.',
+    4: 'Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.',
+    5: 'Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.',
+    6: 'Nulliparous women with a single, breech pregnancy.',
+    7: 'Multiparous women with a single, breech pregnancy.',
+    8: 'Women with multiple pregnancies (twins, triplets, etc.).',
+    9: 'Women with a single pregnancy in a transverse or oblique lie.',
+    10: 'Women with a preterm, single, cephalic pregnancy.',
   };
 
   const totalWomen = data.reduce((sum, item) => sum + item.responses, 0);
@@ -49,29 +46,28 @@ const PieChartAnalysisScreen = ({ route }) => {
   };
 
   const GroupDescription = ({ groupNumber, description }) => (
-    <View style={[styles.descriptionCard, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.descriptionCard.backgroundColor}]}>
+    <View style={[styles.descriptionCard, screenStyle]}>
       <Text style={[styles.descriptionTitle, screenStyle]}>{`Group ${groupNumber}`}</Text>
       <Text style={[styles.descriptionText, screenStyle]}>{description}</Text>
     </View>
   );
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   return (
     <View style={[styles.container, screenStyle]}>
-      <ScrollView contentContainerStyle={[styles.scrollContainer, screenStyle]}>
-          <Text style={[styles.header, screenStyle]}>X Hospital’s February Data</Text>
-          <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
-            <Info size={28} color="#007AFF" />
-          </TouchableOpacity>
-          <Text style={[styles.subHeader, screenStyle]}>Caesarean Sections by Group</Text>
-          <PieChart data={data} />
-        <View style={styles.legendContainer}>
-          {data.map((item, index) => (
-            <View key={index} style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: getColor(index) }]} />
-              <Text style={[styles.legendText, screenStyle]}>{`Group ${item.classification}`}</Text>
-            </View>
-          ))}
-        </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={[styles.header, screenStyle]}>X Hospital’s February Data</Text>
+        <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
+          <Info size={28} color="#007AFF" />
+        </TouchableOpacity>
+        <Text style={[styles.subHeader, screenStyle]}>Caesarean Sections by Group</Text>
+        <BarChart data={data} />
+
         <View style={styles.frameContainer}>
           {data.map((item, index) => (
             <GroupStatistics key={index} item={item} />
@@ -101,18 +97,10 @@ const PieChartAnalysisScreen = ({ route }) => {
   );
 };
 
-const getColor = (index) => {
-  const colors = [
-    '#FF8A8D', '#66C2B5', '#FD8B5A', '#50A0A4', '#FFD700',
-    '#8A2BE2', '#FF4500', '#2E8B57', '#1E90FF', '#DA70D6'
-  ];
-  return colors[index % colors.length];
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    position: 'relative',
     backgroundColor: 'white',
   },
   scrollContainer: {
@@ -122,7 +110,7 @@ const styles = StyleSheet.create({
   infoButton: {
     position: 'absolute',
     top: 40,
-    left: 5,
+    left: 20,
     zIndex: 10,
   },
   header: {
@@ -136,52 +124,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  legendColor: {
-    width: 10,
-    height: 10,
-    marginRight: 5,
-  },
-  legendText: {
-    fontSize: 14,
-  },
   frameContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginBottom: 20,
   },
   frame: {
-    width: '45%',
-    padding: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 5,
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    width: '48%',
+    padding: 15,
+    backgroundColor: '#F0F4F8',
+    borderRadius: 10,
+    marginBottom: 15,
+    elevation: 2,
   },
   groupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
-    alignSelf: 'center',
   },
   statText: {
     fontSize: 14,
     marginBottom: 5,
     color: '#555',
-    textAlign: 'left',
   },
   descriptionContainer: {
     paddingHorizontal: 20,
@@ -229,4 +195,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PieChartAnalysisScreen;
+export default BarChartAnalysisScreen;
