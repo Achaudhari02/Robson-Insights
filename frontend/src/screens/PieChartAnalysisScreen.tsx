@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { PieChart } from '@/components';
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 const PieChartAnalysisScreen = ({ route }) => {
   const { data } = route.params; // Access the passed data
+  const { theme, toggleTheme } = useTheme();
 
   const groupDescriptions = {
     1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
@@ -18,30 +21,36 @@ const PieChartAnalysisScreen = ({ route }) => {
     10: "Women with a preterm, single, cephalic pregnancy."
   };
 
+
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Hospital’s February Data</Text>
-      <Text style={styles.subHeader}>Caesarean Sections by Group</Text>
+    <ScrollView style={[styles.container, screenStyle]}>
+      <Text style={[styles.header, screenStyle]}>Hospital’s February Data</Text>
+      <Text style={[styles.subHeader, screenStyle]}>Caesarean Sections by Group</Text>
       <PieChart data={data} />
-      <View style={styles.legendContainer}>
+      <View style={[styles.legendContainer, screenStyle]}>
         {data.map((item, index) => (
           <View key={index} style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: getColor(index) }]} />
-            <Text style={styles.legendText}>{`Group ${item.classification}`}</Text>
+            <View style={[styles.legendColor, { backgroundColor: getColor(index) }, screenStyle]} />
+            <Text style={[styles.legendText, screenStyle]}>{`Group ${item.classification}`}</Text>
           </View>
         ))}
       </View>
-      <View style={styles.frameContainer}>
+      <View style={[styles.frameContainer, screenStyle]}>
         {data.map((item, index) => (
-          <View key={index} style={styles.frame}>
-            <Text style={styles.frameText}>{`Group ${item.classification}`}</Text>
-            <Text style={styles.frameText}>{`${item.responses} Women`}</Text>
+          <View key={index} style={[styles.frame, screenStyle]}>
+            <Text style={[styles.frameText, screenStyle]}>{`Group ${item.classification}`}</Text>
+            <Text style={[styles.frameText, screenStyle]}>{`${item.responses} ${item.responses === 1 ? 'Woman' : 'Women'}`}</Text>
           </View>
         ))}
       </View>
       <View style={styles.descriptionContainer}>
         {Object.entries(groupDescriptions).map(([key, description]) => (
-          <Text key={key} style={styles.description}>
+          <Text key={key} style={[styles.description, screenStyle]}>
             {`Group ${key}: ${description}`}
           </Text>
         ))}

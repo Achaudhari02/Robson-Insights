@@ -5,6 +5,9 @@ import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import {
   Button as TamaguiButton,
 } from "tamagui";
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
+import { Moon, Sun } from '@tamagui/lucide-icons';
 
 const questions = [
   { question: 'Was this a multiple pregnancy? (twins, triplets, etc.)', key: 'mp' },
@@ -37,7 +40,37 @@ const HomeScreen = ({ navigation }) => {
   const [error, setError] = useState("");
   const [isQuizFinished, setIsQuizFinished] = useState(false);
   const { user, logoutFn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ display: 'flex', flexDirection: 'row'}}>
+          <TamaguiButton
+            icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
+            backgroundColor="$colorTransparent"
+            margin="$2"
+            onPress={() => {
+              toggleTheme();
+            }}
+            hoverStyle={{borderColor: '$colorTransparent'}}
+          >
+          </TamaguiButton>
+          <TamaguiButton
+              size="$4"
+              backgroundColor="$blue10"
+              color="white"
+              borderRadius="$2"
+              margin="$2"
+              onPress={logoutFn}
+              hoverStyle={styles.tamaguiButton}
+            >
+              Logout
+          </TamaguiButton>
+        </View>
+      ),
+    });
+  }, [navigation, theme]);
 
   const handleAnswer = (answer) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
@@ -154,12 +187,17 @@ const HomeScreen = ({ navigation }) => {
     setIsQuizFinished(false);
   };
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   const renderContent = () => {
     if (isQuizFinished) {
       if (error) {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Error: {error}</Text>
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Error: {error}</Text>
             <Button title="Restart Quiz" onPress={() => {
               setError("");
               setAnswers({});
@@ -170,25 +208,25 @@ const HomeScreen = ({ navigation }) => {
         );
       } else if (result.length > 0) {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Result: {result}</Text>
-            <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Result: {result}</Text>
+            <Text style={[styles.text, screenStyle]}>Description: {robsonClassification[result]}</Text>
             <Button title="Restart Quiz and Submit Result" onPress={handleSubmitAndRestart} />
             <Button title="Restart Quiz and Discard Result" onPress={handleDiscardAndRestart} />
           </View>
         );
       } else {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Calculating result...</Text>
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Calculating result...</Text>
           </View>
         );
       }
     } else {
       return (
         <View>
-          <Text style={styles.text}>{questions[currentQuestionIndex].question}</Text>
-          <View style={styles.buttonsContainer}>
+          <Text style={[styles.text, screenStyle]}>{questions[currentQuestionIndex].question}</Text>
+          <View style={[styles.buttonsContainer, screenStyle]}>
             <AnswerButton title="Yes" onPress={() => handleAnswer('y')} />
             <AnswerButton title="No" onPress={() => handleAnswer('n')} />
           </View>
@@ -198,7 +236,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenStyle]}>
       {renderContent()}
     </View>
   );
