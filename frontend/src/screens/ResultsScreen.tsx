@@ -814,7 +814,15 @@ const ResultsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('Pie Chart', { data: parsedResults })
+            navigation.navigate('BarChartAnalysis', { data: parsedResults })
+          }
+        >
+          <BarChart data={parsedResults}/>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('PieChartAnalysis', { data: parsedResults })
           }
         >
           <PieChart data={parsedResults} />
