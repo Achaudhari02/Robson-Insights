@@ -38,23 +38,6 @@ const HomeScreen = ({ navigation }) => {
   const [isQuizFinished, setIsQuizFinished] = useState(false);
   const { user, logoutFn } = useAuth();
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TamaguiButton
-            size="$4"
-            backgroundColor="$blue10"
-            color="white"
-            borderRadius="$2"
-            margin="$2"
-            onPress={logoutFn}
-            hoverStyle={styles.tamaguiButton}
-          >
-            Logout
-        </TamaguiButton>
-      ),
-    });
-  }, [navigation]);
 
   const handleAnswer = (answer) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };

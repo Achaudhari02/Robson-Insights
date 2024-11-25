@@ -4,7 +4,7 @@ import { Button as InternalButton, YStack, Text } from 'tamagui';
 export const Button = ({
   children,
   onPress,
-  disabled,
+  disabled = false,
   backgroundColor = "$blue10",
   fontWeight = "bold",
   ...props
@@ -17,7 +17,6 @@ export const Button = ({
       onPress={onPress}
       disabled={disabled}
       backgroundColor={bgColor}
-      width="100%"
       paddingHorizontal="$4"
       paddingVertical="$6"
       hoverStyle={{

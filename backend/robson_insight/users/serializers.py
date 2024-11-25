@@ -10,7 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'username', 'group', 'can_add', 'can_view']        
+        fields = ['id', 'username', 'group', 'can_add', 'can_view', 'is_admin']        
 
 class GroupSerializer(serializers.ModelSerializer):
 

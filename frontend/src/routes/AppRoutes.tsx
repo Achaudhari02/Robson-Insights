@@ -11,12 +11,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import SignUpScreen from '@/screens/SignupScreen';
 import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
 import { axiosInstance } from '@/lib/axios';
-import { Button as TamaguiButton } from 'tamagui';
+import { LogoutButton } from '@/components/LogoutButton';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = () => {
+const AppTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -26,7 +26,7 @@ const BottomTabs = () => {
 
           if (route.name === 'Home') {
             iconName = 'home';
-          } else if (route.name === 'Results') {
+          } else if (route.name === 'ResultsWrapper') {
             iconName = 'assignment';
           } else if (route.name === 'Groups') {
             iconName = 'group';
@@ -34,82 +34,69 @@ const BottomTabs = () => {
 
           return <IconComponent name={iconName} size={size} color={color} />;
         },
+        headerRight: () => <LogoutButton />,
+        headerShown: true,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Results" component={ResultsStack} options={{ headerShown: false }}/> 
+      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/> 
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
 };
 
-const AuthStack = () => {
+const AuthScreens = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Signup" component={SignUpScreen} />
-    </Stack.Navigator>
+    <Stack.Screen 
+      name="Login"  
+      component={LoginScreen} 
+      options={{
+        title: 'Login'
+      }}
+    />
+    <Stack.Screen 
+      name="Signup" 
+      component={SignUpScreen} 
+      options={{
+        title: 'Sign Up'
+      }}
+    />
+  </Stack.Navigator>
   );
 };
 
 const ResultsStack = () => {
-  const { user, logoutFn } = useAuth();
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
+      headerShown: true }}>
       <Stack.Screen 
         name="Results" 
         component={ResultsScreen} 
-        options={{
-          headerShown: true, // Ensures header is shown for this screen
-          headerRight: () => (
-            <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              onPress={() => logoutFn}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Logout
-            </TamaguiButton>
-          ),
-        }}
       />
       <Stack.Screen 
         name="Pie Chart" 
         component={PieChartAnalysisScreen} 
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              onPress={() => logoutFn}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Logout
-            </TamaguiButton>
-          ),
-        }}
       />
     </Stack.Navigator>
   );
 };
 
 const AppStack = () => {
-  
   return (
     <Stack.Navigator>
-      <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="App" component={AppTabs} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };
 
-
+const AuthStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Auth" component={AuthScreens} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+};
 
 export const AppRoutes = () => {
   const { user } = useAuth();

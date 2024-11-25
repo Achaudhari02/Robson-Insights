@@ -102,6 +102,7 @@ class UserProfileInGroupListView(generics.ListAPIView):
         group_pk = self.kwargs.get('group_pk')
         queryset = UserProfile.objects.filter(group=group_pk)
         return queryset
+    
 
 class AddUserToGroupView(APIView):
     permission_classes = [IsAuthenticated]
@@ -166,6 +167,60 @@ class RemoveUserFromGroup(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+class LeaveGroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        group_id = request.data.get('group_id')
+
+        if not group_id:
+            return Response(
+                {'error': 'Group ID is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            group = Group.objects.get(id=group_id)
+            user_profile = UserProfile.objects.get(
+                user=request.user, 
+                group=group
+            )
+
+            # Prevent the last admin from leaving
+            admin_count = UserProfile.objects.filter(
+                group=group, 
+                is_admin=True
+            ).count()
+            
+            if user_profile.is_admin and admin_count <= 1:
+                return Response(
+                    {'error': 'Cannot leave group: you are the last administrator'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user_profile.delete()
+
+            return Response(
+                {'success': f'You have left the group {group.name}'}, 
+                status=status.HTTP_200_OK
+            )
+
+        except Group.DoesNotExist:
+            return Response(
+                {'error': 'Group not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'You are not a member of this group'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+               
 class GetInviteView(APIView):
     permission_classes = [permissions.AllowAny]
 
