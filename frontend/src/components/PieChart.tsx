@@ -17,7 +17,7 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
   const svgWidth = 400;
   const svgHeight = 300;
   const radius = Math.min(svgWidth, svgHeight) / 2 - 20;
-  const separationDistance = 5; // Adjust this value for more or less separation
+  const separationDistance = 5;
 
   const colorScale = d3Scale.scaleOrdinal<string>()
     .domain(data.map((d) => d.classification))

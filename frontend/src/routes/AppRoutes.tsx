@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
-import { View, Text, Modal, Button, StyleSheet } from 'react-native';
+import { View, Text, Modal, Button, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
@@ -10,6 +10,7 @@ import GroupsScreen from '@/screens/GroupsScreen';
 import { MaterialIcons } from '@expo/vector-icons';
 import SignUpScreen from '@/screens/SignupScreen';
 import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
+import BarChartAnalysisScreen from '@/screens/BarChartAnalysisScreen';
 import { axiosInstance } from '@/lib/axios';
 import { LogoutButton } from '@/components/LogoutButton';
 
@@ -39,7 +40,7 @@ const AppTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/> 
+      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/>
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
@@ -48,16 +49,16 @@ const AppTabs = () => {
 const AuthScreens = () => {
   return (
     <Stack.Navigator>
-    <Stack.Screen 
-      name="Login"  
-      component={LoginScreen} 
+    <Stack.Screen
+      name="Login"
+      component={LoginScreen}
       options={{
         title: 'Login'
       }}
     />
-    <Stack.Screen 
-      name="Signup" 
-      component={SignUpScreen} 
+    <Stack.Screen
+      name="Signup"
+      component={SignUpScreen}
       options={{
         title: 'Sign Up'
       }}
@@ -70,13 +71,41 @@ const ResultsStack = () => {
   return (
     <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
       headerShown: true }}>
-      <Stack.Screen 
-        name="Results" 
-        component={ResultsScreen} 
+      <Stack.Screen
+        name="Results"
+        component={ResultsScreen}
       />
-      <Stack.Screen 
-        name="Pie Chart" 
-        component={PieChartAnalysisScreen} 
+      <Stack.Screen
+        name="PieChartAnalysis"
+        component={PieChartAnalysisScreen}
+        options={({ navigation }) => ({
+          headerShown: true,
+          headerTitle: '',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="BarChartAnalysis"
+        component={BarChartAnalysisScreen}
+        options={({ navigation }) => ({
+          headerShown: true,
+          headerTitle: '',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          ),
+        })}
       />
     </Stack.Navigator>
   );
@@ -102,28 +131,28 @@ export const AppRoutes = () => {
   const { user } = useAuth();
   const [invitations, setInvitations] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  
+
   const InvitationModal = ({ visible, invitations, onClose }) => {
     const [confirmVisible, setConfirmVisible] = useState(false);
     const [selectedInvite, setSelectedInvite] = useState(null);
-  
+
     const handleAccept = async (invite) => {
       try {
         await axiosInstance.get(`users/accept-invitation/${invite.token}/`, {
           headers: { Authorization: `Token ${user.token}` },
         });
         console.log(`Accepted invite for group: ${invite.group_name}`);
-        await fetchInvitations(); 
+        await fetchInvitations();
       } catch (error) {
         console.error('Error accepting invitation:', error);
       }
     };
-  
+
     const handleReject = (invite) => {
       setSelectedInvite(invite);
       setConfirmVisible(true);
     };
-  
+
     const confirmReject = async () => {
       try {
         await axiosInstance.delete(`users/reject-invitation/${selectedInvite.token}/`, {
@@ -131,12 +160,12 @@ export const AppRoutes = () => {
         });
         console.log(`Rejected invite for group: ${selectedInvite.group_name}`);
         setConfirmVisible(false);
-        await fetchInvitations(); 
+        await fetchInvitations();
       } catch (error) {
         console.error('Error rejecting invitation:', error);
       }
     };
-  
+
     return (
       <>
         <Modal visible={visible} transparent={true} animationType="slide">
@@ -159,7 +188,7 @@ export const AppRoutes = () => {
             </View>
           </View>
         </Modal>
-  
+
         <Modal visible={confirmVisible} transparent={true} animationType="fade">
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
             <View style={{ width: 250, padding: 20, backgroundColor: 'white', borderRadius: 10 }}>
@@ -172,7 +201,7 @@ export const AppRoutes = () => {
       </>
     );
   };
-  
+
   const fetchInvitations = async () => {
     try {
       const response = await axiosInstance.get('users/invitations/', {
@@ -207,4 +236,17 @@ const styles = StyleSheet.create({
   tamaguiButton: {
     backgroundColor: "#007bff",
   },
+  button: {
+    margin: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center'
+  },
+
 });

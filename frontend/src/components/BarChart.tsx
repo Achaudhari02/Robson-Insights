@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
-import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
+import { Svg, G, Rect, Text as SvgText, Line } from 'react-native-svg';
 
 export const BarChart = ({ data }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
@@ -36,19 +36,23 @@ export const BarChart = ({ data }) => {
   const chartWidth = svgWidth - margin.left - margin.right;
   const chartHeight = svgHeight - margin.top - margin.bottom;
   const recommendedCSectionRates = {
-    1: 15,
-    2: 25,
-    3: 10,
+    1: 10,
+    2: 35,
+    3: 35,
     4: 20,
     5: 50,
     6: 90,
     7: 90,
     8: 70,
     9: 95,
-    10: 30
+    10: 30,
   };
 
-  const maxResponses = d3Array.max(data, (d) => d.responses);
+  useEffect(() => {
+    console.log("BarChart Data:", data);
+  }, [data]);
+
+  const maxResponses = d3Array.max(data, (d) => d.responses) || 0;
   const capValue = maxResponses * 1.1;
   const xScale = d3Scale
     .scaleLinear()
@@ -66,15 +70,11 @@ export const BarChart = ({ data }) => {
       <Text style={styles.title}>Caesarean Sections by Group</Text>
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
-          <Svg width={20} height={20}>
-            <Rect width={20} height={20} fill="url(#csectionLegendGradient)" rx={5} ry={5} />
-          </Svg>
+          <View style={[styles.legendColorBox, { backgroundColor: '#FF8A8D' }]} />
           <Text style={styles.legendText}>C-Section</Text>
         </View>
         <View style={styles.legendItem}>
-          <Svg width={20} height={20}>
-            <Rect width={20} height={20} fill="url(#nonCsectionLegendGradient)" rx={5} ry={5} />
-          </Svg>
+          <View style={[styles.legendColorBox, { backgroundColor: '#66C2B5' }]} />
           <Text style={styles.legendText}>Non-C-Section</Text>
         </View>
         <View style={styles.legendItem}>
@@ -87,25 +87,6 @@ export const BarChart = ({ data }) => {
 
       <View>
         <Svg width={svgWidth} height={svgHeight}>
-          <Defs>
-            <LinearGradient id="csectionGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor="#FF8A8D" />
-              <Stop offset="100%" stopColor="#FD8B5A" />
-            </LinearGradient>
-            <LinearGradient id="nonCsectionGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor="#66C2B5" />
-              <Stop offset="100%" stopColor="#50A0A4" />
-            </LinearGradient>
-            <LinearGradient id="csectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor="#FF8A8D" />
-              <Stop offset="100%" stopColor="#FD8B5A" />
-            </LinearGradient>
-            <LinearGradient id="nonCsectionLegendGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor="#66C2B5" />
-              <Stop offset="100%" stopColor="#50A0A4" />
-            </LinearGradient>
-          </Defs>
-
           <G x={margin.left} y={margin.top}>
             {data.map((d, index) => {
               const csectionCount = d.csectionCount;
@@ -120,7 +101,7 @@ export const BarChart = ({ data }) => {
                     <Rect
                       width={csectionWidth}
                       height={yScale.bandwidth()}
-                      fill="url(#csectionGradient)"
+                      fill="#FF8A8D"
                     />
                   )}
 
@@ -129,7 +110,7 @@ export const BarChart = ({ data }) => {
                       x={csectionCount > 0 ? csectionWidth : 0}
                       width={nonCsectionWidth}
                       height={yScale.bandwidth()}
-                      fill="url(#nonCsectionGradient)"
+                      fill="#66C2B5"
                     />
                   )}
 
@@ -242,6 +223,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 20,
     marginBottom: 5,
+  },
+  legendColorBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
   },
   legendText: {
     marginLeft: 5,
