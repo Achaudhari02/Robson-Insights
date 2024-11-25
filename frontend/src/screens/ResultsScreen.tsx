@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
@@ -618,6 +619,7 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
+
       {renderReportModal()}
       {renderEmailModal()}
       {renderImportModal()}

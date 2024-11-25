@@ -11,6 +11,34 @@ import { ToastProvider, ToastViewport } from '@tamagui/toast'
 
 const tamaguiConfig = createTamagui(config)
 
+const navigationConfig = {
+  linking: {
+    prefixes: ['http://localhost:8081'],
+    config: {
+      screens: {
+        App: {
+          screens: {
+            Home: '',
+            ResultsWrapper: {
+              screens: {
+                Results: 'results',
+              }
+            },
+            Groups: 'groups',
+          }
+        },
+        Auth: {
+        screens: {
+          Login: 'login',
+          Signup: 'signup',
+        }
+      },
+      }
+    }
+  }
+};
+
+
 // TypeScript types across all Tamagui APIs
 type Conf = typeof tamaguiConfig
 declare module '@tamagui/core' {
@@ -28,7 +56,7 @@ const App = () => {
   }
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={navigationConfig.linking}>
         <TamaguiProvider config={tamaguiConfig}>
           <Theme name="light">
             <ToastProvider>
