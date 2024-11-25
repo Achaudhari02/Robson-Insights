@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#F5F5F5',
     borderRadius: 5,
-    alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
+    alignItems: 'flex-start',
     marginBottom: 10,
   },
   groupTitle: {
@@ -167,13 +167,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
-    alignSelf: 'center', // Added to center the title
+    alignSelf: 'center',
   },
   statText: {
     fontSize: 14,
     marginBottom: 5,
     color: '#555',
-    textAlign: 'left', // Optional: Ensure text is left-aligned
+    textAlign: 'left',
   },
   descriptionContainer: {
     paddingHorizontal: 20,
@@ -220,6 +220,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
 
 export default PieChartAnalysisScreen;

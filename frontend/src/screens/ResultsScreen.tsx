@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Button
+  Button,
   Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
@@ -696,7 +696,7 @@ const ResultsScreen = ({ navigation }) => {
                 setDateRange([null, null]);
                 navigation.setOptions({
                   title: 'Results',
-                  
+
                 });
               } else {
                 setModalVisible(true);
@@ -776,7 +776,7 @@ const ResultsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('Pie Chart', { data: parsedResults })
+            navigation.navigate('PieChartAnalysis', { data: parsedResults })
           }
         >
           <PieChart data={parsedResults} />

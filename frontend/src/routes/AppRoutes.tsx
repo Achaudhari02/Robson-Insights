@@ -3,7 +3,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import { View, Text, Modal, Button, TouchableOpacity, StyleSheet } from 'react-native';
-import { View, Text, Modal, Button, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
@@ -41,7 +40,7 @@ const AppTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/> 
+      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/>
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
@@ -50,16 +49,16 @@ const AppTabs = () => {
 const AuthScreens = () => {
   return (
     <Stack.Navigator>
-    <Stack.Screen 
-      name="Login"  
-      component={LoginScreen} 
+    <Stack.Screen
+      name="Login"
+      component={LoginScreen}
       options={{
         title: 'Login'
       }}
     />
-    <Stack.Screen 
-      name="Signup" 
-      component={SignUpScreen} 
+    <Stack.Screen
+      name="Signup"
+      component={SignUpScreen}
       options={{
         title: 'Sign Up'
       }}
@@ -72,9 +71,9 @@ const ResultsStack = () => {
   return (
     <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
       headerShown: true }}>
-      <Stack.Screen 
-        name="Results" 
-        component={ResultsScreen} 
+      <Stack.Screen
+        name="Results"
+        component={ResultsScreen}
       />
       <Stack.Screen
         name="PieChartAnalysis"
@@ -237,4 +236,17 @@ const styles = StyleSheet.create({
   tamaguiButton: {
     backgroundColor: "#007bff",
   },
+  button: {
+    margin: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center'
+  },
+
 });
