@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import { View, Text, Modal, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Modal, Button, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
@@ -12,11 +13,12 @@ import SignUpScreen from '@/screens/SignupScreen';
 import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
 import BarChartAnalysisScreen from '@/screens/BarChartAnalysisScreen';
 import { axiosInstance } from '@/lib/axios';
+import { LogoutButton } from '@/components/LogoutButton';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = () => {
+const AppTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -26,7 +28,7 @@ const BottomTabs = () => {
 
           if (route.name === 'Home') {
             iconName = 'home';
-          } else if (route.name === 'Results') {
+          } else if (route.name === 'ResultsWrapper') {
             iconName = 'assignment';
           } else if (route.name === 'Groups') {
             iconName = 'group';
@@ -34,28 +36,46 @@ const BottomTabs = () => {
 
           return <IconComponent name={iconName} size={size} color={color} />;
         },
+        headerRight: () => <LogoutButton />,
+        headerShown: true,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Results" component={ResultsStack} />
+      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ headerShown: false, tabBarLabel: 'Results'}}/> 
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
 };
 
-const AuthStack = () => {
+const AuthScreens = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Signup" component={SignUpScreen} />
-    </Stack.Navigator>
+    <Stack.Screen 
+      name="Login"  
+      component={LoginScreen} 
+      options={{
+        title: 'Login'
+      }}
+    />
+    <Stack.Screen 
+      name="Signup" 
+      component={SignUpScreen} 
+      options={{
+        title: 'Sign Up'
+      }}
+    />
+  </Stack.Navigator>
   );
 };
 
 const ResultsStack = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Results" component={ResultsScreen} />
+    <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
+      headerShown: true }}>
+      <Stack.Screen 
+        name="Results" 
+        component={ResultsScreen} 
+      />
       <Stack.Screen
         name="PieChartAnalysis"
         component={PieChartAnalysisScreen}
@@ -93,15 +113,20 @@ const ResultsStack = () => {
 };
 
 const AppStack = () => {
-
   return (
     <Stack.Navigator>
-      <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="App" component={AppTabs} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };
 
-
+const AuthStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Auth" component={AuthScreens} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+};
 
 export const AppRoutes = () => {
   const { user } = useAuth();
@@ -209,17 +234,7 @@ export const AppRoutes = () => {
 };
 
 const styles = StyleSheet.create({
-  button: {
-    margin: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#007BFF',
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
+  tamaguiButton: {
+    backgroundColor: "#007bff",
   },
 });
-

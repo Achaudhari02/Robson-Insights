@@ -82,7 +82,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logoutFn = async () => {
-    console.log("user gang", user);
     await axiosInstance.post(
       "/logout/",
       {},

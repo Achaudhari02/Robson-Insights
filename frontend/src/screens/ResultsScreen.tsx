@@ -7,6 +7,7 @@ import {
   Modal,
   TouchableOpacity,
   Button
+  Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
@@ -21,7 +22,6 @@ import { Menu } from '@tamagui/lucide-icons';
 const ResultsScreen = ({ navigation }) => {
   const [results, setResults] = useState([]);
   const [parsedResults, setParsedResults] = useState([]);
-  const { user, logoutFn } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [allResults, setAllResults] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
@@ -46,29 +46,7 @@ const ResultsScreen = ({ navigation }) => {
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [initialSelectedType, setInitialSelectedType] = useState('group');
   const [initialSelectedId, setInitialSelectedId] = useState(null);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.buttonContainer}>
-          <Button
-            onPress={() => logoutFn()}
-            title="Logout"
-          />
-        </View>
-      ),
-    });
-  }, [navigation]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity onPress={logoutFn} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>Logout</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
+  const { user, logoutFn } = useAuth();
 
   useEffect(() => {
     if (selectedId !== null) {
@@ -448,6 +426,30 @@ const ResultsScreen = ({ navigation }) => {
     }
   };
 
+  const downloadTemplate = async () => {
+    try {
+      const response = await axiosInstance.get('survey/generate-quarterly-xlsx/', {
+        headers: {
+          Authorization: `Token ${user.token}`,
+        },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'text/csv' });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'quarterly_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
   const handleTextChange = (event) => {
     setEmail(event.target.value);
   };
@@ -642,6 +644,7 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
+
       {renderReportModal()}
       {renderEmailModal()}
       {renderImportModal()}
@@ -693,6 +696,7 @@ const ResultsScreen = ({ navigation }) => {
                 setDateRange([null, null]);
                 navigation.setOptions({
                   title: 'Results',
+                  
                 });
               } else {
                 setModalVisible(true);
@@ -704,6 +708,15 @@ const ResultsScreen = ({ navigation }) => {
             <Text style={styles.sideMenuItemText}>
               {reportGenerated ? 'Exit Report' : 'Generate Report'}
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+                downloadTemplate();
+                setMenuOpen(false);
+            }}
+            style={styles.sideMenuItem}
+          >
+            <Text style={styles.sideMenuItemText}>Download Quarterly Report Template</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -763,7 +776,7 @@ const ResultsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('PieChartAnalysis', { data: parsedResults })
+            navigation.navigate('Pie Chart', { data: parsedResults })
           }
         >
           <PieChart data={parsedResults} />

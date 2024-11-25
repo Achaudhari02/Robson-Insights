@@ -4,7 +4,7 @@ import { Button as InternalButton, YStack, Text } from 'tamagui';
 export const Button = ({
   children,
   onPress,
-  disabled = undefined,
+  disabled = false,
   backgroundColor = "$blue10",
   fontWeight = "bold",
   ...props
@@ -19,21 +19,21 @@ export const Button = ({
       onPress={onPress}
       disabled={disabled}
       backgroundColor={bgColor}
-      borderRadius="$3" // Rounded corners
+      borderRadius="$3"
       paddingHorizontal="$4"
       paddingVertical="$6"
-      shadowColor={disabled ? undefined : "$shadowColor"} // Drop shadow when active
-      elevation={disabled ? 0 : 3} // Shadow depth for disabled and active states
+      shadowColor={disabled ? undefined : "$shadowColor"}
+      elevation={disabled ? 0 : 3}
       hoverStyle={{
         backgroundColor: hoverBgColor,
-        transform: disabled ? undefined : "scale(1.03)", // Slight scale effect on hover
+        transform: disabled ? undefined : "scale(1.03)",
         elevation: disabled ? 0 : 6,
       }}
       pressStyle={{
         backgroundColor: pressBgColor,
-        transform: disabled ? undefined : "scale(0.97)", // Shrink slightly on press
+        transform: disabled ? undefined : "scale(0.97)",
       }}
-      transition="all 0.2s ease-in-out" // Smooth transitions for styles
+      transition="all 0.2s ease-in-out"
       {...props}
     >
       <YStack justifyContent="center" alignItems="center" flex={1}>
