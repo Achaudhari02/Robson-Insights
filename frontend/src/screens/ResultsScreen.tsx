@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Button,
   Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
@@ -659,8 +658,9 @@ const ResultsScreen = ({ navigation }) => {
           position: 'absolute',
           top: 5,
           right: 5,
-          backgroundColor: 'rgba(0, 0, 0, 0)',
+          backgroundColor: 'white',
           zIndex: 10,
+          border: "1px solid grey"
         }}
         hoverStyle={{
           backgroundColor: 'rgba(0, 0, 0, 0)',

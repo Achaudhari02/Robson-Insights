@@ -68,6 +68,7 @@ const LoginScreen = () => {
               onChangeText={handleChange("email")}
               onBlur={handleBlur("email")}
               placeholder="Email"
+              placeholderAsTitle={true}
               helperText={touched.email && errors.email ? errors.email : ""}
             />
             <TextField
@@ -76,6 +77,7 @@ const LoginScreen = () => {
               onBlur={handleBlur("password")}
               placeholder="Password"
               secureTextEntry
+              placeholderAsTitle={true}
               helperText={touched.password && errors.password ? errors.password : ""}
             />
             <YStack height="40%" />
