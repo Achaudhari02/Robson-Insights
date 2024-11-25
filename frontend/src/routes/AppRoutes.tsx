@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
-import { View, Text, Modal, Button } from 'react-native';
+import { View, Text, Modal, Button, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
@@ -11,6 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import SignUpScreen from '@/screens/SignupScreen';
 import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
 import { axiosInstance } from '@/lib/axios';
+import { Button as TamaguiButton } from 'tamagui';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,7 +37,7 @@ const BottomTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Results" component={ResultsStack} /> 
+      <Tab.Screen name="Results" component={ResultsStack} options={{ headerShown: false }}/> 
       <Tab.Screen name="Groups" component={GroupsScreen} />
     </Tab.Navigator>
   );
@@ -45,30 +46,55 @@ const BottomTabs = () => {
 const AuthStack = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignUpScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
   );
 };
 
 const ResultsStack = () => {
+  const { user, logoutFn } = useAuth();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Results" component={ResultsScreen} />
       <Stack.Screen 
-        name="PieChartAnalysis" 
-        component={PieChartAnalysisScreen} 
-        options={({ navigation }) => ({
-          headerShown: true,
-          headerTitle: '',
-          headerLeft: () => (
-            <Button
-              onPress={() => navigation.goBack()}
-              title="Close"
-              color="#007BFF"
-            />
+        name="Results" 
+        component={ResultsScreen} 
+        options={{
+          headerShown: true, // Ensures header is shown for this screen
+          headerRight: () => (
+            <TamaguiButton
+              size="$4"
+              backgroundColor="$blue10"
+              color="white"
+              borderRadius="$2"
+              margin="$2"
+              onPress={() => logoutFn}
+              hoverStyle={styles.tamaguiButton}
+            >
+              Logout
+            </TamaguiButton>
           ),
-        })}
+        }}
+      />
+      <Stack.Screen 
+        name="Pie Chart" 
+        component={PieChartAnalysisScreen} 
+        options={{
+          headerShown: true,
+          headerRight: () => (
+            <TamaguiButton
+              size="$4"
+              backgroundColor="$blue10"
+              color="white"
+              borderRadius="$2"
+              margin="$2"
+              onPress={() => logoutFn}
+              hoverStyle={styles.tamaguiButton}
+            >
+              Logout
+            </TamaguiButton>
+          ),
+        }}
       />
     </Stack.Navigator>
   );
@@ -189,3 +215,9 @@ export const AppRoutes = () => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  tamaguiButton: {
+    backgroundColor: "#007bff",
+  },
+});

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Button, StyleSheet, Text } from "react-native";
+import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity } from "react-native";
 import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,8 +18,7 @@ import { useToastController, useToastState, Toast } from "@tamagui/toast";
 import { Check } from "@tamagui/lucide-icons";
 import Papa from 'papaparse';
 
-
-export default function GroupsScreen() {
+const GroupsScreen = ({ navigation }) => {
   const [groups, setGroups] = useState([]);
   const [configurations, setConfigurations] = useState([]);
   const [groupUsers, setGroupUsers] = useState([]);
@@ -45,6 +44,24 @@ export default function GroupsScreen() {
   const currentToast = useToastState();
   const [file, setFile] = useState(null);
   const [checkedGroups, setCheckedGroups] = useState({});
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            onPress={logoutFn}
+            hoverStyle={styles.tamaguiButton}
+          >
+            Logout
+        </TamaguiButton>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     fetchGroups();
@@ -818,6 +835,8 @@ const styles = StyleSheet.create({
     borderStyle: 'solid',
   },
   tamaguiButton: {
-    backgroundColor: "$blue10",
-  }
+    backgroundColor: "#007bff",
+  },
 });
+
+export default GroupsScreen;

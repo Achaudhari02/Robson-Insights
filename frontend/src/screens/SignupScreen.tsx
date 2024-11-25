@@ -12,7 +12,7 @@ import { axiosInstance } from "@/lib/axios";
 const SignUpScreen = ({ route }) => {
   const { registerFn, error } = useAuth();
   const navigation = useNavigation();
-  const { token } = route.params;
+  const { token } = route?.params || { token: new URLSearchParams(window.location.search).get('token') || '' };
   const [initialEmail, setInitialEmail] = useState("");
 
   useEffect(() => {

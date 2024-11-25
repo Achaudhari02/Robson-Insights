@@ -2,6 +2,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import React, { useState, useEffect } from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import {
+  Button as TamaguiButton,
+} from "tamagui";
 
 const questions = [
   { question: 'Was this a multiple pregnancy? (twins, triplets, etc.)', key: 'mp' },
@@ -38,12 +41,17 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View style={styles.buttonContainer}>
-          <Button
-            onPress={() => logoutFn()}
-            title="Logout"
-          />
-        </View>
+        <TamaguiButton
+            size="$4"
+            backgroundColor="$blue10"
+            color="white"
+            borderRadius="$2"
+            margin="$2"
+            onPress={logoutFn}
+            hoverStyle={styles.tamaguiButton}
+          >
+            Logout
+        </TamaguiButton>
       ),
     });
   }, [navigation]);
@@ -256,6 +264,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 10,
     alignItems: 'center',
+  },
+  tamaguiButton: {
+    backgroundColor: "#007bff",
   },
 });
 
