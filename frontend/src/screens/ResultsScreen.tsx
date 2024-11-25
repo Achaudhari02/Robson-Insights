@@ -6,13 +6,14 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Button
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
 import { YStack } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import { format, endOfDay } from 'date-fns';
+import { format, endOfDay, subMonths, subYears } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Menu } from '@tamagui/lucide-icons';
@@ -45,6 +46,19 @@ const ResultsScreen = ({ navigation }) => {
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [initialSelectedType, setInitialSelectedType] = useState('group');
   const [initialSelectedId, setInitialSelectedId] = useState(null);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.buttonContainer}>
+          <Button
+            onPress={() => logoutFn()}
+            title="Logout"
+          />
+        </View>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -143,6 +157,18 @@ const ResultsScreen = ({ navigation }) => {
     });
   };
 
+  const handlePreviousQuarter = () => {
+    const end = new Date();
+    const start = subMonths(end, 3);
+    setDateRange([start, end]);
+  };
+
+  const handlePreviousYear = () => {
+    const end = new Date();
+    const start = subYears(end, 1);
+    setDateRange([start, end]);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return format(date, 'MM/dd/yy');
@@ -201,6 +227,20 @@ const ResultsScreen = ({ navigation }) => {
             dropdownMode="select"
             className="date-picker"
           />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handlePreviousQuarter}
+            >
+              <Text style={styles.buttonText}>Last 3 Months</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handlePreviousYear}
+            >
+              <Text style={styles.buttonText}>Last 12 Months</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={styles.button}
@@ -467,7 +507,7 @@ const ResultsScreen = ({ navigation }) => {
       setSuccessMessage('');
     } catch (e) {
       setSuccessMessage("");
-      if (e.response.status == 422) {
+      if (e.response.status === 422) {
         setErrorMessaage("Invalid file format");
       } else {
         setErrorMessaage("Error uploading file");
@@ -712,7 +752,15 @@ const ResultsScreen = ({ navigation }) => {
       )}
 
       <ScrollView style={styles.entryContainer}>
-        <BarChart data={parsedResults} />
+
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('BarChartAnalysis', { data: parsedResults })
+          }
+        >
+          <BarChart data={parsedResults}/>
+        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() =>
             navigation.navigate('PieChartAnalysis', { data: parsedResults })
@@ -720,6 +768,7 @@ const ResultsScreen = ({ navigation }) => {
         >
           <PieChart data={parsedResults} />
         </TouchableOpacity>
+
         <View style={{ paddingHorizontal: 10 }}>
           {renderTableHeader()}
           {currentEntries.map(renderTableRow)}
@@ -898,6 +947,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: '600',
+    textAlign: 'center',
   },
   emailInput: {
     width: '100%',
@@ -907,6 +957,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+  },
+  quickSelectButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  quickSelectButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    marginVertical: 10,
+    paddingVertical: 12,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonsContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonContainer: {
+    marginRight: 10,
   },
 });
 
