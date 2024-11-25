@@ -7,6 +7,8 @@ import { TamaguiProvider, createTamagui, Theme } from 'tamagui'
 import { config } from '@tamagui/config/v3'
 import { useFonts } from 'expo-font'
 import { ToastProvider, ToastViewport } from '@tamagui/toast'
+import { ThemeProvider } from './ThemeContext';
+
 
 
 const tamaguiConfig = createTamagui(config)
@@ -60,7 +62,9 @@ const App = () => {
         <TamaguiProvider config={tamaguiConfig}>
           <Theme name="light">
             <ToastProvider>
-              <AppRoutes />
+              <ThemeProvider>
+                <AppRoutes />
+              </ThemeProvider>
               <ToastViewport />
             </ToastProvider>
           </Theme>

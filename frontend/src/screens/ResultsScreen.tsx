@@ -17,7 +17,9 @@ import { axiosInstance } from '@/lib/axios';
 import { format, endOfDay, subMonths, subYears } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Menu } from '@tamagui/lucide-icons';
+import { Menu, Moon, Sun } from '@tamagui/lucide-icons';
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 const ResultsScreen = ({ navigation }) => {
   const [results, setResults] = useState([]);
@@ -47,6 +49,37 @@ const ResultsScreen = ({ navigation }) => {
   const [initialSelectedType, setInitialSelectedType] = useState('group');
   const [initialSelectedId, setInitialSelectedId] = useState(null);
   const { user, logoutFn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ display: 'flex', flexDirection: 'row'}}>
+          <TamaguiButton
+            icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
+            backgroundColor="$colorTransparent"
+            margin="$2"
+            onPress={() => {
+              toggleTheme();
+            }}
+            hoverStyle={{borderColor: '$colorTransparent'}}
+          >
+          </TamaguiButton>
+          <TamaguiButton
+              size="$4"
+              backgroundColor="$blue10"
+              color="white"
+              borderRadius="$2"
+              margin="$2"
+              onPress={logoutFn}
+              hoverStyle={styles.tamaguiButton}
+            >
+              Logout
+          </TamaguiButton>
+        </View>
+      ),
+    });
+  }, [navigation, theme]);
 
   useEffect(() => {
     if (selectedId !== null) {
@@ -384,21 +417,21 @@ const ResultsScreen = ({ navigation }) => {
     <View
       style={[
         styles.tableRow,
-        index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+        index % 2 === 0 ? (theme === 'dark' ? screenStyle : styles.rowEven) : screenStyle,
       ]}
       key={`${result.id}-${index}`}
     >
-      <Text style={styles.cell}>Group {result.classification}</Text>
-      <Text style={styles.cell}>{formatCSection(result.csection)}</Text>
-      <Text style={styles.cell}>{formatDate(result.date)}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>Group {result.classification}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatCSection(result.csection)}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatDate(result.date)}</Text>
     </View>
   );
 
   const renderTableHeader = () => (
-    <View style={[styles.tableRow, styles.rowEven]}>
-      <Text style={styles.columnHeader}>Classification</Text>
-      <Text style={styles.columnHeader}>C-Section</Text>
-      <Text style={styles.columnHeader}>Date</Text>
+    <View style={[styles.tableRow, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.rowEven.backgroundColor, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderBottomWidth: theme === 'dark' ? 3 : 0}]}>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Classification</Text>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>C-Section</Text>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Date</Text>
     </View>
   );
 
@@ -642,8 +675,13 @@ const ResultsScreen = ({ navigation }) => {
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentEntries = results.slice(indexOfFirstEntry, indexOfLastEntry);
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+  
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
 
       {renderReportModal()}
       {renderEmailModal()}
@@ -651,7 +689,7 @@ const ResultsScreen = ({ navigation }) => {
       {renderFilterModal()}
 
       <TamaguiButton
-        icon={<Menu />}
+        icon={<Menu color={screenStyle.color}/>}
         size="$4"
         circular
         onPress={() => setMenuOpen(!menuOpen)}
@@ -764,7 +802,15 @@ const ResultsScreen = ({ navigation }) => {
         </View>
       )}
 
-      <ScrollView style={styles.entryContainer}>
+      <ScrollView style={[styles.entryContainer, screenStyle]}>
+
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('Bar Chart', { data: parsedResults })
+          }
+        >
+          <BarChart data={parsedResults}/>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() =>
@@ -781,8 +827,7 @@ const ResultsScreen = ({ navigation }) => {
         >
           <PieChart data={parsedResults} />
         </TouchableOpacity>
-
-        <View style={{ paddingHorizontal: 10 }}>
+        <View style={{ paddingHorizontal: theme === 'dark' ? 0 : 10, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderTopWidth: theme === 'dark' ? 3 : 0}}>
           {renderTableHeader()}
           {currentEntries.map(renderTableRow)}
           {renderPagination()}
@@ -970,6 +1015,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+  },
+  tamaguiButton: {
+    backgroundColor: "#007bff",
+    color: '#fff',
   },
   quickSelectButtons: {
     flexDirection: 'row',
