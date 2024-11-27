@@ -1,9 +1,11 @@
 import csv
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.utils.dateparse import parse_date
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.mail import EmailMessage
+from django.views import View
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.views import APIView
@@ -125,6 +127,66 @@ class EntryListView(generics.ListCreateAPIView):
             self.perform_create(serializer)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class FilterEntriesByDateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        current_user = request.user
+        
+        user_groups = UserProfile.objects.filter(user=current_user).values_list('group', flat=True)
+        
+        if not user_groups.exists():
+            return JsonResponse({'entries': []})
+
+        start_date = request.POST.get('start_date', None)
+        end_date = request.POST.get('end_date', None)
+        
+        try:
+            start_date = parse_date(start_date) if start_date else None
+            end_date = parse_date(end_date) if end_date else None
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format'}, status=400)
+        
+        if start_date:
+            start_date = datetime.combine(start_date, datetime.min.time())
+            print(start_date)
+        if end_date:
+            end_date = datetime.combine(end_date, datetime.max.time())
+            print(end_date)
+        
+        if start_date and end_date:
+            entries = Entry.objects.filter(
+                date__range=(start_date, end_date),
+                groups__in=user_groups
+            ).distinct()
+        elif start_date:
+            entries = Entry.objects.filter(
+                date__gte=start_date,
+                groups__in=user_groups
+            ).distinct()
+        elif end_date:
+            entries = Entry.objects.filter(
+                date__lte=end_date,
+                groups__in=user_groups
+            ).distinct()
+        else:
+            entries = Entry.objects.filter(groups__in=user_groups).distinct()
+
+        entries_data = [
+            {
+                'id': entry.pk,
+                'classification': entry.classification,
+                'user': entry.user.username if entry.user else None,
+                'groups': [group.name for group in entry.groups.all()],
+                'csection': entry.csection,
+                'date': entry.date.isoformat(),
+            }
+            for entry in entries
+        ]
+        
+        return JsonResponse({'entries': entries_data})
         
         
 class EntryFilterListView(generics.ListAPIView):
