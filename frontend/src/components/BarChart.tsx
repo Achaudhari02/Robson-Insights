@@ -58,19 +58,17 @@ export const BarChart = ({ data }) => {
     .domain([0, capValue])
     .range([0, chartWidth]);
 
-  const cardStyle = {
-    backgroundColor: theme === 'dark' ? '#2C2F33' : '#fff',
-    shadowColor: theme === 'dark' ? '#fff' : '#000',
-    shadowOpacity: 0.2,
-    borderWidth: theme === 'dark' ? 1 : 0,
-    borderColor: theme === 'dark' ? '#FFFFFF30' : 'transparent',
-  };
 
   const yScale = d3Scale
     .scaleBand()
     .domain(data.map((d) => d.classification))
     .range([0, chartHeight])
     .padding(0.2);
+
+
+    const cardStyle = {
+      backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : '#fff',
+    };
 
     const screenStyle = {
       backgroundColor: theme === 'dark' ? '#2C2F33' : lightTheme.backgroundColor,

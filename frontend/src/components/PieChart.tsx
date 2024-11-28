@@ -37,13 +37,9 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
     .outerRadius(radius)
     .innerRadius(0);
 
-    const cardStyle = {
-      backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : '#fff',
-      shadowColor: theme === 'dark' ? '#fff' : '#000',
-      shadowOpacity: 0.2,
-      borderWidth: theme === 'dark' ? 1 : 0,
-      borderColor: theme === 'dark' ? '#FFFFFF30' : 'transparent',
-    };
+  const cardStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : '#fff',
+  };
   const screenStyle = {
     backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,

@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { PieChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
 import { useTheme } from '../ThemeContext';
@@ -9,6 +9,7 @@ const PieChartAnalysisScreen = ({ route }) => {
   const { data } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const EXTERNAL_URL = 'https://www.who.int/publications/i/item/9789241513197';
 
   const groupDescriptions = {
     1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
@@ -55,6 +56,15 @@ const PieChartAnalysisScreen = ({ route }) => {
     </View>
   );
 
+  const openExternalLink = async () => {
+    const supported = await Linking.canOpenURL(EXTERNAL_URL);
+    if (supported) {
+      await Linking.openURL(EXTERNAL_URL);
+    } else {
+      Alert.alert("Unable to open the link", `Don't know how to open this URL: ${EXTERNAL_URL}`);
+    }
+  };
+
   return (
     <View style={[styles.container, screenStyle]}>
       <ScrollView contentContainerStyle={[styles.scrollContainer, screenStyle]}>
@@ -83,13 +93,27 @@ const PieChartAnalysisScreen = ({ route }) => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={[styles.modalContainer, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.modalContainer.backgroundColor}]}>
-          <Text style={[styles.modalHeader, {color: screenStyle.color}]}>Group Descriptions</Text>
+        <View style={[styles.modalContainer, { backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.modalContainer.backgroundColor }]}>
+          <Text style={[styles.modalHeader, { color: screenStyle.color }]}>Group Descriptions</Text>
           <ScrollView style={styles.descriptionContainer}>
             {Object.entries(groupDescriptions).map(([key, description]) => (
               <GroupDescription key={key} groupNumber={key} description={description} />
             ))}
           </ScrollView>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.closeButton]}
+              onPress={openExternalLink}
+            >
+              <Text style={styles.closeButtonText}>Learn More</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
@@ -112,6 +136,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: 'white',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 20,
   },
   scrollContainer: {
     paddingTop: 20,

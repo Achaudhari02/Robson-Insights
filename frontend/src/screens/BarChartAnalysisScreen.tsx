@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { BarChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
 import { useTheme } from '../ThemeContext';
@@ -57,6 +57,17 @@ const BarChartAnalysisScreen = ({ route }) => {
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,
   };
 
+  const EXTERNAL_URL = 'https://www.who.int/publications/i/item/9789241513197';
+
+  const openExternalLink = async () => {
+    const supported = await Linking.canOpenURL(EXTERNAL_URL);
+    if (supported) {
+      await Linking.openURL(EXTERNAL_URL);
+    } else {
+      Alert.alert("Unable to open the link", `Don't know how to open this URL: ${EXTERNAL_URL}`);
+    }
+  };
+
   return (
     <View style={[styles.container, screenStyle]}>
 
@@ -86,9 +97,20 @@ const BarChartAnalysisScreen = ({ route }) => {
               <GroupDescription key={key} groupNumber={key} description={description} />
             ))}
           </ScrollView>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.closeButton]}
+              onPress={openExternalLink}
+            >
+              <Text style={styles.closeButtonText}>Learn More</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
@@ -100,6 +122,12 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     backgroundColor: 'white',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 20,
   },
   scrollContainer: {
     paddingTop: 20,
