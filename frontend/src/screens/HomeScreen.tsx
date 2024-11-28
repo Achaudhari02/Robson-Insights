@@ -261,6 +261,22 @@ const HomeScreen = ({ navigation }) => {
     setIsQuizFinished(false);
   };
 
+  const handleExport = () => {
+    const header = 'Question,Answer';
+    const rows = questions.map(q => {
+      const answer = answers[q.key] === 'y';
+      return `${q.question},${answer}`;
+    });
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'questions_answers.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const screenStyle = {
     backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,
