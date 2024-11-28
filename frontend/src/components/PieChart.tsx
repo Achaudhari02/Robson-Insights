@@ -35,7 +35,7 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Caesarean Sections by Group</Text>
+      <Text style={styles.title}>Caesarean Sections by Classification</Text>
       <Svg width={svgWidth} height={svgHeight}>
         <G x={svgWidth / 2} y={svgHeight / 2}>
           {pieData.map((slice, index) => {

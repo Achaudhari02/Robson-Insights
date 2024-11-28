@@ -1,70 +1,210 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import {
-  Button as TamaguiButton,
-} from "tamagui";
+
+// Define the type for answers
+interface Answers {
+  multiple_pregnancy?: string;
+  fetal_presentation?: string;
+  gestational_age?: string;
+  parity?: string;
+  previous_cesarean?: string;
+  num_previous_cesarean?: string;
+  onset_of_labor?: string;
+  csection?: string;
+}
 
 const questions = [
-  { question: 'Was this a multiple pregnancy? (twins, triplets, etc.)', key: 'mp' },
-  { question: 'Was this a transverse or oblique lie?', key: 'lie' },
-  { question: 'Was this a breech pregnancy?', key: 'bp' },
-  { question: 'Was the gestational age <37 weeks?', key: 'ga' },
-  { question: 'Was this a multiparous woman?', key: 'mw' },
-  { question: 'Were there previous uterine scars?', key: 'us' },
-  { question: 'Was the labor induced or the cesarean section started before labor?', key: 'li' },
-  { question: 'Was this a cesarean section?', key: 'cs' },
+  {
+    question: 'Is this a multiple pregnancy (e.g., twins or triplets)?',
+    key: 'multiple_pregnancy',
+    type: 'multiple_pregnancy',
+    options: ['Yes', 'No'],
+  },
+  {
+    question: 'What is the fetal lie and presentation?',
+    key: 'fetal_presentation',
+    type: 'fetal_presentation',
+    options: ['Cephalic', 'Breech', 'Transverse or oblique'],
+  },
+  {
+    question: 'What is the gestational age?',
+    key: 'gestational_age',
+    type: 'gestational_age',
+    options: ['37 weeks or more', 'Less than 37 weeks'],
+  },
+  {
+    question: 'Is the woman multiparous (has given birth before)?',
+    key: 'parity',
+    type: 'parity',
+    options: ['Multiparous', 'Nulliparous'],
+  },
+  {
+    question: 'Has the woman had any previous cesarean sections?',
+    key: 'previous_cesarean',
+    type: 'previous_cesarean',
+    options: ['Yes', 'No'],
+  },
+  {
+    question: 'How many previous cesarean sections has the woman had?',
+    key: 'num_previous_cesarean',
+    type: 'num_previous_cesarean',
+    options: ['One', 'More than one'],
+  },
+  {
+    question: 'What was the onset of labor?',
+    key: 'onset_of_labor',
+    type: 'onset_of_labor',
+    options: ['Spontaneous labor', 'Induced labor or pre-labor cesarean section'],
+  },
+  {
+    question: 'Did the pregnancy result in a cesarean section?',
+    key: 'csection',
+    type: 'csection',
+    options: ['Yes', 'No'],
+  },
 ];
 
 const robsonClassification = {
-  1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
-  2: "Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-  3: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.",
-  4: "Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.",
-  5: "Multiparous women with at least one previous cesarean and a term, single, cephalic pregnancy.",
-  6: "Nulliparous women with a single, breech pregnancy.",
-  7: "Multiparous women with a single, breech pregnancy.",
-  8: "Women with multiple pregnancies (twins, triplets, etc.).",
-  9: "Women with a single pregnancy in a transverse or oblique lie.",
-  10: "Women with a preterm, single, cephalic pregnancy."
+  '1': 'Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.',
+  '2': 'Nulliparous women with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.',
+  '3': 'Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in spontaneous labor.',
+  '4': 'Multiparous women without previous cesarean, with a term, single, cephalic pregnancy in induced labor or pre-labor cesarean.',
+  '5.1': 'Multiparous women with one previous cesarean and a term, single, cephalic pregnancy.',
+  '5.2': 'Multiparous women with more than one previous cesarean and a term, single, cephalic pregnancy.',
+  '6': 'Nulliparous women with a single, breech pregnancy.',
+  '7': 'Multiparous women with a single, breech pregnancy.',
+  '8': 'Women with multiple pregnancies (twins, triplets, etc.).',
+  '9': 'Women with a single pregnancy in a transverse or oblique lie.',
+  '10': 'Women with a preterm, single, cephalic pregnancy.',
 };
 
 const HomeScreen = ({ navigation }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [result, setResult] = useState("");
-  const [error, setError] = useState("");
+  const [answers, setAnswers] = useState<Answers>({});
+  const [result, setResult] = useState('');
+  const [error, setError] = useState('');
   const [isQuizFinished, setIsQuizFinished] = useState(false);
-  const { user, logoutFn } = useAuth();
+  const { user } = useAuth();
 
-
-  const handleAnswer = (answer) => {
-    const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
+  const handleAnswer = (answer: string) => {
+    const newAnswers: Answers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      computeResult(newAnswers);
+    const currentQuestionType = questions[currentQuestionIndex].type;
+
+    if (currentQuestionType === 'multiple_pregnancy') {
+      if (answer === 'Yes') {
+        // Multiple pregnancy -> Group 8
+        setResult('8');
+        // Proceed to the final question
+        const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+        setCurrentQuestionIndex(finalQuestionIndex);
+      } else {
+        // Singleton -> Proceed to Question 2
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      }
+    } else if (currentQuestionType === 'fetal_presentation') {
+      if (answer === 'Breech') {
+        // Skip to Question 4 (Parity)
+        const question4Index = questions.findIndex((q) => q.type === 'parity');
+        setCurrentQuestionIndex(question4Index);
+      } else if (answer === 'Cephalic') {
+        // Proceed to Question 3 (Gestational Age)
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else if (answer === 'Transverse or oblique') {
+        // Transverse lie -> Group 9
+        setResult('9');
+        // Proceed to the final question
+        const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+        setCurrentQuestionIndex(finalQuestionIndex);
+      }
+    } else if (currentQuestionType === 'gestational_age') {
+      if (answer === '37 weeks or more') {
+        // Proceed to Question 4 (Parity)
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else if (answer === 'Less than 37 weeks') {
+        // Group 10
+        setResult('10');
+        // Proceed to the final question
+        const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+        setCurrentQuestionIndex(finalQuestionIndex);
+      }
+    } else if (currentQuestionType === 'parity') {
+      const presentation = newAnswers['fetal_presentation'];
+      if (presentation === 'Breech') {
+        if (answer === 'Multiparous') {
+          // Group 7
+          setResult('7');
+          // Proceed to the final question
+          const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+          setCurrentQuestionIndex(finalQuestionIndex);
+        } else if (answer === 'Nulliparous') {
+          // Group 6
+          setResult('6');
+          // Proceed to the final question
+          const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+          setCurrentQuestionIndex(finalQuestionIndex);
+        }
+      } else if (presentation === 'Cephalic') {
+        if (answer === 'Multiparous') {
+          // Proceed to Question 5 (Previous Cesarean)
+          setCurrentQuestionIndex(currentQuestionIndex + 1);
+        } else if (answer === 'Nulliparous') {
+          // Skip to Question 7 (Onset of labor)
+          const question7Index = questions.findIndex((q) => q.type === 'onset_of_labor');
+          setCurrentQuestionIndex(question7Index);
+        }
+      }
+    } else if (currentQuestionType === 'previous_cesarean') {
+      if (answer === 'Yes') {
+        // Proceed to Question 6 (Number of previous CS)
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else if (answer === 'No') {
+        // Skip to Question 7 (Onset of labor)
+        const question7Index = questions.findIndex((q) => q.type === 'onset_of_labor');
+        setCurrentQuestionIndex(question7Index);
+      }
+    } else if (currentQuestionType === 'num_previous_cesarean') {
+      if (answer === 'One') {
+        // Group 5.1
+        setResult('5.1');
+      } else if (answer === 'More than one') {
+        // Group 5.2
+        setResult('5.2');
+      }
+      // Proceed to the final question
+      const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+      setCurrentQuestionIndex(finalQuestionIndex);
+    } else if (currentQuestionType === 'onset_of_labor') {
+      const parity = newAnswers['parity'];
+      if (parity === 'Multiparous') {
+        if (answer === 'Spontaneous labor') {
+          // Group 3
+          setResult('3');
+        } else {
+          // Group 4
+          setResult('4');
+        }
+      } else if (parity === 'Nulliparous') {
+        if (answer === 'Spontaneous labor') {
+          // Group 1
+          setResult('1');
+        } else {
+          // Group 2
+          setResult('2');
+        }
+      }
+      // Proceed to the final question
+      const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
+      setCurrentQuestionIndex(finalQuestionIndex);
+    } else if (currentQuestionType === 'csection') {
+      // Store the answer
+      setAnswers(newAnswers);
+      // Quiz is finished
       setIsQuizFinished(true);
     }
-  };
-
-  const handleExport = () => {
-    const header = 'Question,Answer';
-    const rows = questions.map(q => {
-      const answer = answers[q.key] === 'y';
-      return `${q.question},${answer}`;
-    });
-    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'questions_answers.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const AnswerButton = ({ title, onPress }) => {
@@ -72,10 +212,7 @@ const HomeScreen = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={[
-          styles.answerButton,
-          isHovered && styles.answerButtonHover,
-        ]}
+        style={[styles.answerButton, isHovered && styles.answerButtonHover]}
         onPress={onPress}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -85,70 +222,32 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const computeResult = (answers) => {
-    let result = "";
-    setError("");
-
-    if (answers.mw === 'n' && answers.us === 'y') {
-      setError("Invalid response: Nulliparous women cannot have previous uterine scars.");
-      return;
-    }
-
-    if (answers.mw === 'y' && answers.us === 'n' && answers.cs === 'y') {
-      setError("Invalid response: Multiparous women who had a cesarean should have previous uterine scars.");
-      return;
-    }
-
-    if (answers.bp === 'y' && answers.lie === 'y') {
-      setError("Invalid response: A fetus cannot be both in breech position and transverse/oblique lie.");
-      return;
-    }
-
-    if (answers.mp === 'y') {
-      result = '8';
-    } else if (answers.lie === 'y') {
-      result = '9';
-    } else if (answers.bp === 'y') {
-      result = (answers.mw === 'y' ? '7' : '6');
-    } else if (answers.ga === 'y') {
-      result = '10';
-    } else if (answers.us === 'y') {
-      result = '5';
-    } else if (answers.mw === 'y') {
-      result = (answers.li === 'y' ? '4' : '3');
-    } else {
-      result = (answers.li === 'y' ? '2' : '1');
-    }
-
-    if (!result) {
-      setError("Your responses do not correspond to any valid classification. Please review your answers.");
-    } else {
-      setResult(result);
-    }
-  };
-
   const handleSubmitAndRestart = async () => {
     try {
-      await axiosInstance.post('/survey/entries/', {
-        classification: result || 'Invalid',
-        csection: answers.cs === 'y'
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${user.token}`
+      await axiosInstance.post(
+        '/survey/entries/',
+        {
+          classification: result || 'Invalid',
+          csection: answers.csection === 'Yes',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Token ${user.token}`,
+          },
         }
-      });
+      );
     } catch (error) {
       console.error('Error submitting survey results:', error);
     }
-    setResult("");
+    setResult('');
     setAnswers({});
     setCurrentQuestionIndex(0);
     setIsQuizFinished(false);
   };
 
   const handleDiscardAndRestart = () => {
-    setResult("");
+    setResult('');
     setAnswers({});
     setCurrentQuestionIndex(0);
     setIsQuizFinished(false);
@@ -160,19 +259,25 @@ const HomeScreen = ({ navigation }) => {
         return (
           <View style={styles.results}>
             <Text style={styles.text}>Error: {error}</Text>
-            <Button title="Restart Quiz" onPress={() => {
-              setError("");
-              setAnswers({});
-              setCurrentQuestionIndex(0);
-              setIsQuizFinished(false);
-            }} />
+            <Button
+              title="Restart Quiz"
+              onPress={() => {
+                setError('');
+                setAnswers({});
+                setCurrentQuestionIndex(0);
+                setIsQuizFinished(false);
+              }}
+            />
           </View>
         );
       } else if (result.length > 0) {
         return (
           <View style={styles.results}>
-            <Text style={styles.text}>Result: {result}</Text>
+            <Text style={styles.text}>Result: Group {result}</Text>
             <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
+            <Text style={styles.text}>
+              Pregnancy resulted in cesarean section: {answers.csection}
+            </Text>
             <Button title="Restart Quiz and Submit Result" onPress={handleSubmitAndRestart} />
             <Button title="Restart Quiz and Discard Result" onPress={handleDiscardAndRestart} />
           </View>
@@ -185,23 +290,21 @@ const HomeScreen = ({ navigation }) => {
         );
       }
     } else {
+      const currentQuestion = questions[currentQuestionIndex];
       return (
         <View>
-          <Text style={styles.text}>{questions[currentQuestionIndex].question}</Text>
+          <Text style={styles.text}>{currentQuestion.question}</Text>
           <View style={styles.buttonsContainer}>
-            <AnswerButton title="Yes" onPress={() => handleAnswer('y')} />
-            <AnswerButton title="No" onPress={() => handleAnswer('n')} />
+            {currentQuestion.options.map((option) => (
+              <AnswerButton key={option} title={option} onPress={() => handleAnswer(option)} />
+            ))}
           </View>
         </View>
       );
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {renderContent()}
-    </View>
-  );
+  return <View style={styles.container}>{renderContent()}</View>;
 };
 
 const styles = StyleSheet.create({
@@ -209,20 +312,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
+    padding: 10,
   },
   text: {
     marginBottom: 20,
-    fontSize: 25,
+    fontSize: 22,
     textAlign: 'center',
   },
   buttonsContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-  },
-  buttonContainer: {
-    marginRight: 10,
   },
   answerButton: {
     borderColor: '#A9A9A9',
@@ -241,17 +341,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#A9A9A9',
     textAlign: 'center',
+    fontSize: 18,
   },
   results: {
-    display: 'flex',
     flexDirection: 'column',
     gap: 10,
     alignItems: 'center',
   },
-  tamaguiButton: {
-    backgroundColor: "#007bff",
-  },
 });
-
 
 export default HomeScreen;

@@ -15,7 +15,6 @@ export const BarChart = ({ data }) => {
     return () => subscription?.remove();
   }, []);
 
-  // Card styles
   const cardMargin = 15;
   const cardPadding = 20;
 
@@ -40,17 +39,14 @@ export const BarChart = ({ data }) => {
     2: 35,
     3: 35,
     4: 20,
-    5: 50,
+    5.1: 50,
+    5.2: 50,
     6: 90,
     7: 90,
     8: 70,
     9: 95,
     10: 30,
   };
-
-  useEffect(() => {
-    console.log("BarChart Data:", data);
-  }, [data]);
 
   const maxResponses = d3Array.max(data, (d) => d.responses) || 0;
   const capValue = maxResponses * 1.1;
@@ -67,7 +63,7 @@ export const BarChart = ({ data }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Caesarean Sections by Group</Text>
+      <Text style={styles.title}>Caesarean Sections by Classification</Text>
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <View style={[styles.legendColorBox, { backgroundColor: '#FF8A8D' }]} />

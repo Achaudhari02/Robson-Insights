@@ -26,7 +26,7 @@ const BarChartAnalysisScreen = ({ route }) => {
 
   const GroupStatistics = ({ item }) => {
     const groupSizePercentage = ((item.responses / totalWomen) * 100).toFixed(2);
-    const groupCSRate = ((item.csectionCount / item.responses) * 100).toFixed(2);
+    const groupCSRate = item.responses > 0 ? ((item.csectionCount / item.responses) * 100).toFixed(2) : "N/A";
     const groupContributionToCSRate = ((item.csectionCount / totalCS) * 100).toFixed(2);
 
     return (
@@ -35,7 +35,7 @@ const BarChartAnalysisScreen = ({ route }) => {
         <Text style={styles.statText}>{`Total Women: ${item.responses}`}</Text>
         <Text style={styles.statText}>{`Number of CS: ${item.csectionCount}`}</Text>
         <Text style={styles.statText}>{`Group Size: ${groupSizePercentage}%`}</Text>
-        <Text style={styles.statText}>{`Group CS Rate: ${groupCSRate}%`}</Text>
+        <Text style={styles.statText}>{`Group CS Rate: ${item.responses > 0 ? groupCSRate : "N/A"}`}</Text>
         <Text style={styles.statText}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
       </View>
     );
@@ -52,11 +52,9 @@ const BarChartAnalysisScreen = ({ route }) => {
     <View style={styles.container}>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.header}>X Hospital’s February Data</Text>
         <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
           <Info size={28} color="#007AFF" />
         </TouchableOpacity>
-        <Text style={styles.subHeader}>Caesarean Sections by Group</Text>
         <BarChart data={data} />
 
         <View style={styles.frameContainer}>
@@ -100,8 +98,8 @@ const styles = StyleSheet.create({
   },
   infoButton: {
     position: 'absolute',
-    top: 40,
-    left: 20,
+    top: 5,
+    left: 5,
     zIndex: 10,
   },
   header: {

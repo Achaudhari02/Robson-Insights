@@ -7,7 +7,6 @@ import {
   Modal,
   TouchableOpacity,
   Button,
-  Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
@@ -20,6 +19,20 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Menu } from '@tamagui/lucide-icons';
 
 const ResultsScreen = ({ navigation }) => {
+  const classificationOrder = [
+    '1',
+    '2',
+    '3',
+    '4',
+    '5.1',
+    '5.2',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+  ];
+
   const [results, setResults] = useState([]);
   const [parsedResults, setParsedResults] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -82,10 +95,17 @@ const ResultsScreen = ({ navigation }) => {
     const processResultsForAnalysis = () => {
       const categoryData = {};
 
+      // Initialize categoryData with zeros for all classifications
+      classificationOrder.forEach((classification) => {
+        categoryData[classification] = { responses: 0, csectionCount: 0 };
+      });
+
       results.forEach((result) => {
         const { classification, csection } = result;
         if (!categoryData[classification]) {
-          categoryData[classification] = { responses: 0, csectionCount: 0 };
+          // If the classification is not in classificationOrder, you might want to handle it
+          // For now, we'll skip it
+          return;
         }
         categoryData[classification].responses += 1;
         if (csection) {
@@ -93,7 +113,8 @@ const ResultsScreen = ({ navigation }) => {
         }
       });
 
-      return Object.keys(categoryData).map((classification) => ({
+      // Map over classificationOrder to ensure the data is in the desired order
+      return classificationOrder.map((classification) => ({
         classification,
         responses: categoryData[classification].responses,
         csectionCount: categoryData[classification].csectionCount,

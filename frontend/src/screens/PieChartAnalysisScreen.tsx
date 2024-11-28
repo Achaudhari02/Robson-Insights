@@ -34,7 +34,7 @@ const PieChartAnalysisScreen = ({ route }) => {
         <Text style={styles.statText}>{`Total Women: ${item.responses}`}</Text>
         <Text style={styles.statText}>{`Number of CS: ${item.csectionCount}`}</Text>
         <Text style={styles.statText}>{`Group Size: ${groupSizePercentage}%`}</Text>
-        <Text style={styles.statText}>{`Group CS Rate: ${groupCSRate}%`}</Text>
+        <Text style={styles.statText}>{`Group CS Rate: ${item.responses > 0 ? groupCSRate : "N/A"}`}</Text>
         <Text style={styles.statText}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
       </View>
     );
@@ -50,11 +50,9 @@ const PieChartAnalysisScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.header}>X Hospital’s February Data</Text>
           <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
             <Info size={28} color="#007AFF" />
           </TouchableOpacity>
-          <Text style={styles.subHeader}>Caesarean Sections by Group</Text>
           <PieChart data={data} />
         <View style={styles.legendContainer}>
           {data.map((item, index) => (
@@ -113,7 +111,7 @@ const styles = StyleSheet.create({
   },
   infoButton: {
     position: 'absolute',
-    top: 40,
+    top: 5,
     left: 5,
     zIndex: 10,
   },
@@ -150,17 +148,17 @@ const styles = StyleSheet.create({
   },
   frameContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginBottom: 20,
   },
   frame: {
-    width: '45%',
-    padding: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 5,
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    width: '48%',
+    padding: 15,
+    backgroundColor: '#F0F4F8',
+    borderRadius: 10,
+    marginBottom: 15,
+    elevation: 2,
   },
   groupTitle: {
     fontSize: 18,
