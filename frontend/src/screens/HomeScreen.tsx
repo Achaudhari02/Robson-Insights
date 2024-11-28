@@ -2,6 +2,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
 import React, { useState } from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import {
+  Button as TamaguiButton,
+} from "tamagui";
 
 interface Answers {
   multiple_pregnancy?: string;
@@ -13,6 +16,9 @@ interface Answers {
   onset_of_labor?: string;
   csection?: string;
 }
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
+import { Moon, Sun } from '@tamagui/lucide-icons';
 
 const questions = [
   {
@@ -85,10 +91,41 @@ const HomeScreen = ({ navigation }) => {
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [isQuizFinished, setIsQuizFinished] = useState(false);
-  const { user } = useAuth();
+  const { user, logoutFn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
-  const handleAnswer = (answer: string) => {
-    const newAnswers: Answers = { ...answers, [questions[currentQuestionIndex].key]: answer };
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ display: 'flex', flexDirection: 'row'}}>
+          <TamaguiButton
+            icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
+            backgroundColor="$colorTransparent"
+            margin="$2"
+            onPress={() => {
+              toggleTheme();
+            }}
+            hoverStyle={{borderColor: '$colorTransparent'}}
+          >
+          </TamaguiButton>
+          <TamaguiButton
+              size="$4"
+              backgroundColor="$blue10"
+              color="white"
+              borderRadius="$2"
+              margin="$2"
+              onPress={logoutFn}
+              hoverStyle={styles.tamaguiButton}
+            >
+              Logout
+          </TamaguiButton>
+        </View>
+      ),
+    });
+  }, [navigation, theme]);
+
+  const handleAnswer = (answer) => {
+    const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);
 
     const currentQuestionType = questions[currentQuestionIndex].type;
@@ -224,28 +261,30 @@ const HomeScreen = ({ navigation }) => {
     setIsQuizFinished(false);
   };
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   const renderContent = () => {
     if (isQuizFinished) {
       if (error) {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Error: {error}</Text>
-            <Button
-              title="Restart Quiz"
-              onPress={() => {
-                setError('');
-                setAnswers({});
-                setCurrentQuestionIndex(0);
-                setIsQuizFinished(false);
-              }}
-            />
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Error: {error}</Text>
+            <Button title="Restart Quiz" onPress={() => {
+              setError("");
+              setAnswers({});
+              setCurrentQuestionIndex(0);
+              setIsQuizFinished(false);
+            }} />
           </View>
         );
       } else if (result.length > 0) {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Result: Group {result}</Text>
-            <Text style={styles.text}>Description: {robsonClassification[result]}</Text>
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Result: Classification {result}</Text>
+            <Text style={[styles.text, screenStyle]}>Description: {robsonClassification[result]}</Text>
             <Text style={styles.text}>
               Pregnancy resulted in cesarean section: {answers.csection}
             </Text>
@@ -255,8 +294,8 @@ const HomeScreen = ({ navigation }) => {
         );
       } else {
         return (
-          <View style={styles.results}>
-            <Text style={styles.text}>Calculating result...</Text>
+          <View style={[styles.results, screenStyle]}>
+            <Text style={[styles.text, screenStyle]}>Calculating result...</Text>
           </View>
         );
       }
@@ -275,7 +314,7 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  return <View style={styles.container}>{renderContent()}</View>;
+  return <View style={[styles.container, screenStyle]}>{renderContent()}</View>;
 };
 
 const styles = StyleSheet.create({

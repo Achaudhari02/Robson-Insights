@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { BarChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 const BarChartAnalysisScreen = ({ route }) => {
   const { data } = route.params;
 
   const [modalVisible, setModalVisible] = useState(false);
+
+  const { theme, toggleTheme } = useTheme();
 
   const groupDescriptions = {
     1: 'Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.',
@@ -35,21 +39,26 @@ const BarChartAnalysisScreen = ({ route }) => {
         <Text style={styles.statText}>{`Total Women: ${item.responses}`}</Text>
         <Text style={styles.statText}>{`Number of CS: ${item.csectionCount}`}</Text>
         <Text style={styles.statText}>{`Group Size: ${groupSizePercentage}%`}</Text>
-        <Text style={styles.statText}>{`Group CS Rate: ${item.responses > 0 ? groupCSRate : "N/A"}`}</Text>
+        <Text style={styles.statText}>{`Group CS Rate: ${groupCSRate}%`}</Text>
         <Text style={styles.statText}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
       </View>
     );
   };
 
   const GroupDescription = ({ groupNumber, description }) => (
-    <View style={styles.descriptionCard}>
-      <Text style={styles.descriptionTitle}>{`Group ${groupNumber}`}</Text>
-      <Text style={styles.descriptionText}>{description}</Text>
+    <View style={[styles.descriptionCard, screenStyle]}>
+      <Text style={[styles.descriptionTitle, screenStyle]}>{`Group ${groupNumber}`}</Text>
+      <Text style={[styles.descriptionText, screenStyle]}>{description}</Text>
     </View>
   );
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, screenStyle]}>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
@@ -70,8 +79,8 @@ const BarChartAnalysisScreen = ({ route }) => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalHeader}>Group Descriptions</Text>
+        <View style={[styles.modalContainer, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.modalContainer.backgroundColor}]}>
+          <Text style={[styles.modalHeader, {color: screenStyle.color}]}>Group Descriptions</Text>
           <ScrollView style={styles.descriptionContainer}>
             {Object.entries(groupDescriptions).map(([key, description]) => (
               <GroupDescription key={key} groupNumber={key} description={description} />

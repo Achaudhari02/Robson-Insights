@@ -3,6 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Svg, G, Path } from 'react-native-svg';
 import * as d3Shape from 'd3-shape';
 import * as d3Scale from 'd3-scale';
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 interface DataItem {
   classification: string;
@@ -14,6 +16,8 @@ interface PieChartProps {
 }
 
 export const PieChart: React.FC<PieChartProps> = ({ data }) => {
+  const { theme, toggleTheme } = useTheme();
+
   const svgWidth = 400;
   const svgHeight = 300;
   const radius = Math.min(svgWidth, svgHeight) / 2 - 20;
@@ -33,9 +37,15 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
     .outerRadius(radius)
     .innerRadius(0);
 
+
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+  };
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>Caesarean Sections by Classification</Text>
+    <View style={[styles.card, screenStyle]}>
+      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Classification</Text>
       <Svg width={svgWidth} height={svgHeight}>
         <G x={svgWidth / 2} y={svgHeight / 2}>
           {pieData.map((slice, index) => {

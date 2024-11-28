@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
-import { Svg, G, Rect, Text as SvgText, Line } from 'react-native-svg';
+import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 export const BarChart = ({ data }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onChange = ({ window }) => {
@@ -61,23 +64,28 @@ export const BarChart = ({ data }) => {
     .range([0, chartHeight])
     .padding(0.2);
 
+    const screenStyle = {
+      backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+      color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+    };
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>Caesarean Sections by Classification</Text>
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
+    <View style={[styles.card, screenStyle]}>
+      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Classification</Text>
+      <View style={[styles.legendContainer, screenStyle]}>
+        <View style={[styles.legendItem, screenStyle]}>
           <View style={[styles.legendColorBox, { backgroundColor: '#FF8A8D' }]} />
-          <Text style={styles.legendText}>C-Section</Text>
+          <Text style={[styles.legendText, screenStyle]}>C-Section</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColorBox, { backgroundColor: '#66C2B5' }]} />
-          <Text style={styles.legendText}>Non-C-Section</Text>
+          <Text style={[styles.legendText, screenStyle]}>Non-C-Section</Text>
         </View>
-        <View style={styles.legendItem}>
+        <View style={[styles.legendItem, screenStyle]}>
           <Svg width={20} height={2}>
             <Line x1="0" y1="1" x2="20" y2="1" stroke="#FF0000" strokeWidth="2" strokeDasharray="4" />
           </Svg>
-          <Text style={styles.legendText}>Recommended C-Section Rate</Text>
+          <Text style={[styles.legendText, screenStyle]}>Recommended C-Section Rate</Text>
         </View>
       </View>
 
@@ -115,7 +123,7 @@ export const BarChart = ({ data }) => {
                       x={csectionWidth / 2}
                       y={yScale.bandwidth() / 2}
                       fontSize={12}
-                      fill="#000"
+                      fill={screenStyle.color}
                       textAnchor="middle"
                       fontFamily="Avenir Next"
                       alignmentBaseline="middle"
@@ -152,7 +160,7 @@ export const BarChart = ({ data }) => {
                     x={-10}
                     y={yScale.bandwidth() / 2}
                     fontSize={12}
-                    fill="#000"
+                    fill={screenStyle.color}
                     textAnchor="end"
                     fontFamily="Avenir Next"
                     alignmentBaseline="middle"
@@ -167,7 +175,7 @@ export const BarChart = ({ data }) => {
               x={chartWidth / 2}
               y={chartHeight + margin.bottom - 30}
               fontSize={16}
-              fill="#000"
+              fill={screenStyle.color}
               fontFamily="Avenir Next"
               textAnchor="middle"
             >
