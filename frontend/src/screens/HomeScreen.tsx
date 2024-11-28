@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import {
   Button as TamaguiButton,
@@ -285,7 +285,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={[styles.results, screenStyle]}>
             <Text style={[styles.text, screenStyle]}>Result: Classification {result}</Text>
             <Text style={[styles.text, screenStyle]}>Description: {robsonClassification[result]}</Text>
-            <Text style={styles.text}>
+            <Text style={[styles.text, screenStyle]}>
               Pregnancy resulted in cesarean section: {answers.csection}
             </Text>
             <Button title="Restart Quiz and Submit Result" onPress={handleSubmitAndRestart} />
@@ -303,8 +303,8 @@ const HomeScreen = ({ navigation }) => {
       const currentQuestion = questions[currentQuestionIndex];
       return (
         <View>
-          <Text style={styles.text}>{currentQuestion.question}</Text>
-          <View style={styles.buttonsContainer}>
+          <Text style={[styles.text, screenStyle]}>{currentQuestion.question}</Text>
+          <View style={[styles.buttonsContainer, screenStyle]}>
             {currentQuestion.options.map((option) => (
               <AnswerButton key={option} title={option} onPress={() => handleAnswer(option)} />
             ))}
@@ -357,6 +357,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 10,
     alignItems: 'center',
+  },
+  tamaguiButton: {
+    backgroundColor: "#007bff",
   },
 });
 

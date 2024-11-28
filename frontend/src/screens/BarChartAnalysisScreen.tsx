@@ -34,13 +34,13 @@ const BarChartAnalysisScreen = ({ route }) => {
     const groupContributionToCSRate = ((item.csectionCount / totalCS) * 100).toFixed(2);
 
     return (
-      <View style={styles.frame}>
-        <Text style={styles.groupTitle}>{`Group ${item.classification}`}</Text>
-        <Text style={styles.statText}>{`Total Women: ${item.responses}`}</Text>
-        <Text style={styles.statText}>{`Number of CS: ${item.csectionCount}`}</Text>
-        <Text style={styles.statText}>{`Group Size: ${groupSizePercentage}%`}</Text>
-        <Text style={styles.statText}>{`Group CS Rate: ${groupCSRate}%`}</Text>
-        <Text style={styles.statText}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
+      <View style={[styles.frame, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.frame.backgroundColor}]}>
+        <Text style={[styles.groupTitle, {color: screenStyle.color}]}>{`Group ${item.classification}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Total Women: ${item.responses}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Number of CS: ${item.csectionCount}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group Size: ${groupSizePercentage}%`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group CS Rate: ${groupCSRate}%`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
       </View>
     );
   };
