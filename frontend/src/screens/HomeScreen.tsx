@@ -3,7 +3,6 @@ import { axiosInstance } from '@/lib/axios';
 import React, { useState } from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
-// Define the type for answers
 interface Answers {
   multiple_pregnancy?: string;
   fetal_presentation?: string;
@@ -96,38 +95,28 @@ const HomeScreen = ({ navigation }) => {
 
     if (currentQuestionType === 'multiple_pregnancy') {
       if (answer === 'Yes') {
-        // Multiple pregnancy -> Group 8
         setResult('8');
-        // Proceed to the final question
         const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
         setCurrentQuestionIndex(finalQuestionIndex);
       } else {
-        // Singleton -> Proceed to Question 2
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       }
     } else if (currentQuestionType === 'fetal_presentation') {
       if (answer === 'Breech') {
-        // Skip to Question 4 (Parity)
         const question4Index = questions.findIndex((q) => q.type === 'parity');
         setCurrentQuestionIndex(question4Index);
       } else if (answer === 'Cephalic') {
-        // Proceed to Question 3 (Gestational Age)
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else if (answer === 'Transverse or oblique') {
-        // Transverse lie -> Group 9
         setResult('9');
-        // Proceed to the final question
         const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
         setCurrentQuestionIndex(finalQuestionIndex);
       }
     } else if (currentQuestionType === 'gestational_age') {
       if (answer === '37 weeks or more') {
-        // Proceed to Question 4 (Parity)
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else if (answer === 'Less than 37 weeks') {
-        // Group 10
         setResult('10');
-        // Proceed to the final question
         const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
         setCurrentQuestionIndex(finalQuestionIndex);
       }
@@ -135,74 +124,56 @@ const HomeScreen = ({ navigation }) => {
       const presentation = newAnswers['fetal_presentation'];
       if (presentation === 'Breech') {
         if (answer === 'Multiparous') {
-          // Group 7
           setResult('7');
-          // Proceed to the final question
           const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
           setCurrentQuestionIndex(finalQuestionIndex);
         } else if (answer === 'Nulliparous') {
-          // Group 6
           setResult('6');
-          // Proceed to the final question
           const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
           setCurrentQuestionIndex(finalQuestionIndex);
         }
       } else if (presentation === 'Cephalic') {
         if (answer === 'Multiparous') {
-          // Proceed to Question 5 (Previous Cesarean)
           setCurrentQuestionIndex(currentQuestionIndex + 1);
         } else if (answer === 'Nulliparous') {
-          // Skip to Question 7 (Onset of labor)
           const question7Index = questions.findIndex((q) => q.type === 'onset_of_labor');
           setCurrentQuestionIndex(question7Index);
         }
       }
     } else if (currentQuestionType === 'previous_cesarean') {
       if (answer === 'Yes') {
-        // Proceed to Question 6 (Number of previous CS)
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else if (answer === 'No') {
-        // Skip to Question 7 (Onset of labor)
         const question7Index = questions.findIndex((q) => q.type === 'onset_of_labor');
         setCurrentQuestionIndex(question7Index);
       }
     } else if (currentQuestionType === 'num_previous_cesarean') {
       if (answer === 'One') {
-        // Group 5.1
         setResult('5.1');
       } else if (answer === 'More than one') {
-        // Group 5.2
         setResult('5.2');
       }
-      // Proceed to the final question
       const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
       setCurrentQuestionIndex(finalQuestionIndex);
     } else if (currentQuestionType === 'onset_of_labor') {
       const parity = newAnswers['parity'];
       if (parity === 'Multiparous') {
         if (answer === 'Spontaneous labor') {
-          // Group 3
           setResult('3');
         } else {
-          // Group 4
           setResult('4');
         }
       } else if (parity === 'Nulliparous') {
         if (answer === 'Spontaneous labor') {
-          // Group 1
           setResult('1');
         } else {
-          // Group 2
           setResult('2');
         }
       }
-      // Proceed to the final question
       const finalQuestionIndex = questions.findIndex((q) => q.type === 'csection');
       setCurrentQuestionIndex(finalQuestionIndex);
     } else if (currentQuestionType === 'csection') {
-      // Store the answer
       setAnswers(newAnswers);
-      // Quiz is finished
       setIsQuizFinished(true);
     }
   };
