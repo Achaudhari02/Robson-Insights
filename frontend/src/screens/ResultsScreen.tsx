@@ -243,7 +243,7 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setModalVisible(false)}
     >
-      <View style={[styles.modalBackground, screenStyle]}>
+      <View style={[styles.modalBackground]}>
         <View style={[styles.modalContent, screenStyle]}>
           <Text style={[styles.modalTitle, screenStyle]}>Select Date Range</Text>
           <DatePicker
@@ -261,27 +261,27 @@ const ResultsScreen = ({ navigation }) => {
           />
           <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={handlePreviousQuarter}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Last 3 Months</Text>
+              <Text style={[styles.buttonText]}>Last 3 Months</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={handlePreviousYear}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Last 12 Months</Text>
+              <Text style={[styles.buttonText]}>Last 12 Months</Text>
             </TouchableOpacity>
           </View>
           <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, screenStyle]} onPress={handleSubmit}>
-              <Text style={[styles.buttonText, screenStyle]}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleSubmit}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -296,7 +296,7 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setEmailModalVisible(false)}
     >
-      <View style={[styles.modalBackground, screenStyle]}>
+      <View style={[styles.modalBackground]}>
         <View style={[styles.modalContent, screenStyle]}>
           <Text style={[styles.modalTitle, screenStyle]}>Email CSV</Text>
           <View style={[styles.inputContainer, screenStyle]}>
@@ -309,13 +309,13 @@ const ResultsScreen = ({ navigation }) => {
           </View>
           <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={() => setEmailModalVisible(false)}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, screenStyle]} onPress={handleEmail}>
-              <Text style={[styles.buttonText, screenStyle]}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleEmail}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
           <Text
@@ -341,10 +341,10 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setImportModalVisible(false)}
     >
-      <View style={[styles.modalBackground, screenStyle]}>
+      <View style={[styles.modalBackground]}>
         <View style={[styles.modalContent, screenStyle]}>
           <Text style={[styles.modalTitle, screenStyle]}>Import CSV</Text>
-          <View style={[styles.inputContainer, screenStyle]}>
+          <View style={[styles.inputContainer]}>
             <input
               type="file"
               style={styles.fileInput}
@@ -354,17 +354,17 @@ const ResultsScreen = ({ navigation }) => {
           </View>
           <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={() => {
                 setImportModalVisible(false);
                 setErrorMessaage('');
                 setSuccessMessage('');
               }}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, screenStyle]} onPress={handleUpload}>
-              <Text style={[styles.buttonText, screenStyle]}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleUpload}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
           <Text
@@ -389,7 +389,7 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setFilterModalVisible(false)}
     >
-      <View style={[styles.modalBackground, screenStyle]}>
+      <View style={styles.modalBackground}>
         <View style={[styles.modalContent, screenStyle]}>
           <Text style={[styles.modalTitle, screenStyle]}>Filter Data View</Text>
           <YStack gap="$4" padding="$4">
@@ -414,20 +414,20 @@ const ResultsScreen = ({ navigation }) => {
           </YStack>
           <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={() => setFilterModalVisible(false)}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, screenStyle]}
+              style={[styles.button]}
               onPress={() => {
                 fetchEntries();
                 setIsFilterApplied(true);
                 setFilterModalVisible(false);
               }}
             >
-              <Text style={[styles.buttonText, screenStyle]}>Submit</Text>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -698,7 +698,7 @@ const ResultsScreen = ({ navigation }) => {
   const currentEntries = results.slice(indexOfFirstEntry, indexOfLastEntry);
 
   const screenStyle = {
-    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    backgroundColor: theme === 'dark' ? '#2C2F33' : lightTheme.backgroundColor,
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,
   };
 

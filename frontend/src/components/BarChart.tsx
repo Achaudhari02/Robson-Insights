@@ -58,6 +58,14 @@ export const BarChart = ({ data }) => {
     .domain([0, capValue])
     .range([0, chartWidth]);
 
+  const cardStyle = {
+    backgroundColor: theme === 'dark' ? '#2C2F33' : '#fff',
+    shadowColor: theme === 'dark' ? '#fff' : '#000',
+    shadowOpacity: 0.2,
+    borderWidth: theme === 'dark' ? 1 : 0,
+    borderColor: theme === 'dark' ? '#FFFFFF30' : 'transparent',
+  };
+
   const yScale = d3Scale
     .scaleBand()
     .domain(data.map((d) => d.classification))
@@ -65,12 +73,12 @@ export const BarChart = ({ data }) => {
     .padding(0.2);
 
     const screenStyle = {
-      backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+      backgroundColor: theme === 'dark' ? '#2C2F33' : lightTheme.backgroundColor,
       color: theme === 'dark' ? darkTheme.color : lightTheme.color,
     };
 
   return (
-    <View style={[styles.card, screenStyle]}>
+    <View style={[styles.card, cardStyle]}>
       <Text style={[styles.title, screenStyle]}>Caesarean Sections by Classification</Text>
       <View style={[styles.legendContainer, screenStyle]}>
         <View style={[styles.legendItem, screenStyle]}>
@@ -123,7 +131,7 @@ export const BarChart = ({ data }) => {
                       x={csectionWidth / 2}
                       y={yScale.bandwidth() / 2}
                       fontSize={12}
-                      fill={screenStyle.color}
+                      fill="#000"
                       textAnchor="middle"
                       fontFamily="Avenir Next"
                       alignmentBaseline="middle"

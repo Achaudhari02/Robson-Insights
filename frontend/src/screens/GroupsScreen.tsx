@@ -348,7 +348,7 @@ const GroupsScreen = ({ navigation }) => {
 
     } catch (error) {
       console.error("Error leaving group:", error);
-      throw error; 
+      throw error;
     }
   };
 
@@ -460,7 +460,7 @@ const GroupsScreen = ({ navigation }) => {
                   onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
                   onHoverIn={() => setGroupsInfoLabelVisible(false)}
                   onHoverOut={() => setGroupsInfoLabelVisible(true)}
-                />      
+                />
               <Text style={[{opacity: !groupsTooltipVisible && groupsInfoLabelVisible ? 1 : 0, marginLeft: -10}, screenStyle]}>learn more</Text>
               </View>
               {groupsTooltipVisible && (
@@ -527,7 +527,7 @@ const GroupsScreen = ({ navigation }) => {
                       handleUserCheckBoxChange(user.username, newValue)
                     }
                   />
-                  
+
                 </View>
               ))}
               <View style={[styles.row, screenStyle]}>
@@ -550,7 +550,7 @@ const GroupsScreen = ({ navigation }) => {
               {groupNameError ? (
                 <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
               ) : null}
-              
+
 
               <View style={[styles.row, screenStyle]}>
                 <Input
