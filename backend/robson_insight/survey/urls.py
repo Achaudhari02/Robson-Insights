@@ -15,4 +15,5 @@ urlpatterns = [
     path('add-group-to-configuration/', AddGroupToConfiguration.as_view()),
     path('download-survey-csv/', DownloadSurveyCSVView.as_view()),
     path('generate-quarterly-xlsx/', GenerateQuarterlyXLSX.as_view()),
+    path('filter-entries-by-date/', FilterEntriesByDateView.as_view()),
 ]
