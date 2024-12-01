@@ -37,15 +37,17 @@ export const PieChart: React.FC<PieChartProps> = ({ data }) => {
     .outerRadius(radius)
     .innerRadius(0);
 
-  
+  const cardStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : '#fff',
+  };
   const screenStyle = {
     backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
-    color: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
   };
 
   return (
-    <View style={[styles.card, screenStyle]}>
-      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Group</Text>
+    <View style={[styles.card, cardStyle]}>
+      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Classification</Text>
       <Svg width={svgWidth} height={svgHeight}>
         <G x={svgWidth / 2} y={svgHeight / 2}>
           {pieData.map((slice, index) => {
@@ -82,10 +84,11 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: 10,
+    marginLeft: 5,
     fontFamily: 'Avenir Next',
   },
 });

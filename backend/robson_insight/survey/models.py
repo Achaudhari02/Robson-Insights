@@ -2,15 +2,16 @@ from django.db import models
 from django.utils import timezone
 
 from users.models import Group, User
-    
-    
+
+
 class Entry(models.Model):
     CLASSIFICATIONS = [
     ("1", "Group 1"),
     ("2", "Group 2"),
     ("3", "Group 3"),
     ("4", "Group 4"),
-    ("5", "Group 5"),
+    ("5.1", "Group 5.1"),
+    ("5.2", "Group 5.2"),
     ("6", "Group 6"),
     ("7", "Group 7"),
     ("8", "Group 8"),
@@ -34,14 +35,14 @@ class Entry(models.Model):
     date = models.DateTimeField(
         default=timezone.now,
     )
-    
+
     def __str__(self):
         return f'{self.pk} {self.classification} {self.user}'
-    
+
     class Meta:
         verbose_name_plural = "Entries"
-        
-        
+
+
 class Filter(models.Model):
     name = models.CharField(
         max_length=100,
@@ -55,10 +56,10 @@ class Filter(models.Model):
         related_name='filters',
         blank=True,
     )
-    
+
     def __str__(self):
         group_names = ', '.join([group.name for group in self.groups.all()])
         return f'{self.user.username} - Groups: {group_names} {self.pk}'
 
-    
+
 

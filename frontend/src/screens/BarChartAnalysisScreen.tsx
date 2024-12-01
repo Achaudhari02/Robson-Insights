@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { BarChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
 import { useTheme } from '../ThemeContext';
@@ -30,7 +30,7 @@ const BarChartAnalysisScreen = ({ route }) => {
 
   const GroupStatistics = ({ item }) => {
     const groupSizePercentage = ((item.responses / totalWomen) * 100).toFixed(2);
-    const groupCSRate = ((item.csectionCount / item.responses) * 100).toFixed(2);
+    const groupCSRate = item.responses > 0 ? ((item.csectionCount / item.responses) * 100).toFixed(2) : "N/A";
     const groupContributionToCSRate = ((item.csectionCount / totalCS) * 100).toFixed(2);
 
     return (
@@ -57,15 +57,24 @@ const BarChartAnalysisScreen = ({ route }) => {
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,
   };
 
+  const EXTERNAL_URL = 'https://www.who.int/publications/i/item/9789241513197';
+
+  const openExternalLink = async () => {
+    const supported = await Linking.canOpenURL(EXTERNAL_URL);
+    if (supported) {
+      await Linking.openURL(EXTERNAL_URL);
+    } else {
+      Alert.alert("Unable to open the link", `Don't know how to open this URL: ${EXTERNAL_URL}`);
+    }
+  };
+
   return (
     <View style={[styles.container, screenStyle]}>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={[styles.header, screenStyle]}>X Hospital’s February Data</Text>
         <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
           <Info size={28} color="#007AFF" />
         </TouchableOpacity>
-        <Text style={[styles.subHeader, screenStyle]}>Caesarean Sections by Group</Text>
         <BarChart data={data} />
 
         <View style={styles.frameContainer}>
@@ -88,9 +97,20 @@ const BarChartAnalysisScreen = ({ route }) => {
               <GroupDescription key={key} groupNumber={key} description={description} />
             ))}
           </ScrollView>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.closeButton]}
+              onPress={openExternalLink}
+            >
+              <Text style={styles.closeButtonText}>Learn More</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
@@ -103,14 +123,20 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: 'white',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 20,
+  },
   scrollContainer: {
     paddingTop: 20,
     paddingHorizontal: 20,
   },
   infoButton: {
     position: 'absolute',
-    top: 40,
-    left: 20,
+    top: 5,
+    left: 5,
     zIndex: 10,
   },
   header: {

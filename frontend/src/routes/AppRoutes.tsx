@@ -53,12 +53,12 @@ const AppTabs = () => {
         headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
         headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
       }}/>
-      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{ 
+      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{
         headerShown: false,
         headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
         headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
         tabBarLabel: 'Results',
-        }}/> 
+        }}/>
       <Tab.Screen name="Groups" component={GroupsScreen} options ={{
         headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
         headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
@@ -95,9 +95,9 @@ const ResultsStack = () => {
   return (
     <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
       headerShown: true }}>
-      <Stack.Screen 
-        name="Results" 
-        component={ResultsScreen} 
+      <Stack.Screen
+        name="Results"
+        component={ResultsScreen}
         options={{
           headerShown: true,
           headerRight: () => (
@@ -129,9 +129,9 @@ const ResultsStack = () => {
           headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
         }}
       />
-      <Stack.Screen 
-        name="Pie Chart" 
-        component={PieChartAnalysisScreen} 
+      <Stack.Screen
+        name="Pie Chart"
+        component={PieChartAnalysisScreen}
         options={{
           headerShown: true,
           headerRight: () => (
@@ -197,7 +197,7 @@ const ResultsStack = () => {
           headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
         })}
       />
-      
+
     </Stack.Navigator>
   );
 };

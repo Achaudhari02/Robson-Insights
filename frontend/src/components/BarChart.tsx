@@ -18,7 +18,6 @@ export const BarChart = ({ data }) => {
     return () => subscription?.remove();
   }, []);
 
-  // Card styles
   const cardMargin = 15;
   const cardPadding = 20;
 
@@ -43,17 +42,14 @@ export const BarChart = ({ data }) => {
     2: 35,
     3: 35,
     4: 20,
-    5: 50,
+    5.1: 50,
+    5.2: 50,
     6: 90,
     7: 90,
     8: 70,
     9: 95,
     10: 30,
   };
-
-  useEffect(() => {
-    console.log("BarChart Data:", data);
-  }, [data]);
 
   const maxResponses = d3Array.max(data, (d) => d.responses) || 0;
   const capValue = maxResponses * 1.1;
@@ -62,20 +58,26 @@ export const BarChart = ({ data }) => {
     .domain([0, capValue])
     .range([0, chartWidth]);
 
+
   const yScale = d3Scale
     .scaleBand()
     .domain(data.map((d) => d.classification))
     .range([0, chartHeight])
     .padding(0.2);
-  
-  const screenStyle = {
-    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
-    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
-  };
-  
+
+
+    const cardStyle = {
+      backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : '#fff',
+    };
+
+    const screenStyle = {
+      backgroundColor: theme === 'dark' ? '#2C2F33' : lightTheme.backgroundColor,
+      color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+    };
+
   return (
-    <View style={[styles.card, screenStyle]}>
-      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Group</Text>
+    <View style={[styles.card, cardStyle]}>
+      <Text style={[styles.title, screenStyle]}>Caesarean Sections by Classification</Text>
       <View style={[styles.legendContainer, screenStyle]}>
         <View style={[styles.legendItem, screenStyle]}>
           <View style={[styles.legendColorBox, { backgroundColor: '#FF8A8D' }]} />
@@ -127,7 +129,7 @@ export const BarChart = ({ data }) => {
                       x={csectionWidth / 2}
                       y={yScale.bandwidth() / 2}
                       fontSize={12}
-                      fill={screenStyle.color}
+                      fill="#000"
                       textAnchor="middle"
                       fontFamily="Avenir Next"
                       alignmentBaseline="middle"
