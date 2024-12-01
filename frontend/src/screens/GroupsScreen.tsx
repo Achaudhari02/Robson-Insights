@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, TextInput, StyleSheet, Text, Dimensions } from "react-native";
+import { View, StyleSheet, Text, Dimensions } from "react-native";
 import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, Checkbox, TextField } from "@/components";
 import {
   Button,
-  Sheet,
-  H4,
   XStack,
   YStack,
   Dialog,
   Input,
 } from "tamagui";
-import { Menu, Info } from "@tamagui/lucide-icons";
+import { Info, Sun, Moon } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
 import { Check } from "@tamagui/lucide-icons";
 import Papa from 'papaparse';
 
 const { width } = Dimensions.get('window');
 const isTabletOrDesktop = width >= 768;
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
+
 
 const GroupsScreen = ({ navigation }) => {
   const [groups, setGroups] = useState([]);
@@ -45,7 +46,7 @@ const GroupsScreen = ({ navigation }) => {
   const toast = useToastController();
   const currentToast = useToastState();
   const [checkedGroups, setCheckedGroups] = useState({});
-
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     fetchGroups();
@@ -410,7 +411,6 @@ const GroupsScreen = ({ navigation }) => {
     }));
   };
 
-
   const handleGroupSelectChange = (value) => {
     if (value === 'create-group') {
       setCreateGroupModalOpen(true);
@@ -427,8 +427,13 @@ const GroupsScreen = ({ navigation }) => {
     }
   };
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
       <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
         <XStack flexDirection="row" justifyContent="center" alignItems="center" position="relative" zIndex={2000}>
           <Text style={styles.subtitle2}>Groups</Text>
@@ -440,7 +445,7 @@ const GroupsScreen = ({ navigation }) => {
                 marginLeft="$2"
                 data-groups-info-button
                 onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
-                icon={<Info />}
+                icon={<Info color={theme === 'dark' ? darkTheme.color : lightTheme.color} />}
                 chromeless
                 style={{
                   flexDirection: "row",
@@ -507,16 +512,15 @@ const GroupsScreen = ({ navigation }) => {
           )}
           {selectedGroup && (
             <>
-              <Text style={styles.subtitle}>Group Members:</Text>
+              <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
               {groupUsers.map((user) => (
-                <View key={user.id} style={styles.row}>
-                  <Text style={styles.username}>{user.username}</Text>
-                  <Button
-                    onPress={() => removeMember(user.username)}
+                <View key={user.id} style={[styles.row, screenStyle]}>
+                  <Text style={[styles.username, screenStyle]}>{user.username}</Text>
+                  <Button onPress={() => removeMember(user.username)} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
                   >
                     Remove
                   </Button>
-                  <Text>{"Viewing permissions"}</Text>
+                  <Text style={screenStyle}>{"Viewing permissions"}</Text>
                   <Checkbox
                     checked={user.can_view}
                     onCheckedChange={(newValue) =>
@@ -526,7 +530,7 @@ const GroupsScreen = ({ navigation }) => {
 
                 </View>
               ))}
-              <View style={styles.row}>
+              <View style={[styles.row, screenStyle]}>
                 <TextField placeholder="New Group Name"
                   value={groupName}
                   onChangeText={(text) => {
@@ -534,15 +538,16 @@ const GroupsScreen = ({ navigation }) => {
                     if (text.length >= 5) {
                       setGroupNameError("");
                     }
-                  }} />
+                  }}
+                />
                 <Button onPress={updateGroupName} disabled={groupName.length < 5}>
                   Update Name
                 </Button>
               </View>
               {groupNameError ? (
-                <Text style={styles.errorText}>{groupNameError}</Text>
+                <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
               ) : null}
-              <View style={styles.row}>
+              <View style={[styles.row, screenStyle]}>
                 <TextField value={newMember}
                   onChangeText={setNewMember}
                   placeholder="Enter username" />
@@ -606,7 +611,7 @@ const GroupsScreen = ({ navigation }) => {
             key="content"
             bordered
             elevate
-            style={styles.dialogContent}
+            style={[styles.dialogContent, screenStyle]}
           >
             <Dialog.Title>Create Group</Dialog.Title>
             <br />
@@ -619,10 +624,10 @@ const GroupsScreen = ({ navigation }) => {
                   setGroupNameError("");
                 }
               }}
-              style={styles.input}
+              style={[styles.input, screenStyle]}
             />
             {groupNameError ? (
-              <Text style={styles.errorText}>{groupNameError}</Text>
+              <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
             ) : null}
             <XStack space="$2" marginTop="$4" justifyContent="flex-end">
               <Button onPress={() => setCreateGroupModalOpen(false)}>
@@ -718,10 +723,10 @@ const GroupsScreen = ({ navigation }) => {
           )}
           {selectedConfiguration && (
             <>
-              <Text style={styles.subtitle}>Configuration Groups:</Text>
+              <Text style={[styles.subtitle, screenStyle]}>Configuration Groups:</Text>
               {configurationGroups.map((group) => (
-                <View key={group.id} style={styles.row}>
-                  <Text style={styles.username}>{group.name}</Text>
+                <View key={group.id} style={[styles.row, screenStyle]}>
+                  <Text style={[styles.username, screenStyle]}>{group.name}</Text>
                   <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
                     <Checkbox.Indicator>
                       <Check />
@@ -751,9 +756,9 @@ const GroupsScreen = ({ navigation }) => {
             key="content"
             bordered
             elevate
-            style={styles.dialogContent}
+            style={[styles.dialogContent, screenStyle]}
           >
-            <Dialog.Title>Create Configuration</Dialog.Title>
+            <Dialog.Title style={screenStyle}>Create Configuration</Dialog.Title>
             <br />
             <Input
               placeholder="Configuration Name"
@@ -764,7 +769,7 @@ const GroupsScreen = ({ navigation }) => {
                   setConfigurationNameError("");
                 }
               }}
-              style={styles.input}
+              style={[styles.input, screenStyle]}
             />
             {configurationNameError ? (
               <Text style={styles.errorText}>{configurationNameError}</Text>
@@ -783,72 +788,7 @@ const GroupsScreen = ({ navigation }) => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
-      <Dialog
-        open={isLeaveGroupDialogOpen}
-        onOpenChange={setLeaveGroupDialogOpen}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay
-            key="overlay"
-            animation="quick"
-            opacity={0.5}
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
-            backgroundColor="black"
-          />
-          <Dialog.Content
-            bordered
-            elevate
-            key="content"
-            animation={[
-              'quick',
-              {
-                opacity: {
-                  overshootClamping: true,
-                },
-              },
-            ]}
-            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-            x={0}
-            y={0}
-            opacity={1}
-            scale={1}
-          >
-            <YStack space="$4">
-              <Dialog.Title>Leave Group</Dialog.Title>
-              <Dialog.Description>
-                Are you sure you want to leave this group? You'll need a new invitation to rejoin.
-              </Dialog.Description>
-              <XStack space="$3" justifyContent="flex-end">
-                <Button
-                  onPress={() => setLeaveGroupDialogOpen(false)}
-                  backgroundColor="$gray8"
-                  hoverStyle={{
-                    backgroundColor: "$gray7",
-                    opacity: 0.9
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onPress={handleLeaveGroup}
-                  backgroundColor="$red10"
-                  color="white"
-                  hoverStyle={{
-                    backgroundColor: "$red9",
-                    opacity: 0.9
-                  }}
-                >
-                  Leave
-                </Button>
-              </XStack>
-            </YStack>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
     </View>
-
   );
 }
 
@@ -922,6 +862,7 @@ const styles = StyleSheet.create({
   },
   tamaguiButton: {
     backgroundColor: "#007bff",
+    color: '#fff',
   },
 });
 

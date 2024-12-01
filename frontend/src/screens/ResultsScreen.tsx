@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { Button as TamaguiButton } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
@@ -16,9 +15,25 @@ import { axiosInstance } from '@/lib/axios';
 import { format, endOfDay, subMonths, subYears } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Menu } from '@tamagui/lucide-icons';
+import { Menu, Moon, Sun } from '@tamagui/lucide-icons';
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 const ResultsScreen = ({ navigation }) => {
+  const classificationOrder = [
+    '1',
+    '2',
+    '3',
+    '4',
+    '5.1',
+    '5.2',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+  ];
+
   const [results, setResults] = useState([]);
   const [parsedResults, setParsedResults] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -46,7 +61,8 @@ const ResultsScreen = ({ navigation }) => {
   const [initialSelectedType, setInitialSelectedType] = useState('group');
   const [initialSelectedId, setInitialSelectedId] = useState(null);
   const { user, logoutFn } = useAuth();
-
+  const { theme, toggleTheme } = useTheme();
+  
   useEffect(() => {
     if (selectedId !== null) {
       fetchEntries();
@@ -81,10 +97,17 @@ const ResultsScreen = ({ navigation }) => {
     const processResultsForAnalysis = () => {
       const categoryData = {};
 
+      // Initialize categoryData with zeros for all classifications
+      classificationOrder.forEach((classification) => {
+        categoryData[classification] = { responses: 0, csectionCount: 0 };
+      });
+
       results.forEach((result) => {
         const { classification, csection } = result;
         if (!categoryData[classification]) {
-          categoryData[classification] = { responses: 0, csectionCount: 0 };
+          // If the classification is not in classificationOrder, you might want to handle it
+          // For now, we'll skip it
+          return;
         }
         categoryData[classification].responses += 1;
         if (csection) {
@@ -92,7 +115,8 @@ const ResultsScreen = ({ navigation }) => {
         }
       });
 
-      return Object.keys(categoryData).map((classification) => ({
+      // Map over classificationOrder to ensure the data is in the desired order
+      return classificationOrder.map((classification) => ({
         classification,
         responses: categoryData[classification].responses,
         csectionCount: categoryData[classification].csectionCount,
@@ -188,9 +212,9 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setModalVisible(false)}
     >
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Select Date Range</Text>
+      <View style={[styles.modalBackground]}>
+        <View style={[styles.modalContent, screenStyle]}>
+          <Text style={[styles.modalTitle, screenStyle]}>Select Date Range</Text>
           <DatePicker
             selected={startDate}
             onChange={(update) => setDateRange(update)}
@@ -204,29 +228,29 @@ const ResultsScreen = ({ navigation }) => {
             dropdownMode="select"
             className="date-picker"
           />
-          <View style={styles.modalButtons}>
+          <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={handlePreviousQuarter}
             >
-              <Text style={styles.buttonText}>Last 3 Months</Text>
+              <Text style={[styles.buttonText]}>Last 3 Months</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={handlePreviousYear}
             >
-              <Text style={styles.buttonText}>Last 12 Months</Text>
+              <Text style={[styles.buttonText]}>Last 12 Months</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.modalButtons}>
+          <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleSubmit}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -241,10 +265,10 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setEmailModalVisible(false)}
     >
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Email CSV</Text>
-          <View style={styles.inputContainer}>
+      <View style={[styles.modalBackground]}>
+        <View style={[styles.modalContent, screenStyle]}>
+          <Text style={[styles.modalTitle, screenStyle]}>Email CSV</Text>
+          <View style={[styles.inputContainer, screenStyle]}>
             <input
               placeholder={'Enter email'}
               style={styles.emailInput}
@@ -252,15 +276,15 @@ const ResultsScreen = ({ navigation }) => {
               value={email}
             ></input>
           </View>
-          <View style={styles.modalButtons}>
+          <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={() => setEmailModalVisible(false)}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleEmail}>
-              <Text style={styles.buttonText}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleEmail}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
           <Text
@@ -286,10 +310,10 @@ const ResultsScreen = ({ navigation }) => {
       transparent={true}
       onRequestClose={() => setImportModalVisible(false)}
     >
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Import CSV</Text>
-          <View style={styles.inputContainer}>
+      <View style={[styles.modalBackground]}>
+        <View style={[styles.modalContent, screenStyle]}>
+          <Text style={[styles.modalTitle, screenStyle]}>Import CSV</Text>
+          <View style={[styles.inputContainer]}>
             <input
               type="file"
               style={styles.fileInput}
@@ -297,26 +321,27 @@ const ResultsScreen = ({ navigation }) => {
               accept=".csv, .xlsx"
             />
           </View>
-          <View style={styles.modalButtons}>
+          <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={() => {
                 setImportModalVisible(false);
                 setErrorMessaage('');
                 setSuccessMessage('');
               }}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleUpload}>
-              <Text style={styles.buttonText}>Submit</Text>
+            <TouchableOpacity style={[styles.button]} onPress={handleUpload}>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
           <Text
-            style={
+            style={[
               errorMessage.length === 0
                 ? styles.successMessage
-                : styles.errorMessage
+                : styles.errorMessage,
+                , screenStyle]
             }
           >
             {errorMessage.length === 0 ? successMessage : errorMessage}
@@ -334,8 +359,8 @@ const ResultsScreen = ({ navigation }) => {
       onRequestClose={() => setFilterModalVisible(false)}
     >
       <View style={styles.modalBackground}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Filter Data View</Text>
+        <View style={[styles.modalContent, screenStyle]}>
+          <Text style={[styles.modalTitle, screenStyle]}>Filter Data View</Text>
           <YStack gap="$4" padding="$4">
             <Select
               value={selectedType}
@@ -356,22 +381,22 @@ const ResultsScreen = ({ navigation }) => {
               )}
             />
           </YStack>
-          <View style={styles.modalButtons}>
+          <View style={[styles.modalButtons, screenStyle]}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={() => setFilterModalVisible(false)}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button]}
               onPress={() => {
                 fetchEntries();
                 setIsFilterApplied(true);
                 setFilterModalVisible(false);
               }}
             >
-              <Text style={styles.buttonText}>Submit</Text>
+              <Text style={[styles.buttonText]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -383,21 +408,21 @@ const ResultsScreen = ({ navigation }) => {
     <View
       style={[
         styles.tableRow,
-        index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+        index % 2 === 0 ? (theme === 'dark' ? screenStyle : styles.rowEven) : screenStyle,
       ]}
       key={`${result.id}-${index}`}
     >
-      <Text style={styles.cell}>Group {result.classification}</Text>
-      <Text style={styles.cell}>{formatCSection(result.csection)}</Text>
-      <Text style={styles.cell}>{formatDate(result.date)}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>Group {result.classification}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatCSection(result.csection)}</Text>
+      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatDate(result.date)}</Text>
     </View>
   );
 
   const renderTableHeader = () => (
-    <View style={[styles.tableRow, styles.rowEven]}>
-      <Text style={styles.columnHeader}>Classification</Text>
-      <Text style={styles.columnHeader}>C-Section</Text>
-      <Text style={styles.columnHeader}>Date</Text>
+    <View style={[styles.tableRow, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.rowEven.backgroundColor, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderBottomWidth: theme === 'dark' ? 3 : 0}]}>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Classification</Text>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>C-Section</Text>
+      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Date</Text>
     </View>
   );
 
@@ -641,8 +666,13 @@ const ResultsScreen = ({ navigation }) => {
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentEntries = results.slice(indexOfFirstEntry, indexOfLastEntry);
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? '#2C2F33' : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
 
       {renderReportModal()}
       {renderEmailModal()}
@@ -650,7 +680,7 @@ const ResultsScreen = ({ navigation }) => {
       {renderFilterModal()}
 
       <TamaguiButton
-        icon={<Menu />}
+        icon={<Menu color={screenStyle.color}/>}
         size="$4"
         circular
         onPress={() => setMenuOpen(!menuOpen)}
@@ -669,7 +699,7 @@ const ResultsScreen = ({ navigation }) => {
       />
 
       {menuOpen && (
-        <View style={styles.sideMenu}>
+        <View style={[styles.sideMenu, screenStyle]}>
           <TouchableOpacity
             onPress={() => {
               handleExport();
@@ -677,16 +707,16 @@ const ResultsScreen = ({ navigation }) => {
             }}
             style={styles.sideMenuItem}
           >
-            <Text style={styles.sideMenuItemText}>Download as CSV</Text>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>Download as CSV</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               setEmailModalVisible(true);
               setMenuOpen(false);
             }}
-            style={styles.sideMenuItem}
+            style={[styles.sideMenuItem, screenStyle]}
           >
-            <Text style={styles.sideMenuItemText}>Email CSV</Text>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>Email CSV</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -703,9 +733,9 @@ const ResultsScreen = ({ navigation }) => {
               }
               setMenuOpen(false);
             }}
-            style={styles.sideMenuItem}
+            style={[styles.sideMenuItem, screenStyle]}
           >
-            <Text style={styles.sideMenuItemText}>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>
               {reportGenerated ? 'Exit Report' : 'Generate Report'}
             </Text>
           </TouchableOpacity>
@@ -714,27 +744,27 @@ const ResultsScreen = ({ navigation }) => {
                 downloadTemplate();
                 setMenuOpen(false);
             }}
-            style={styles.sideMenuItem}
+            style={[styles.sideMenuItem, screenStyle]}
           >
-            <Text style={styles.sideMenuItemText}>Download Quarterly Report Template</Text>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>Download Quarterly Report Template</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               setImportModalVisible(true);
               setMenuOpen(false);
             }}
-            style={styles.sideMenuItem}
+            style={[styles.sideMenuItem, screenStyle]}
           >
-            <Text style={styles.sideMenuItemText}>Import CSV</Text>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>Import CSV</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               setFilterModalVisible(true);
               setMenuOpen(false);
             }}
-            style={styles.sideMenuItem}
+            style={[styles.sideMenuItem, screenStyle]}
           >
-            <Text style={styles.sideMenuItemText}>Filter Data</Text>
+            <Text style={[styles.sideMenuItemText, screenStyle]}>Filter Data</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -749,6 +779,7 @@ const ResultsScreen = ({ navigation }) => {
             style={[
               styles.sideMenuItem,
               !isFilterApplied && styles.disabledMenuItem,
+              , screenStyle
             ]}
             disabled={!isFilterApplied}
           >
@@ -756,6 +787,7 @@ const ResultsScreen = ({ navigation }) => {
               style={[
                 styles.sideMenuItemText,
                 !isFilterApplied && styles.disabledMenuItemText,
+                , screenStyle
               ]}
             >
               Reset Data View
@@ -764,11 +796,11 @@ const ResultsScreen = ({ navigation }) => {
         </View>
       )}
 
-      <ScrollView style={styles.entryContainer}>
+      <ScrollView style={[styles.entryContainer, screenStyle]}>
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('BarChartAnalysis', { data: parsedResults })
+            navigation.navigate('Bar Chart', { data: parsedResults })
           }
         >
           <BarChart data={parsedResults}/>
@@ -776,13 +808,12 @@ const ResultsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('PieChartAnalysis', { data: parsedResults })
+            navigation.navigate('Pie Chart', { data: parsedResults })
           }
         >
           <PieChart data={parsedResults} />
         </TouchableOpacity>
-
-        <View style={{ paddingHorizontal: 10 }}>
+        <View style={{ paddingHorizontal: theme === 'dark' ? 0 : 10, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderTopWidth: theme === 'dark' ? 3 : 0}}>
           {renderTableHeader()}
           {currentEntries.map(renderTableRow)}
           {renderPagination()}
@@ -970,6 +1001,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+  },
+  tamaguiButton: {
+    backgroundColor: "#007bff",
+    color: '#fff',
   },
   quickSelectButtons: {
     flexDirection: 'row',

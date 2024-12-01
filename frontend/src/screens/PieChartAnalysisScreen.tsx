@@ -1,11 +1,15 @@
 import React, {useState} from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { PieChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
+import { useTheme } from '../ThemeContext';
+import { lightTheme, darkTheme } from '../themes';
 
 const PieChartAnalysisScreen = ({ route }) => {
   const { data } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const EXTERNAL_URL = 'https://www.who.int/publications/i/item/9789241513197';
 
   const groupDescriptions = {
     1: "Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.",
@@ -20,6 +24,11 @@ const PieChartAnalysisScreen = ({ route }) => {
     10: "Women with a preterm, single, cephalic pregnancy."
   };
 
+  const screenStyle = {
+    backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+    color: theme === 'dark' ? darkTheme.color : lightTheme.color,
+  };
+
   const totalWomen = data.reduce((sum, item) => sum + item.responses, 0);
   const totalCS = data.reduce((sum, item) => sum + item.csectionCount, 0);
 
@@ -29,38 +38,45 @@ const PieChartAnalysisScreen = ({ route }) => {
     const groupContributionToCSRate = ((item.csectionCount / totalCS) * 100).toFixed(2);
 
     return (
-      <View style={styles.frame}>
-        <Text style={styles.groupTitle}>{`Group ${item.classification}`}</Text>
-        <Text style={styles.statText}>{`Total Women: ${item.responses}`}</Text>
-        <Text style={styles.statText}>{`Number of CS: ${item.csectionCount}`}</Text>
-        <Text style={styles.statText}>{`Group Size: ${groupSizePercentage}%`}</Text>
-        <Text style={styles.statText}>{`Group CS Rate: ${groupCSRate}%`}</Text>
-        <Text style={styles.statText}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
+      <View style={[styles.frame, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.frame.backgroundColor}]}>
+        <Text style={[styles.groupTitle, {color: screenStyle.color}]}>{`Group ${item.classification}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Total Women: ${item.responses}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Number of CS: ${item.csectionCount}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group Size: ${groupSizePercentage}%`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group CS Rate: ${item.responses > 0 ? groupCSRate : "N/A"}`}</Text>
+        <Text style={[styles.statText, {color: screenStyle.color}]}>{`Group Contribution to Overall CS Rate: ${groupContributionToCSRate}%`}</Text>
       </View>
     );
   };
 
   const GroupDescription = ({ groupNumber, description }) => (
-    <View style={styles.descriptionCard}>
-      <Text style={styles.descriptionTitle}>{`Group ${groupNumber}`}</Text>
-      <Text style={styles.descriptionText}>{description}</Text>
+    <View style={[styles.descriptionCard, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.descriptionCard.backgroundColor}]}>
+      <Text style={[styles.descriptionTitle, screenStyle]}>{`Group ${groupNumber}`}</Text>
+      <Text style={[styles.descriptionText, screenStyle]}>{description}</Text>
     </View>
   );
 
+  const openExternalLink = async () => {
+    const supported = await Linking.canOpenURL(EXTERNAL_URL);
+    if (supported) {
+      await Linking.openURL(EXTERNAL_URL);
+    } else {
+      Alert.alert("Unable to open the link", `Don't know how to open this URL: ${EXTERNAL_URL}`);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.header}>X Hospital’s February Data</Text>
-          <TouchableOpacity style={styles.infoButton} onPress={() => setModalVisible(true)}>
+    <View style={[styles.container, screenStyle]}>
+      <ScrollView contentContainerStyle={[styles.scrollContainer, screenStyle]}>
+          <TouchableOpacity style={[styles.infoButton, screenStyle]} onPress={() => setModalVisible(true)}>
             <Info size={28} color="#007AFF" />
           </TouchableOpacity>
-          <Text style={styles.subHeader}>Caesarean Sections by Group</Text>
           <PieChart data={data} />
         <View style={styles.legendContainer}>
           {data.map((item, index) => (
             <View key={index} style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: getColor(index) }]} />
-              <Text style={styles.legendText}>{`Group ${item.classification}`}</Text>
+              <Text style={[styles.legendText, screenStyle]}>{`Group ${item.classification}`}</Text>
             </View>
           ))}
         </View>
@@ -77,13 +93,27 @@ const PieChartAnalysisScreen = ({ route }) => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalHeader}>Group Descriptions</Text>
+        <View style={[styles.modalContainer, { backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.modalContainer.backgroundColor }]}>
+          <Text style={[styles.modalHeader, { color: screenStyle.color }]}>Group Descriptions</Text>
           <ScrollView style={styles.descriptionContainer}>
             {Object.entries(groupDescriptions).map(([key, description]) => (
               <GroupDescription key={key} groupNumber={key} description={description} />
             ))}
           </ScrollView>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.closeButton]}
+              onPress={openExternalLink}
+            >
+              <Text style={styles.closeButtonText}>Learn More</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
@@ -107,13 +137,19 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'white',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 20,
+  },
   scrollContainer: {
     paddingTop: 20,
     paddingHorizontal: 20,
   },
   infoButton: {
     position: 'absolute',
-    top: 40,
+    top: 5,
     left: 5,
     zIndex: 10,
   },
@@ -150,17 +186,17 @@ const styles = StyleSheet.create({
   },
   frameContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginBottom: 20,
   },
   frame: {
-    width: '45%',
-    padding: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 5,
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    width: '48%',
+    padding: 15,
+    backgroundColor: '#F0F4F8',
+    borderRadius: 10,
+    marginBottom: 15,
+    elevation: 2,
   },
   groupTitle: {
     fontSize: 18,
