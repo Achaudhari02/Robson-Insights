@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
-import { View, Text, Modal, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Modal, Button, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ResultsScreen from '@/screens/ResultsScreen';
@@ -13,17 +13,15 @@ import PieChartAnalysisScreen from '@/screens/PieChartAnalysisScreen';
 import BarChartAnalysisScreen from '@/screens/BarChartAnalysisScreen';
 import { axiosInstance } from '@/lib/axios';
 import { LogoutButton } from '@/components/LogoutButton';
-import { Button as TamaguiButton } from 'tamagui';
-import { useTheme } from '../ThemeContext';
+import { Button as TamaguiButton,  updateTheme, useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
-import { Sun, Moon } from '@tamagui/lucide-icons'
-
+import { Sun, Moon } from '@tamagui/lucide-icons';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const AppTabs = () => {
-  const { theme, toggleTheme } = useTheme();
+const AppTabs = ({ toggleTheme }) => {
+  const theme = useThemeName();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -41,7 +39,10 @@ const AppTabs = () => {
 
           return <IconComponent name={iconName} size={size} color={color} />;
         },
-        headerRight: () => <LogoutButton />,
+        headerRight: () => <View style={{ display: 'flex', flexDirection: 'row' }}>
+          <ThemeToggle toggleTheme={toggleTheme} />
+          <LogoutButton />
+        </View>,
         headerShown: true,
         tabBarStyle: {
           backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
@@ -49,20 +50,28 @@ const AppTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options ={{
-        headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
+      <Tab.Screen name="Home" component={HomeScreen} options={{
+        headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme=== 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)' },
         headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-      }}/>
-      <Tab.Screen name="ResultsWrapper" component={ResultsStack} options={{
-        headerShown: false,
-        headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
+      }} />
+      <Tab.Screen
+        name="ResultsWrapper"
+        options={{
+          headerShown: false,
+          headerStyle: {
+            backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+            borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)',
+          },
+          headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
+          tabBarLabel: 'Results',
+        }}
+      >
+        {() => <ResultsStack toggleTheme={toggleTheme} />}
+      </Tab.Screen>
+      <Tab.Screen name="Groups" component={GroupsScreen} options={{
+        headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)' },
         headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-        tabBarLabel: 'Results',
-        }}/>
-      <Tab.Screen name="Groups" component={GroupsScreen} options ={{
-        headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
-        headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-      }}/>
+      }} />
     </Tab.Navigator>
   );
 };
@@ -70,143 +79,77 @@ const AppTabs = () => {
 const AuthScreens = () => {
   return (
     <Stack.Navigator>
-    <Stack.Screen
-      name="Login"
-      component={LoginScreen}
-      options={{
-        title: 'Login'
-      }}
-    />
-    <Stack.Screen
-      name="Signup"
-      component={SignUpScreen}
-      options={{
-        title: 'Sign Up'
-      }}
-    />
-  </Stack.Navigator>
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{
+          title: 'Login'
+        }}
+      />
+      <Stack.Screen
+        name="Signup"
+        component={SignUpScreen}
+        options={{
+          title: 'Sign Up'
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 
-const ResultsStack = () => {
-  const { user, logoutFn } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-
+const ResultsStack = ({ toggleTheme }) => {
+  const theme = useThemeName();
   return (
-    <Stack.Navigator screenOptions={{  headerRight: () => <LogoutButton />,
-      headerShown: true }}>
+    <Stack.Navigator screenOptions={{
+      headerRight: () => <View style={{ display: 'flex', flexDirection: 'row' }}>
+        <ThemeToggle toggleTheme={toggleTheme}/>
+        <LogoutButton />
+      </View>,
+      headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)' },
+      headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
+      headerShown: true
+    }}>
       <Stack.Screen
         name="Results"
         component={ResultsScreen}
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <View style={{ display: 'flex', flexDirection: 'row'}}>
-              <TamaguiButton
-                icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
-                backgroundColor="$colorTransparent"
-                margin="$2"
-                onPress={() => {
-                  toggleTheme();
-                }}
-                hoverStyle={{borderColor: '$colorTransparent'}}
-              >
-              </TamaguiButton>
-              <TamaguiButton
-                  size="$4"
-                  backgroundColor="$blue10"
-                  color="white"
-                  borderRadius="$2"
-                  margin="$2"
-                  onPress={logoutFn}
-                  hoverStyle={styles.tamaguiButton}
-                >
-                  Logout
-              </TamaguiButton>
-            </View>
-          ),
-          headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
-          headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-        }}
       />
       <Stack.Screen
         name="Pie Chart"
         component={PieChartAnalysisScreen}
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <View style={{ display: 'flex', flexDirection: 'row'}}>
-              <TamaguiButton
-                icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
-                backgroundColor="$colorTransparent"
-                margin="$2"
-                onPress={() => {
-                  toggleTheme();
-                }}
-                hoverStyle={{borderColor: '$colorTransparent'}}
-              >
-              </TamaguiButton>
-              <TamaguiButton
-                  size="$4"
-                  backgroundColor="$blue10"
-                  color="white"
-                  borderRadius="$2"
-                  margin="$2"
-                  onPress={logoutFn}
-                  hoverStyle={styles.tamaguiButton}
-                >
-                  Logout
-              </TamaguiButton>
-            </View>
-          ),
-          headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
-          headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-        }}
       />
       <Stack.Screen
         name="Bar Chart"
         component={BarChartAnalysisScreen}
-        options={({ navigation }) => ({
-          headerShown: true,
-          headerRight: () => (
-            <View style={{ display: 'flex', flexDirection: 'row'}}>
-              <TamaguiButton
-                icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
-                backgroundColor="$colorTransparent"
-                margin="$2"
-                onPress={() => {
-                  toggleTheme();
-                }}
-                hoverStyle={{borderColor: '$colorTransparent'}}
-              >
-              </TamaguiButton>
-              <TamaguiButton
-                  size="$4"
-                  backgroundColor="$blue10"
-                  color="white"
-                  borderRadius="$2"
-                  margin="$2"
-                  onPress={logoutFn}
-                  hoverStyle={styles.tamaguiButton}
-                >
-                  Logout
-              </TamaguiButton>
-            </View>
-          ),
-          headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)'},
-          headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
-        })}
       />
 
     </Stack.Navigator>
   );
 };
 
-const AppStack = () => {
+const ThemeToggle = ({ toggleTheme }) => {
+  const themeName = useThemeName();
+ 
+  return (
+    <TamaguiButton
+      icon={themeName === 'dark' ? <Sun size="$2" /> : <Moon size="$2" />}
+      backgroundColor="$colorTransparent"
+      margin="$2"
+      onPress={() => {
+        console.log('ThemeToggle button clicked');
+        toggleTheme();
+      }}
+      hoverStyle={{ borderColor: '$colorTransparent' }}
+    />
+  );
+};
+
+const AppStack = ({ toggleTheme }) => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="App" component={AppTabs} options={{ headerShown: false }} />
-    </Stack.Navigator>
+     <Stack.Screen name="App" options={{ headerShown: false }}>
+        {() => <AppTabs toggleTheme={toggleTheme} />}
+      </Stack.Screen>
+  </Stack.Navigator>
   );
 };
 
@@ -218,7 +161,7 @@ const AuthStack = () => {
   );
 };
 
-export const AppRoutes = () => {
+export const AppRoutes = ({ toggleTheme }) => {
   const { user } = useAuth();
   const [invitations, setInvitations] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -313,7 +256,7 @@ export const AppRoutes = () => {
 
   return (
     <>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? <AppStack toggleTheme={toggleTheme}/> : <AuthStack />}
       <InvitationModal
         visible={modalVisible}
         invitations={invitations}

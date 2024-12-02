@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import React, { useState } from 'react';
 import { Input, Stack, Label, Text } from 'tamagui';
 
-export const TextField = ({ label = "", value, onChangeText, placeholder, secureTextEntry = false, helperText = "" }) => {
+export const TextField = ({ label = "", value, onChangeText, placeholder, secureTextEntry = false, helperText = "", placeholderAsTitle = false }) => {
   const [isFocused, setIsFocused] = useState(false);
   const { setError } = useAuth();
 
@@ -12,10 +12,10 @@ export const TextField = ({ label = "", value, onChangeText, placeholder, secure
   };
 
   return (
-    <Stack width="100%" gap="$2">
+    <Stack gap="$2" flexGrow={1}>
       <Label>{label}</Label>
       <Stack position="relative">
-        {isFocused || value ? (
+      {(isFocused || value) && placeholderAsTitle ? (
           <Stack
             position="absolute"
             top={-10}
@@ -30,13 +30,13 @@ export const TextField = ({ label = "", value, onChangeText, placeholder, secure
         ) : null}
         <Input
           paddingHorizontal="$4"
-          paddingVertical="$6"
+          paddingVertical="$5"
           value={value}
           placeholder={isFocused ? "" : placeholder}
           onChangeText={handleChangeText}
           secureTextEntry={secureTextEntry}
           borderColor="#E2E8F0"
-          borderWidth="$1"
+          borderWidth="$0.25"
           background="white"
           style={{ fontSize: 16 }}
           onFocus={() => setIsFocused(true)}

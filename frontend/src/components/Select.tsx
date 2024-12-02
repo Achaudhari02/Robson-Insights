@@ -3,6 +3,7 @@ import { Adapt, Select as InternalSelect, Sheet, XStack, YStack, getFontSize } f
 import type { FontSizeTokens, SelectProps } from 'tamagui'
 import { Check, ChevronDown, ChevronUp } from '@tamagui/lucide-icons'
 import { LinearGradient } from 'tamagui/linear-gradient'
+import { Dimensions } from 'react-native';
 
 type CustomSelectProps = SelectProps & {
   items: any[];
@@ -12,38 +13,28 @@ export const Select = (props: CustomSelectProps) => {
   const [val, setVal] = React.useState(String(props.defaultValue))
   const isEmpty = !props.items || props.items.length === 0;
 
+  const { width: screenWidth } = Dimensions.get('window');
+  const isMobile = screenWidth < 480;
+
+  const handlePress = (e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
     <XStack ai="center" gap="$4">
       <InternalSelect value={val} onValueChange={setVal} disablePreventBodyScroll {...props}>
-        <InternalSelect.Trigger width={220} iconAfter={ChevronDown} disabled={isEmpty} opacity={isEmpty ? 0.5 : 1}>
-          <InternalSelect.Value
-            placeholder={isEmpty ? "No items available" : "Select an option"}
+        <InternalSelect.Trigger
+          width={isMobile ? 300 : 260}
+          height={isMobile ? 50 : 40}
+          iconAfter={ChevronDown}
+          disabled={isEmpty}
+          onPress={handlePress}
+          opacity={isEmpty ? 0.5 : 1}
+        >          <InternalSelect.Value onPress={handlePress}
+          placeholder={isEmpty ? "No items available" : "Select an option"}
           />      </InternalSelect.Trigger>
 
-        <Adapt when="sm" platform="touch">
-          <Sheet
-            native={!!props.native}
-            modal
-            dismissOnSnapToBottom
-            animationConfig={{
-              type: 'spring',
-              damping: 20,
-              mass: 1.2,
-              stiffness: 250,
-            }}
-          >
-            <Sheet.Frame>
-              <Sheet.ScrollView>
-                <Adapt.Contents />
-              </Sheet.ScrollView>
-            </Sheet.Frame>
-            <Sheet.Overlay
-              animation="lazy"
-              enterStyle={{ opacity: 0 }}
-              exitStyle={{ opacity: 0 }}
-            />
-          </Sheet>
-        </Adapt>
 
         <InternalSelect.Content zIndex={200000}>
           <InternalSelect.ScrollUpButton
@@ -52,7 +43,7 @@ export const Select = (props: CustomSelectProps) => {
             position="relative"
             width="100%"
             height="$3"
-          >
+          >f
             <YStack zIndex={10}>
               <ChevronUp size={20} />
             </YStack>
@@ -66,7 +57,8 @@ export const Select = (props: CustomSelectProps) => {
           </InternalSelect.ScrollUpButton>
 
           <InternalSelect.Viewport
-            minWidth={200}
+            minWidth={isMobile ? 320 : 260}
+            backgroundColor="transparent"
           >
             <InternalSelect.Group>
               {/* for longer lists memoizing these is useful */}

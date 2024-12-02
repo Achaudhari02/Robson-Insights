@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { BarChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
-import { useTheme } from '../ThemeContext';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 const BarChartAnalysisScreen = ({ route }) => {
@@ -10,7 +10,7 @@ const BarChartAnalysisScreen = ({ route }) => {
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  const { theme, toggleTheme } = useTheme();
+  const theme  = useThemeName();
 
   const groupDescriptions = {
     1: 'Nulliparous women with a term, single, cephalic pregnancy in spontaneous labor.',

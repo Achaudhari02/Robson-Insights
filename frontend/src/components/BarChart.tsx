@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import * as d3Scale from 'd3-scale';
 import * as d3Array from 'd3-array';
-import { Svg, G, Rect, Text as SvgText, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
-import { useTheme } from '../ThemeContext';
+import { Svg, G, Rect, Text as SvgText, Line } from 'react-native-svg';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 export const BarChart = ({ data }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-  const { theme, toggleTheme } = useTheme();
+  const theme  = useThemeName();
 
   useEffect(() => {
     const onChange = ({ window }) => {

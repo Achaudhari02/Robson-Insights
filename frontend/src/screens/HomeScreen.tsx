@@ -1,11 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { axiosInstance } from '@/lib/axios';
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import {
-  Button as TamaguiButton,
-} from "tamagui";
-
 interface Answers {
   multiple_pregnancy?: string;
   fetal_presentation?: string;
@@ -16,9 +12,8 @@ interface Answers {
   onset_of_labor?: string;
   csection?: string;
 }
-import { useTheme } from '../ThemeContext';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
-import { Moon, Sun } from '@tamagui/lucide-icons';
 
 const questions = [
   {
@@ -91,39 +86,8 @@ const HomeScreen = ({ navigation }) => {
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [isQuizFinished, setIsQuizFinished] = useState(false);
-  const { user, logoutFn } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ display: 'flex', flexDirection: 'row'}}>
-          <TamaguiButton
-            icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
-            backgroundColor="$colorTransparent"
-            margin="$2"
-            onPress={() => {
-              toggleTheme();
-            }}
-            hoverStyle={{borderColor: '$colorTransparent'}}
-          >
-          </TamaguiButton>
-          <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              onPress={logoutFn}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Logout
-          </TamaguiButton>
-        </View>
-      ),
-    });
-  }, [navigation, theme]);
-
+  const { user } = useAuth();
+  const theme = useThemeName();
   const handleAnswer = (answer) => {
     const newAnswers = { ...answers, [questions[currentQuestionIndex].key]: answer };
     setAnswers(newAnswers);

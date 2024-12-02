@@ -7,6 +7,7 @@ app_name = 'users'
 urlpatterns = [
     path('', UserProfileListView.as_view()),
     path('<int:pk>/', UserProfileDetailView.as_view()),
+    path('get-user-profile/', GetUserProfileView.as_view(), name='get-user-profile'),
     path('groups/', GroupListCreateView.as_view()),
     path('groups/<int:group_pk>/', GroupDetailView.as_view()),
     path('groups/<int:group_pk>/update/', GroupUpdateView.as_view(), name='update-group'),
