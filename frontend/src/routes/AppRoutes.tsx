@@ -57,6 +57,7 @@ const AppTabs = ({ toggleTheme }) => {
       <Tab.Screen
         name="ResultsWrapper"
         options={{
+          unmountOnBlur: true,
           headerShown: false,
           headerStyle: {
             backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
