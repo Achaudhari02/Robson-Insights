@@ -16,6 +16,11 @@ export const Select = (props: CustomSelectProps) => {
   const { width: screenWidth } = Dimensions.get('window');
   const isMobile = screenWidth < 480;
 
+  const handlePress = (e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
     <XStack ai="center" gap="$4">
       <InternalSelect value={val} onValueChange={setVal} disablePreventBodyScroll {...props}>
@@ -24,9 +29,10 @@ export const Select = (props: CustomSelectProps) => {
           height={isMobile ? 50 : 40}
           iconAfter={ChevronDown}
           disabled={isEmpty}
+          onPress={handlePress}
           opacity={isEmpty ? 0.5 : 1}
-        >          <InternalSelect.Value
-            placeholder={isEmpty ? "No items available" : "Select an option"}
+        >          <InternalSelect.Value onPress={handlePress}
+          placeholder={isEmpty ? "No items available" : "Select an option"}
           />      </InternalSelect.Trigger>
 
 
@@ -52,6 +58,7 @@ export const Select = (props: CustomSelectProps) => {
 
           <InternalSelect.Viewport
             minWidth={isMobile ? 320 : 260}
+            backgroundColor="transparent"
           >
             <InternalSelect.Group>
               {/* for longer lists memoizing these is useful */}

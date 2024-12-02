@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Text, Dimensions } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
 import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,15 +10,18 @@ import {
   YStack,
   Dialog,
   Input,
+  ScrollView,
+  Popover,
+  Text
 } from "tamagui";
-import { Info, Sun, Moon } from "@tamagui/lucide-icons";
+import { Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
-import { Check } from "@tamagui/lucide-icons";
+import { Check, MoreVertical, Trash, UserPlus, Edit3, Upload } from "@tamagui/lucide-icons";
 import Papa from 'papaparse';
 
 const { width } = Dimensions.get('window');
 const isTabletOrDesktop = width >= 768;
-import { useTheme } from '../ThemeContext';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 
@@ -40,13 +43,18 @@ const GroupsScreen = ({ navigation }) => {
   const [groupsTooltipVisible, setGroupsTooltipVisible] = useState(false);
   const [configurationsTooltipVisible, setConfigurationsTooltipVisible] = useState(false);
   const [isLeaveGroupDialogOpen, setLeaveGroupDialogOpen] = useState(false);
+  const [isAddMembersModalOpen, setAddMembersModalOpen] = useState(false);
+  const [isUpdateNameModalOpen, setUpdateNameModalOpen] = useState(false);
+  const [isGroupAdmin, setIsGroupAdmin] = useState(false);
+
   const groupsTooltipRef = useRef(null);
   const configurationsTooltipRef = useRef(null);
+
 
   const toast = useToastController();
   const currentToast = useToastState();
   const [checkedGroups, setCheckedGroups] = useState({});
-  const { theme, toggleTheme } = useTheme();
+  const theme = useThemeName();
 
   useEffect(() => {
     fetchGroups();
@@ -127,6 +135,8 @@ const GroupsScreen = ({ navigation }) => {
         }
       );
       setGroupUsers(response.data);
+      setIsGroupAdmin(response.data.find(u => u.username === user.email)?.is_admin || false);
+
     } catch (error) {
       console.error("Error fetching group users:", error);
     }
@@ -383,7 +393,7 @@ const GroupsScreen = ({ navigation }) => {
 
   const handleUserCheckBoxChange = async (username, newValue) => {
     try {
-      await axiosInstance.put(
+      await axiosInstance.post(
         "users/toggle-permissions/",
         {
           username: username,
@@ -433,9 +443,9 @@ const GroupsScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
+    <ScrollView style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
       <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
-        <XStack flexDirection="row" justifyContent="center" alignItems="center" position="relative" zIndex={2000}>
+        <XStack flexDirection="row" justifyContent="center" alignItems="center" position="relative" zIndex={2001}>
           <Text style={styles.subtitle2}>Groups</Text>
           <View style={{ position: 'relative', paddingVertical: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -483,13 +493,72 @@ const GroupsScreen = ({ navigation }) => {
         </XStack>
       </XStack>
       <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
-        <View style={styles.container}>
-          <Select
-            items={[...groups, { label: 'Create Group', value: 'create-group' }]}
-            value={selectedGroup}
-            onValueChange={handleGroupSelectChange} />
+        <View style={[styles.container, screenStyle]}>
+          <XStack flex={1} alignItems="center" gap="$2">
+            <Select
+              items={[...groups, { label: 'Create Group', value: 'create-group' }]}
+              value={selectedGroup}
+              onValueChange={handleGroupSelectChange} />
 
+            {selectedGroup && isGroupAdmin && (
+              <Popover size="$5" allowFlip>
+                <Popover.Trigger asChild>
+                  <Button
+                    icon={<MoreVertical size="$1" />}
+                    circular
+                    size="$3"
+                    backgroundColor="$colorTransparent"
+                    hoverStyle={{ backgroundColor: '$gray5' }}
+                  />
+                </Popover.Trigger>
 
+                <Popover.Content
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                  enterStyle={{ y: -10, opacity: 0 }}
+                  exitStyle={{ y: -10, opacity: 0 }}
+                  elevate
+                  animation={[
+                    'quick',
+                    {
+                      opacity: {
+                        overshootClamping: true,
+                      },
+                    },
+                  ]}
+                  width={width * 0.8}
+                  maxWidth={400}
+                  alignSelf="center"
+                >
+                  <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
+
+                  <YStack space="$3" padding="$4">
+                    <Button
+                      onPress={() => setAddMembersModalOpen(true)}
+                      icon={<UserPlus size={16} />}
+                      size="$3"
+                    >
+                      Add Members Manually
+                    </Button>
+                    <Button
+                      onPress={handleFileUpload}
+                      icon={<Upload size={16} />}
+                      size="$3"
+                    >
+                      Add Members Via CSV
+                    </Button>
+                    <Button
+                      onPress={() => setUpdateNameModalOpen(true)}
+                      icon={<Edit3 size={16} />}
+                      size="$3"
+                    >
+                      Update Name
+                    </Button>
+                  </YStack>
+                </Popover.Content>
+              </Popover>
+            )}
+          </XStack>
           {currentToast && !currentToast.isHandledNatively && (
             <Toast
               key={currentToast.id}
@@ -511,85 +580,127 @@ const GroupsScreen = ({ navigation }) => {
             </Toast>
           )}
           {selectedGroup && (
-            <>
+            <YStack paddingVertical="$2">
               <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
-              {groupUsers.map((user) => (
-                <View key={user.id} style={[styles.row, screenStyle]}>
-                  <Text style={[styles.username, screenStyle]}>{user.username}</Text>
-                  <Button onPress={() => removeMember(user.username)} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
-                  >
-                    Remove
-                  </Button>
-                  <Text style={screenStyle}>{"Viewing permissions"}</Text>
-                  <Checkbox
-                    checked={user.can_view}
-                    onCheckedChange={(newValue) =>
-                      handleUserCheckBoxChange(user.username, newValue)
-                    }
-                  />
-
-                </View>
-              ))}
-              <View style={[styles.row, screenStyle]}>
-                <TextField placeholder="New Group Name"
-                  value={groupName}
-                  onChangeText={(text) => {
-                    setGroupName(text);
-                    if (text.length >= 5) {
-                      setGroupNameError("");
-                    }
-                  }}
-                />
-                <Button onPress={updateGroupName} disabled={groupName.length < 5}>
-                  Update Name
-                </Button>
-              </View>
-              {groupNameError ? (
-                <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
-              ) : null}
-              <View style={[styles.row, screenStyle]}>
-                <TextField value={newMember}
-                  onChangeText={setNewMember}
-                  placeholder="Enter username" />
-
-                <Button onPress={addMember}>
-                  Add Member
-                </Button>
-              </View>
-              <XStack paddingVertical="$3" gap="$3" justifyContent="flex-start" alignItems="center">
-                {groupUsers.some(user =>
-                  user.username === user.username && (user.can_add || user.is_admin)
-                ) && (
-                    <Button
-                      backgroundColor="$blue10"
-                      color="white"
-                      hoverStyle={{
-                        backgroundColor: "$blue9",
-                        opacity: 0.9
-                      }}
-                      pressStyle={{
-                        opacity: 0.8
-                      }}
-                      onPress={handleFileUpload}>
-                      Add Members from CSV
-                    </Button>
-                  )}
-                <Button
-                  onPress={() => setLeaveGroupDialogOpen(true)}
-                  backgroundColor="$red10"
-                  color="white"
-                  hoverStyle={{
-                    backgroundColor: "$red9",
-                    opacity: 0.9
-                  }}
-                  pressStyle={{
-                    opacity: 0.8
-                  }}
+              {groupUsers.map((groupUser) => (
+                <XStack
+                  key={groupUser.id}
+                  alignItems="center"
+                  justifyContent="space-between"
+                  width="100%"
+                  paddingVertical="$2"
+                  paddingHorizontal="$4"
+                  gap="$4"
+                  opacity={!isGroupAdmin ? 0.6 : 1}
                 >
-                  Leave Group
-                </Button>
-              </XStack>
-            </>
+                  <XStack flex={1} minWidth={0}>  {/* Add this wrapper */}
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      flex={1}
+                      minWidth={0}
+                    >
+                      {groupUser.username}
+                    </Text>
+                  </XStack>
+                  {isTabletOrDesktop ? (
+                    <XStack gap="$4" alignItems="center">
+                      {isGroupAdmin && user.email !== groupUser.username && (
+                        <Button
+                          onPress={() => removeMember(groupUser.username)}
+                          size="$3"
+                          flexShrink={0}
+                        >
+                          Remove
+                        </Button>
+                      )}
+
+                      <Text style={{ flexShrink: 0 }}>
+                        Viewing permissions
+                      </Text>
+
+                      <Checkbox
+                        checked={groupUser.can_view}
+                        onCheckedChange={(newValue) =>
+                          handleUserCheckBoxChange(groupUser.username, newValue)
+                        }
+                        size="$3"
+                        flexShrink={0}
+                        disabled={!isGroupAdmin}
+                      />
+                    </XStack>
+                  ) : (
+                    <>
+                      {isGroupAdmin && (
+                        <Popover placement="bottom-start" size="$5" allowFlip>
+                          <Popover.Trigger asChild>
+                            <Button
+                              icon={<MoreVertical size="$1" />}
+                              circular
+                              size="$3"
+                              backgroundColor="$colorTransparent"
+                              hoverStyle={{ backgroundColor: '$gray5' }}
+                            />
+                          </Popover.Trigger>
+
+                          <Popover.Content
+                            borderWidth={1}
+                            borderColor="$borderColor"
+                            enterStyle={{ y: -10, opacity: 0 }}
+                            exitStyle={{ y: -10, opacity: 0 }}
+                            elevate
+                            animation={[
+                              'quick',
+                              {
+                                opacity: {
+                                  overshootClamping: true,
+                                },
+                              },
+                            ]}
+                            width={width * 0.8}
+                            alignSelf="center"
+                          >
+                            <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
+
+                            <XStack
+                              space="$3"
+                              padding="$3"
+                              alignItems="center"
+                              justifyContent="center"
+                              width="100%"
+                            >
+                              {user.email !== groupUser.username && (
+                                <Button
+                                  onPress={() => removeMember(groupUser.username)}
+                                  theme="red"
+                                  size="$3"
+                                  icon={<Trash size={16} />}
+                                  chromeless
+                                >
+                                  <Text size="$2">Remove</Text>
+                                </Button>
+                              )}
+
+                              <XStack space="$2" alignItems="center">
+                                <Text size="$2">Can View</Text>
+                                <Checkbox
+                                  checked={groupUser.can_view}
+                                  onCheckedChange={(newValue) => {
+                                    handleUserCheckBoxChange(groupUser.username, newValue);
+                                  }}
+                                  size="$2"
+                                />
+                              </XStack>
+                            </XStack>
+                          </Popover.Content>
+                        </Popover>
+                      )}
+                    </>
+                  )}
+                </XStack>
+              ))}
+
+            </YStack>
           )}
         </View>
         <View style={{ width: 42 }} />
@@ -695,46 +806,30 @@ const GroupsScreen = ({ navigation }) => {
       </XStack>
       <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
 
-        <View style={styles.container}>
+        <View style={[styles.container, screenStyle]}>
           <Select
             items={[...configurations, { label: 'Create Configuration', value: 'create-configuration' }]}
             value={selectedConfiguration}
             onValueChange={handleConfigurationSelectChange}
           />
-          {currentToast && !currentToast.isHandledNatively && (
-            <Toast
-              key={currentToast.id}
-              duration={currentToast.duration}
-              enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-              exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-              y={0}
-              opacity={1}
-              scale={1}
-              animation="100ms"
-              viewportName={currentToast.viewportName}
-            >
-              <YStack>
-                <Toast.Title>{currentToast.title}</Toast.Title>
-                {!!currentToast.message && (
-                  <Toast.Description>{currentToast.message}</Toast.Description>
-                )}
-              </YStack>
-            </Toast>
-          )}
           {selectedConfiguration && (
-            <>
+            <YStack padding="$2" gap="$1">
               <Text style={[styles.subtitle, screenStyle]}>Configuration Groups:</Text>
               {configurationGroups.map((group) => (
-                <View key={group.id} style={[styles.row, screenStyle]}>
-                  <Text style={[styles.username, screenStyle]}>{group.name}</Text>
-                  <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                <XStack justifyContent="flex-start" gap="$3" key={group.id} style={screenStyle}>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    minWidth={0}
+                  >{group.name}</Text>
+                  <Checkbox size="$3" checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
                     <Checkbox.Indicator>
                       <Check />
                     </Checkbox.Indicator>
                   </Checkbox>
-                </View>
+                </XStack>
               ))}
-            </>
+            </YStack>
           )}
         </View>
         <View style={{ width: 42 }} />
@@ -788,7 +883,177 @@ const GroupsScreen = ({ navigation }) => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
-    </View>
+      <Dialog
+        open={isLeaveGroupDialogOpen}
+        onOpenChange={setLeaveGroupDialogOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
+            y={0}
+            opacity={1}
+            scale={1}
+          >
+            <YStack space="$4">
+              <Dialog.Title>Leave Group</Dialog.Title>
+              <Dialog.Description>
+                Are you sure you want to leave this group? You'll need a new invitation to rejoin.
+              </Dialog.Description>
+              <XStack space="$3" justifyContent="flex-end">
+                <Button
+                  onPress={() => setLeaveGroupDialogOpen(false)}
+                  backgroundColor="$gray8"
+                  hoverStyle={{
+                    backgroundColor: "$gray7",
+                    opacity: 0.9
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleLeaveGroup}
+                  backgroundColor="$red10"
+                  color="white"
+                  hoverStyle={{
+                    backgroundColor: "$red9",
+                    opacity: 0.9
+                  }}
+                >
+                  Leave
+                </Button>
+              </XStack>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      {/* Add Members Modal */}
+      <Dialog open={isAddMembersModalOpen} onOpenChange={setAddMembersModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
+            y={0}
+            opacity={1}
+            scale={1}
+            width={width * 0.9}
+            maxWidth={500}
+          >
+            <Dialog.Title>Add Members</Dialog.Title>
+            <YStack space="$4" padding="$4">
+              <Input
+                placeholder="Member Email"
+                value={newMember}
+                onChangeText={setNewMember}
+              />
+              <Button onPress={addMember}>Add Member</Button>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      {/* Update Name Modal */}
+      <Dialog open={isUpdateNameModalOpen} onOpenChange={setUpdateNameModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
+            y={0}
+            opacity={1}
+            scale={1}
+            width={width * 0.9}
+            maxWidth={500}
+          >
+            <Dialog.Title>Update Group Name</Dialog.Title>
+            <YStack space="$4" padding="$4" gap="$4">
+              <Input
+                placeholder="New Group Name"
+                value={groupName}
+                onChangeText={(text) => {
+                  setGroupName(text);
+                  if (text.length >= 5) {
+                    setGroupNameError("");
+                  }
+                }}
+              />
+              {groupNameError ? (
+                <Text style={styles.errorText}>{groupNameError}</Text>
+              ) : null}
+              <Button
+                onPress={() => {
+                  updateGroupName();
+                  setUpdateNameModalOpen(false);
+                }}
+                disabled={groupName.length < 5}
+              >
+                Update Name
+              </Button>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+    </ScrollView>
   );
 }
 

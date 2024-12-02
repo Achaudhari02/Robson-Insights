@@ -31,10 +31,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password: password,
       });
       const userData = {
-        email: userCredential.data.email,
+        email: email,
         token: userCredential.data.token,
-        firstName: userCredential.data.firstName,
-        lastName: userCredential.data.lastName,
       };
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
@@ -62,10 +60,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         last_name: registerData.lastName,
       });
       const userData = {
-        email: userCredential.data.email,
+        email: registerData.email,
         token: userCredential.data.token,
-        firstName: userCredential.data.firstName,
-        lastName: userCredential.data.lastName,
       };
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
@@ -111,8 +107,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 type User = {
   email: string;
   token: string;
-  firstName: string;
-  lastName: string;
 };
 
 type RegisterData = {

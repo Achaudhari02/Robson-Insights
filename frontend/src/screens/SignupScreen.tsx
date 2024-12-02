@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, YStack, XStack } from "tamagui";
-import { ChevronLeft } from "@tamagui/lucide-icons";
-import { Pressable } from "react-native";
+import { Text, YStack } from "tamagui";
 import { TextField, Button } from "@/components";
 import { useNavigation } from "@react-navigation/native";
 import { Formik } from "formik";

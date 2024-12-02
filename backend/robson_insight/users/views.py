@@ -32,7 +32,43 @@ class UserProfileDetailView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         queryset = UserProfile.objects.filter(pk=pk)
         return queryset
+    
+class GetUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        group_id = request.query_params.get('group_id')
+        email = request.query_params.get('email')
+
+        if not group_id or not email:
+            return Response(
+                {'error': 'Both group_id and email are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_profile = UserProfile.objects.get(
+                user__username=email,
+                group_id=group_id
+            )
+
+            return Response({
+                'is_admin': user_profile.is_admin,
+                'can_view': user_profile.can_view,
+                'username': user_profile.user.username
+            }, status=status.HTTP_200_OK)
+
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'User profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 class GroupListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = GroupSerializer

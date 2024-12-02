@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Platform,
+  Alert
 } from 'react-native';
-import { Button as TamaguiButton } from 'tamagui';
+import { Button as TamaguiButton, Text } from 'tamagui';
 import { BarChart, PieChart, Select } from '@/components';
 import { YStack } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,9 +16,10 @@ import { axiosInstance } from '@/lib/axios';
 import { format, endOfDay, subMonths, subYears } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Menu, Moon, Sun } from '@tamagui/lucide-icons';
-import { useTheme } from '../ThemeContext';
+import { Menu } from '@tamagui/lucide-icons';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
+import { useToastController, useToastState, Toast } from "@tamagui/toast";
 
 const ResultsScreen = ({ navigation }) => {
   const classificationOrder = [
@@ -60,16 +62,23 @@ const ResultsScreen = ({ navigation }) => {
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [initialSelectedType, setInitialSelectedType] = useState('group');
   const [initialSelectedId, setInitialSelectedId] = useState(null);
-  const { user, logoutFn } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  
+  const [hasPermission, setHasPermission] = useState(false);
+  const [currentFilterName, setCurrentFilterName] = useState('');
+
+  const toast = useToastController();
+  const currentToast = useToastState();
+
+  const { user } = useAuth();
+  const theme = useThemeName();
+
   useEffect(() => {
     if (selectedId !== null) {
-      fetchEntries();
+      fetchResults();
     }
   }, [selectedId]);
 
   useEffect(() => {
+    // Fetch filters
     axiosInstance.get('/survey/filters/', {
       headers: {
         Authorization: `Token ${user.token}`,
@@ -77,17 +86,38 @@ const ResultsScreen = ({ navigation }) => {
     })
       .then(response => setFilters(response.data))
       .catch(error => console.error('Error fetching filters:', error));
-
+  
+    // Fetch groups and check permissions
     axiosInstance.get('/users/groups/', {
       headers: {
         Authorization: `Token ${user.token}`,
       }
     })
-      .then(response => {
-        setGroups(response.data); if (response.data.length > 0) {
-          // Set the first group as the default selection
-          setSelectedId(response.data[0].id);
-          setInitialSelectedId(response.data[0].id);
+      .then(async response => {
+        setGroups(response.data);
+        if (response.data.length > 0) {
+          for (const group of response.data) {
+            try {
+              const permissionResponse = await axiosInstance.get(`users/get-user-profile/`, {
+                params: {
+                  group_id: group.id,
+                  email: user.email
+                },
+                headers: { Authorization: `Token ${user.token}` }
+              });
+  
+              const canView = permissionResponse.data.can_view || permissionResponse.data.is_admin;
+              if (canView) {
+                setSelectedId(group.id);
+                setInitialSelectedId(group.id);
+                setCurrentFilterName(group.name);
+                setHasPermission(true);
+                break;
+              }
+            } catch (error) {
+              console.error('Error checking group permissions:', error);
+            }
+          }
         }
       })
       .catch((error) => console.error('Error fetching groups:', error));
@@ -135,11 +165,19 @@ const ResultsScreen = ({ navigation }) => {
 
   const handleSubmit = () => {
     if (!startDate || !endDate) {
-      window.alert('Please select both start and end dates.');
+      if (Platform.OS === 'web') {
+        window.alert('Please select both start and end dates.');
+      } else {
+        Alert.alert('Error', 'Please select both start and end dates.');
+      }
       return;
     }
     if (startDate > endDate) {
-      window.alert('Start date cannot be after end date.');
+      if (Platform.OS === 'web') {
+        window.alert('Start date cannot be after end date.');
+      } else {
+        Alert.alert('Error', 'Start date cannot be after end date.');
+      }
       return;
     }
     setModalVisible(false);
@@ -179,31 +217,37 @@ const ResultsScreen = ({ navigation }) => {
     return csection ? 'Yes' : 'No';
   };
 
-  const handleSelectionChange = (value) => {
-    setSelectedId(value);
-  };
 
-  const handleTypeChange = (value) => {
-    setSelectedType(value);
-    setSelectedId(null);
-  };
-
-  const fetchEntries = () => {
+  const fetchResults = async () => {
     const prefix = selectedType === 'group' ? 'group-' : 'filter-';
     const endpoint = `/survey/entries/filter/${prefix}${selectedId}/`;
+    console.log("selected", selectedType)
+    if (selectedType === 'group') {
+      const selectedGroup = groups.find(g => g.id === selectedId);
+      if (selectedGroup) {
+        setCurrentFilterName(selectedGroup.name);
+      }
+    } else {
+      const selectedFilter = filters.find(f => f.id === selectedId);
+      if (selectedFilter) {
+        setCurrentFilterName(selectedFilter.name);
+      }
+    }
 
-    axiosInstance
-      .get(endpoint, {
-        headers: { Authorization: `Token ${user.token}` },
-      })
-      .then((response) => {
-        setResults(response.data);
-        setAllResults(response.data);
-      })
-      .catch((error) =>
-        console.error(`Error fetching entries for ${selectedType}:`, error)
-      );
+    try {
+      const response = await axiosInstance.get(endpoint, {
+        headers: { Authorization: `Token ${user.token}` }
+      });
+      setResults(response.data);
+      setAllResults(response.data);
+    } catch (error) {
+      console.error(`Error fetching entries for ${selectedType}:`, error);
+      toast.show('Error', {
+        message: 'Failed to fetch results'
+      });
+    }
   };
+
 
   const renderReportModal = () => (
     <Modal
@@ -341,7 +385,7 @@ const ResultsScreen = ({ navigation }) => {
               errorMessage.length === 0
                 ? styles.successMessage
                 : styles.errorMessage,
-                , screenStyle]
+              , screenStyle]
             }
           >
             {errorMessage.length === 0 ? successMessage : errorMessage}
@@ -351,58 +395,124 @@ const ResultsScreen = ({ navigation }) => {
     </Modal>
   );
 
-  const renderFilterModal = () => (
-    <Modal
-      visible={filterModalVisible}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={() => setFilterModalVisible(false)}
-    >
-      <View style={styles.modalBackground}>
-        <View style={[styles.modalContent, screenStyle]}>
-          <Text style={[styles.modalTitle, screenStyle]}>Filter Data View</Text>
-          <YStack gap="$4" padding="$4">
-            <Select
-              value={selectedType}
-              onValueChange={handleTypeChange}
-              items={[
-                { label: 'Group', value: 'group' },
-                { label: 'Configuration', value: 'filter' },
-              ]}
-            />
-            <Select
-              value={selectedId}
-              onValueChange={handleSelectionChange}
-              items={(selectedType === 'group' ? groups : filters).map(
-                (item) => ({
-                  label: item.name,
-                  value: item.id,
-                })
-              )}
-            />
-          </YStack>
-          <View style={[styles.modalButtons, screenStyle]}>
-            <TouchableOpacity
-              style={[styles.button]}
-              onPress={() => setFilterModalVisible(false)}
-            >
-              <Text style={[styles.buttonText]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button]}
-              onPress={() => {
-                fetchEntries();
-                setIsFilterApplied(true);
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={[styles.buttonText]}>Submit</Text>
-            </TouchableOpacity>
+  const renderFilterModal = () => {
+
+    const [tempType, setTempType] = useState(selectedType);
+    const [tempId, setTempId] = useState(selectedId);
+
+    const handleSubmit = async () => {
+      console.log("is it not?", tempType, tempId);
+    
+      if (tempType === 'group') {
+        try {
+          const response = await axiosInstance.get(`users/get-user-profile/`, {
+            params: {
+              group_id: tempId,
+              email: user.email
+            },
+            headers: { Authorization: `Token ${user.token}` }
+          });
+    
+          const canView = response.data.can_view || response.data.is_admin;
+          setHasPermission(canView);
+    
+          if (!canView) {
+            toast.show('Access Denied', {
+              message: 'You do not have permission to view results for this group'
+            });
+            setTempType(selectedType);
+            setTempId(selectedId);
+            setFilterModalVisible(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking permissions:', error);
+          toast.show('Error', {
+            message: 'Failed to verify permissions'
+          });
+          // Reset and close on error
+          setTempType(selectedType);
+          setTempId(selectedId);
+          setFilterModalVisible(false);
+          return;
+        }
+      }
+    
+      setSelectedType(tempType);
+      setSelectedId(tempId);
+    
+      if (tempType === 'group') {
+        const selectedGroup = groups.find(g => Number(g.id) === Number(tempId));
+        if (selectedGroup) {
+          setCurrentFilterName(selectedGroup.name);
+        }
+      } else {
+        const selectedFilter = filters.find(f => Number(f.id) === Number(tempId));
+        if (selectedFilter) {
+          setCurrentFilterName(selectedFilter.name);
+        }
+      }
+      
+      setIsFilterApplied(true);
+      setFilterModalVisible(false);
+    };
+
+    const handleCancel = () => {
+      // Reset temporary selections
+      setTempType(selectedType);
+      setTempId(selectedId);
+      setFilterModalVisible(false);
+    };
+    return (
+      <Modal
+        visible={filterModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={handleCancel}
+      >
+        <View style={styles.modalBackground}>
+          <View style={[styles.modalContent, screenStyle]}>
+            <Text style={[styles.modalTitle, screenStyle]}>Filter Data View</Text>
+            <YStack gap="$4" padding="$4">
+              <Select
+                value={tempType}
+                onValueChange={setTempType}
+                items={[
+                  { label: 'Group', value: 'group' },
+                  { label: 'Configuration', value: 'filter' },
+                ]}
+              />
+              <Select
+                value={tempId}
+                onValueChange={setTempId}
+                items={(tempType === 'group' ? groups : filters).map(
+                  (item) => ({
+                    label: item.name,
+                    value: item.id,
+                  })
+                )}
+              />
+            </YStack>
+
+            <View style={[styles.modalButtons, screenStyle]}>
+              <TouchableOpacity
+                style={[styles.button]}
+                onPress={handleCancel}
+              >
+                <Text style={[styles.buttonText]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button]}
+                onPress={handleSubmit}
+              >
+                <Text style={[styles.buttonText]}>Submit</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   const renderTableRow = (result, index) => (
     <View
@@ -412,17 +522,17 @@ const ResultsScreen = ({ navigation }) => {
       ]}
       key={`${result.id}-${index}`}
     >
-      <Text style={[styles.cell, {color: screenStyle.color}]}>Group {result.classification}</Text>
-      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatCSection(result.csection)}</Text>
-      <Text style={[styles.cell, {color: screenStyle.color}]}>{formatDate(result.date)}</Text>
+      <Text style={[styles.cell, { color: screenStyle.color }]}>Group {result.classification}</Text>
+      <Text style={[styles.cell, { color: screenStyle.color }]}>{formatCSection(result.csection)}</Text>
+      <Text style={[styles.cell, { color: screenStyle.color }]}>{formatDate(result.date)}</Text>
     </View>
   );
 
   const renderTableHeader = () => (
-    <View style={[styles.tableRow, {backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.rowEven.backgroundColor, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderBottomWidth: theme === 'dark' ? 3 : 0}]}>
-      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Classification</Text>
-      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>C-Section</Text>
-      <Text style={[styles.columnHeader, {color: screenStyle.color}]}>Date</Text>
+    <View style={[styles.tableRow, { backgroundColor: theme === 'dark' ? screenStyle.backgroundColor : styles.rowEven.backgroundColor, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderBottomWidth: theme === 'dark' ? 3 : 0 }]}>
+      <Text style={[styles.columnHeader, { color: screenStyle.color }]}>Classification</Text>
+      <Text style={[styles.columnHeader, { color: screenStyle.color }]}>C-Section</Text>
+      <Text style={[styles.columnHeader, { color: screenStyle.color }]}>Date</Text>
     </View>
   );
 
@@ -526,7 +636,7 @@ const ResultsScreen = ({ navigation }) => {
       });
       setErrorMessaage("");
       setSuccessMessage(response.data["message"]);
-      fetchEntries();
+      fetchResults();
       setFile(null);
       setImportModalVisible(false);
       setErrorMessaage('');
@@ -673,14 +783,23 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
-
+      {currentFilterName && (
+        <Text
+          paddingVertical="$2"
+          paddingHorizontal="$4"
+          fontSize="$6"
+          fontWeight="bold"
+        >
+          {currentFilterName + "'s Data"}
+        </Text>
+      )}
       {renderReportModal()}
       {renderEmailModal()}
       {renderImportModal()}
       {renderFilterModal()}
 
       <TamaguiButton
-        icon={<Menu color={screenStyle.color}/>}
+        icon={<Menu color={theme === 'dark' ? 'white' : 'black'} />}
         size="$4"
         circular
         onPress={() => setMenuOpen(!menuOpen)}
@@ -688,13 +807,13 @@ const ResultsScreen = ({ navigation }) => {
           position: 'absolute',
           top: 5,
           right: 5,
-          backgroundColor: 'white',
+          backgroundColor: theme === 'dark' ? '$gray3' : 'white',
           zIndex: 10,
-          border: "1px solid grey"
+          border: theme === 'dark' ? "1px solid white" : "1px solid grey"
         }}
         hoverStyle={{
-          backgroundColor: 'rgba(0, 0, 0, 0)',
-          borderColor: 'rgba(0, 0, 0, 0)',
+          backgroundColor: theme === 'dark' ? '$gray4' : '$gray2',
+          borderColor: theme === 'dark' ? 'white' : 'grey',
         }}
       />
 
@@ -741,8 +860,8 @@ const ResultsScreen = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
-                downloadTemplate();
-                setMenuOpen(false);
+              downloadTemplate();
+              setMenuOpen(false);
             }}
             style={[styles.sideMenuItem, screenStyle]}
           >
@@ -772,7 +891,7 @@ const ResultsScreen = ({ navigation }) => {
                 setSelectedType(initialSelectedType);
                 setSelectedId(initialSelectedId);
                 setIsFilterApplied(false);
-                fetchEntries();
+                fetchResults();
               }
               setMenuOpen(false);
             }}
@@ -803,7 +922,7 @@ const ResultsScreen = ({ navigation }) => {
             navigation.navigate('Bar Chart', { data: parsedResults })
           }
         >
-          <BarChart data={parsedResults}/>
+          <BarChart data={parsedResults} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -813,12 +932,32 @@ const ResultsScreen = ({ navigation }) => {
         >
           <PieChart data={parsedResults} />
         </TouchableOpacity>
-        <View style={{ paddingHorizontal: theme === 'dark' ? 0 : 10, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderTopWidth: theme === 'dark' ? 3 : 0}}>
+        <View style={{ paddingHorizontal: theme === 'dark' ? 0 : 10, borderColor: theme === 'dark' ? darkTheme.color : 'transparent', borderTopWidth: theme === 'dark' ? 3 : 0 }}>
           {renderTableHeader()}
           {currentEntries.map(renderTableRow)}
           {renderPagination()}
         </View>
       </ScrollView>
+      {currentToast && !currentToast.isHandledNatively && (
+        <Toast
+          key={currentToast.id}
+          duration={currentToast.duration}
+          enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+          exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          y={0}
+          opacity={1}
+          scale={1}
+          animation="100ms"
+          viewportName={currentToast.viewportName}
+        >
+          <YStack>
+            <Toast.Title>{currentToast.title}</Toast.Title>
+            {!!currentToast.message && (
+              <Toast.Description>{currentToast.message}</Toast.Description>
+            )}
+          </YStack>
+        </Toast>
+      )}
     </View>
   );
 };
