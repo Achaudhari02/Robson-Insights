@@ -148,11 +148,9 @@ class FilterEntriesByDateView(APIView):
 
         if start_date:
             start_date = datetime.combine(start_date, datetime.min.time())
-            print(start_date)
         if end_date:
             end_date = datetime.combine(end_date, datetime.max.time())
-            print(end_date)
-
+        
         if start_date and end_date:
             entries = Entry.objects.filter(
                 date__range=(start_date, end_date),
@@ -170,6 +168,8 @@ class FilterEntriesByDateView(APIView):
             ).distinct()
         else:
             entries = Entry.objects.filter(groups__in=user_groups).distinct()
+            
+        entries = entries.order_by('date')
 
         entries_data = [
             {

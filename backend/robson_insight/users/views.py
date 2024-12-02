@@ -186,10 +186,14 @@ class RemoveUserFromGroup(APIView):
             user = User.objects.get(username=username)
             group = Group.objects.get(id=group_id)
             user_profile = UserProfile.objects.get(user=user, group=group)
+            num_user_profiles = UserProfile.objects.filter(user=request.user).count()
 
             requesting_user_admin = UserProfile.objects.get(user=request.user, group=group).is_admin
             if not requesting_user_admin:
                 return Response({'error': 'You are not authorized to remove users from this group.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            if num_user_profiles <= 1:
+                return Response({'error': 'You must be a member of at least one group.'}, status=status.HTTP_403_FORBIDDEN)
 
             user_profile.delete()
 
