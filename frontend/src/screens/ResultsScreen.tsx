@@ -96,6 +96,8 @@ const ResultsScreen = ({ navigation }) => {
       .then(async response => {
         setGroups(response.data);
         if (response.data.length > 0) {
+          let hasAccessToAnyGroup = false;
+  
           for (const group of response.data) {
             try {
               const permissionResponse = await axiosInstance.get(`users/get-user-profile/`, {
@@ -112,15 +114,33 @@ const ResultsScreen = ({ navigation }) => {
                 setInitialSelectedId(group.id);
                 setCurrentFilterName(group.name);
                 setHasPermission(true);
+                hasAccessToAnyGroup = true;
                 break;
               }
             } catch (error) {
               console.error('Error checking group permissions:', error);
             }
           }
+  
+          if (!hasAccessToAnyGroup) {
+            toast.show('No Access', {
+              message: 'You do not have permission to view data from any groups'
+            });
+            setHasPermission(false);
+            setSelectedId(null);
+            setInitialSelectedId(null);
+            setCurrentFilterName('');
+            setSelectedType('filter');
+            setInitialSelectedType('filter');
+          }
         }
       })
-      .catch((error) => console.error('Error fetching groups:', error));
+      .catch((error) => {
+        console.error('Error fetching groups:', error);
+        toast.show('Error', {
+          message: 'Failed to fetch groups'
+        });
+      });
   }, []);
 
   useEffect(() => {
