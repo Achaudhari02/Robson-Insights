@@ -307,7 +307,7 @@ const GroupsScreen = ({ navigation }) => {
       );
       fetchConfigurationGroups(selectedConfiguration);
       toast.show('Group added successfully', {
-        message: `$Group has been added to the configuration.`,
+        message: `This group has been added to the configuration.`,
       });
     } catch (error) {
       console.error('Error adding group:', error);
@@ -1111,7 +1111,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     width: width > 480 ? 250 : 200,
-    maxWidth: '90%',
   },
   arrow: {
     position: 'absolute',
@@ -1122,8 +1121,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     borderBottomColor: '#333',
     borderStyle: 'solid',
-    width: 0, // Add explicit width
-    height: 0, // Add explicit height
   },
   tamaguiButton: {
     backgroundColor: "#007bff",

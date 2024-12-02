@@ -86,7 +86,7 @@ const ResultsScreen = ({ navigation }) => {
     })
       .then(response => setFilters(response.data))
       .catch(error => console.error('Error fetching filters:', error));
-  
+
     // Fetch groups and check permissions
     axiosInstance.get('/users/groups/', {
       headers: {
@@ -97,7 +97,7 @@ const ResultsScreen = ({ navigation }) => {
         setGroups(response.data);
         if (response.data.length > 0) {
           let hasAccessToAnyGroup = false;
-  
+
           for (const group of response.data) {
             try {
               const permissionResponse = await axiosInstance.get(`users/get-user-profile/`, {
@@ -107,7 +107,7 @@ const ResultsScreen = ({ navigation }) => {
                 },
                 headers: { Authorization: `Token ${user.token}` }
               });
-  
+
               const canView = permissionResponse.data.can_view || permissionResponse.data.is_admin;
               if (canView) {
                 setSelectedId(group.id);
@@ -121,7 +121,7 @@ const ResultsScreen = ({ navigation }) => {
               console.error('Error checking group permissions:', error);
             }
           }
-  
+
           if (!hasAccessToAnyGroup) {
             toast.show('No Access', {
               message: 'You do not have permission to view data from any groups'
@@ -241,7 +241,6 @@ const ResultsScreen = ({ navigation }) => {
   const fetchResults = async () => {
     const prefix = selectedType === 'group' ? 'group-' : 'filter-';
     const endpoint = `/survey/entries/filter/${prefix}${selectedId}/`;
-    console.log("selected", selectedType)
     if (selectedType === 'group') {
       const selectedGroup = groups.find(g => g.id === selectedId);
       if (selectedGroup) {
@@ -422,7 +421,7 @@ const ResultsScreen = ({ navigation }) => {
 
     const handleSubmit = async () => {
       console.log("is it not?", tempType, tempId);
-    
+
       if (tempType === 'group') {
         try {
           const response = await axiosInstance.get(`users/get-user-profile/`, {
@@ -432,10 +431,10 @@ const ResultsScreen = ({ navigation }) => {
             },
             headers: { Authorization: `Token ${user.token}` }
           });
-    
+
           const canView = response.data.can_view || response.data.is_admin;
           setHasPermission(canView);
-    
+
           if (!canView) {
             toast.show('Access Denied', {
               message: 'You do not have permission to view results for this group'
@@ -457,10 +456,10 @@ const ResultsScreen = ({ navigation }) => {
           return;
         }
       }
-    
+
       setSelectedType(tempType);
       setSelectedId(tempId);
-    
+
       if (tempType === 'group') {
         const selectedGroup = groups.find(g => Number(g.id) === Number(tempId));
         if (selectedGroup) {
@@ -472,7 +471,7 @@ const ResultsScreen = ({ navigation }) => {
           setCurrentFilterName(selectedFilter.name);
         }
       }
-      
+
       setIsFilterApplied(true);
       setFilterModalVisible(false);
     };
@@ -803,16 +802,16 @@ const ResultsScreen = ({ navigation }) => {
 
   return (
     <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
-      {currentFilterName && (
+      {currentFilterName ? (
         <Text
           paddingVertical="$2"
           paddingHorizontal="$4"
           fontSize="$6"
           fontWeight="bold"
         >
-          {currentFilterName + "'s Data"}
+          {`${currentFilterName}'s Data`}
         </Text>
-      )}
+      ) : null} 
       {renderReportModal()}
       {renderEmailModal()}
       {renderImportModal()}
