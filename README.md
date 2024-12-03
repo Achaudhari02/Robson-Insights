@@ -107,7 +107,7 @@ Start the frontend application:
 
 The frontend is built using React Native and Expo with TypeScript. After running the start command, you can access the frontend app as specified by the output from the Expo CLI.
 
-####Backend
+#### Backend
 
 Navigate to the backend directory, set up the Python virtual environment, and install dependencies:
 
