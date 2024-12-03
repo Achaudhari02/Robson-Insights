@@ -5,6 +5,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 # Release Notes
 
 ## Version 1.0
+
 ### Features
 - Implemented ability to take Robson Classification Quiz and submit or discard result 
 - User and group-scoped Pie and Bar chart visualizations of Robson Classification results
@@ -14,7 +15,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 - Filtering/configuration of results viewing page
 - Added ability mass invite users to group via CSV import
 
-- ### Bug Fixes
+### Bug Fixes
 - Fixed issue where exit button for Detailed Pie Chart screen would not appear
 - Fixed issue where CSV import would not parse correctly
 - Fixed problem with CSV data export where data would be seperated by semicolon
