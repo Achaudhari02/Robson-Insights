@@ -66,14 +66,33 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 ## Getting Started
 ### Prerequisites
 
-What things you need to install the software and how to install them.
+What things you need to run Robson Insights and how to install them.
 
-Node.js
-Python 3.x
+Git - **[Installation](https://github.com/git-guides/install-git)**
+
+Node.js - **[Installation](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)**
+
+Python 3.x - **[Installation](https://pythongeeks.org/python-3-installation-and-setup-guide/)**
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development environment running.
+Step by step instructions that tell you how to get a development environment running.
+
+#### Initial Setup
+
+Open your respective Windows/MacOS/Linux terminal application and create a new directory for the application to live.
+
+```bash
+mkdir robson_insights
+cd robson_insights
+```
+
+Clone the repository and navigate into the directory:
+
+```bash
+git clone https://github.com/drewmlawton/JIB-4109.git
+cd JIB-4109
+```
 
 #### Frontend
 
