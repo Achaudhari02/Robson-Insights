@@ -63,7 +63,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 
 
 
-## Getting Started
+## Installation Guide
 ### Prerequisites
 
 What things you need to run Robson Insights and how to install them.
