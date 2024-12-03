@@ -44,10 +44,7 @@ const AppTabs = ({ toggleTheme }) => {
           <LogoutButton />
         </View>,
         headerShown: true,
-        tabBarStyle: {
-          backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
-          borderTopColor: theme === 'dark' ? 'transparent' : 'rgb(216, 216, 216)',
-        },
+        tabBarStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)' },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{
@@ -106,7 +103,11 @@ const ResultsStack = ({ toggleTheme }) => {
         <ThemeToggle toggleTheme={toggleTheme}/>
         <LogoutButton />
       </View>,
-      headerStyle: { backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor, borderBottomColor: theme === 'dark' ? darkTheme.backgroundColor : 'rgb(216, 216, 216)' },
+      headerStyle: {
+        backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
+        borderBottomColor: theme === 'dark' ? '#444' : 'rgb(216, 216, 216)',
+        borderBottomWidth: 1,
+      },
       headerTintColor: theme === 'dark' ? darkTheme.color : lightTheme.color,
       headerShown: true
     }}>
@@ -129,7 +130,7 @@ const ResultsStack = ({ toggleTheme }) => {
 
 const ThemeToggle = ({ toggleTheme }) => {
   const themeName = useThemeName();
- 
+
   return (
     <TamaguiButton
       icon={themeName === 'dark' ? <Sun size="$2" /> : <Moon size="$2" />}
