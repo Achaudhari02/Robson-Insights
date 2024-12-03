@@ -6,7 +6,7 @@ The Robson Insights app is a specialized tool designed for healthcare profession
 
 ## Version 1.0
 ### Features
-- Implemented Robson Classification Quiz 
+- Implemented ability to take Robson Classification Quiz and submit or discard result 
 - User and group-scoped Pie and Bar chart visualizations of Robson Classification results
 - User Authentication with manually approved accounts and email based sign-ups
 - Group management implementation, administrators of groups can add, remove, and change view permisions of users
