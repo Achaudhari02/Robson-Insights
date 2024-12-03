@@ -1,67 +1,33 @@
 # Robson Classification Application
 
-The Robson Insights app is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.\
+The Robson Insights app is a specialized tool designed for healthcare professionals to engage in anonymized data collection and analysis concerning the Robson classification system. This application enables users within an organization to complete quizzes based on the Robson classification group of a patient, fostering a collaborative and informed approach to patient categorization in obstetric care.
 
 # Release Notes
 
-## Version 0.4.0
+## Version 1.0
 ### Features
-- Added HTML styles to email invite and changed sender email to robsoninsights.gmail.com
-- Added expected C-Section percentages/benchmarks per classification group for comparison
-- Added ability to create reports based on date-ranges passed in by user
-- Update quiz result page to allow user to discard result
+- Implemented Robson Classification Quiz 
+- User and group-scoped Pie and Bar chart visualizations of Robson Classification results
+- User Authentication with manually approved accounts and email based sign-ups
+- Group management implementation, administrators of groups can add, remove, and change view permisions of users
+- Create quarterly/yearly reports based on date-ranges passed in by user in Results section
+- Filtering/configuration of results viewing page
+- Added ability mass invite users to group via CSV import
+
 - ### Bug Fixes
 - Fixed issue where exit button for Detailed Pie Chart screen would not appear
 - Fixed issue where CSV import would not parse correctly
 - Fixed problem with CSV data export where data would be seperated by semicolon
-### Known Issues
-- Bar chart visualization on mobile will overflow off of screen if there are too many entries
-- Groups screen UI is clunky and unintuitive
-
-## Version 0.3.0
-### Features
-- Added Bar Chart Visiulization for Robson results analysis
-- Added Pie Chart Visiulization for Robson results analysis
-- Added export button to chart page to save visualizations
-- Added description to quiz results screen for information on classification meaning
-- Added ability mass invite users to group via CSV import
-- Implemented filtering/configuration of results viewing page
-### Bug Fixes
+- Fixed issue where exit button for Detailed Pie Chart screen would not appear
+- Fixed issue where CSV import would not parse correctly
+- Fixed problem with CSV data export where data would be seperated by semicolon
 - Improved User Interface of Groups tab for non-mobile users
 - Fixed issue where existing users invited to group would not receive invite
-### Known Issues
-- CSV file import for mass group invite is sometimes not properly parsed
-- Charts export only exports one of two graphs when should be both 
-
-## Version 0.2.0
-### Features
-- Group/Hospital creation added to groups tab
-- Added Group/Hosital selection for users in multiple groups/hospitals
-- Allow group admins to add/Remove users from groups
-- Upon admin adding user to group, signup email is sent to users added to group who do not exist in Robson Insights System
-- Enable group admins to toggle results viewing permisions for group members 
-### Bug Fixes
 - Fixed bug where groups tab would appear blank when user signs in
 - Fixed bug where survey resuls would only be applied to one group when user is part of multiple groups
+  
 ### Known Issues
-- No easy way for admins to add users in mass to a group 
-- User Interface for Groups tab  is not friendly to non-mobile users
-
-## Version 0.1.0
-### Features
-- Robson Classification Quiz
-- User-scoped table visualization of their aggregate results
-- User Authentication with manually approved accounts
-- Initial group management, administrators of groups can add and remove users
-### Bug Fixes
-- No bug fixes addressed in Sprint 1
-### Known Issues
-- Users cannot yet create or join their own groups
-- Group permissions of users must currently be manually set
-- Visualizations need to include group data
-
-
-
+- Group member added notification sometimes pops up on clicking to results page
 
 ## Installation Guide
 ### Prerequisites
