@@ -114,9 +114,6 @@ const PieChartAnalysisScreen = ({ route }) => {
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -135,6 +132,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    position: 'relative',
     backgroundColor: 'white',
   },
   buttonContainer: {
