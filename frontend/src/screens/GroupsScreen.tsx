@@ -456,7 +456,6 @@ const GroupsScreen = ({ navigation }) => {
                 data-groups-info-button
                 onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
                 icon={<Info color={theme === 'dark' ? darkTheme.color : lightTheme.color} />}
-                chromeless
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -581,31 +580,33 @@ const GroupsScreen = ({ navigation }) => {
           )}
           {selectedGroup && (
             <YStack paddingVertical="$2">
-              <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
-              {groupUsers.map((groupUser) => (
-                <XStack
-                  key={groupUser.id}
-                  alignItems="center"
-                  justifyContent="space-between"
-                  width="100%"
-                  paddingVertical="$2"
-                  paddingHorizontal="$4"
-                  gap="$4"
-                  opacity={!isGroupAdmin ? 0.6 : 1}
-                >
-                  <XStack flex={1} minWidth={0}>  {/* Add this wrapper */}
-                    <Text
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      flex={1}
-                      minWidth={0}
-                    >
-                      {groupUser.username}
-                    </Text>
-                  </XStack>
-                  {isTabletOrDesktop ? (
-                    <XStack gap="$4" alignItems="center">
-                      {isGroupAdmin && user.email !== groupUser.username && (
+            <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
+            {groupUsers.map((groupUser) => (
+              <XStack
+                key={groupUser.id}
+                alignItems="center"
+                justifyContent="space-between"
+                width="100%"
+                paddingVertical="$2"
+                paddingHorizontal="$4"
+                gap="$4"
+                opacity={!isGroupAdmin ? 0.6 : 1}
+              >
+                <XStack flex={1} minWidth={0}>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    flex={1}
+                    minWidth={0}
+                  >
+                    {groupUser.username}
+                  </Text>
+                </XStack>
+
+                {isTabletOrDesktop ? (
+                  <XStack gap="$4" alignItems="center">
+                    {isGroupAdmin && user.email !== groupUser.username && (
+                      <View>
                         <Button
                           onPress={() => removeMember(groupUser.username)}
                           size="$3"
@@ -613,94 +614,59 @@ const GroupsScreen = ({ navigation }) => {
                         >
                           Remove
                         </Button>
+                      </View>
+                    )}
+                    {!(isGroupAdmin && user.email === groupUser.username) && (
+                      <>
+                        <Text style={{ flexShrink: 0 }}>Viewing permissions</Text>
+                        <Checkbox
+                          checked={groupUser.can_view}
+                          onCheckedChange={(newValue) =>
+                            handleUserCheckBoxChange(groupUser.username, newValue)
+                          }
+                          size="$3"
+                          flexShrink={0}
+                          disabled={!isGroupAdmin}
+                        />
+                      </>
+                    )}
+                  </XStack>
+                ) : (
+                  <YStack alignItems="flex-start" width="100%" paddingVertical="$2" gap="$2">
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={{ width: '100%' }}
+                    >
+                      {groupUser.username}
+                    </Text>
+                    <XStack justifyContent="space-between" alignItems="center" width="100%">
+                      {isGroupAdmin && user.email !== groupUser.username && (
+                        <Button
+                          onPress={() => removeMember(groupUser.username)}
+                          size="$3"
+                          hoverStyle={{ backgroundColor: '$red6' }}
+                        >
+                          Remove
+                        </Button>
                       )}
-
-                      <Text style={{ flexShrink: 0 }}>
-                        Viewing permissions
-                      </Text>
-
-                      <Checkbox
-                        checked={groupUser.can_view}
-                        onCheckedChange={(newValue) =>
-                          handleUserCheckBoxChange(groupUser.username, newValue)
-                        }
-                        size="$3"
-                        flexShrink={0}
-                        disabled={!isGroupAdmin}
-                      />
+                      {!(isGroupAdmin && user.email === groupUser.username) && (
+                        <XStack alignItems="center" gap="$2">
+                          <Text>Can View</Text>
+                          <Checkbox
+                            checked={groupUser.can_view}
+                            onCheckedChange={(newValue) => handleUserCheckBoxChange(groupUser.username, newValue)}
+                            size="$3"
+                            disabled={!isGroupAdmin}
+                          />
+                        </XStack>
+                      )}
                     </XStack>
-                  ) : (
-                    <>
-                      {isGroupAdmin && (
-                        <Popover placement="bottom-start" size="$5" allowFlip>
-                          <Popover.Trigger asChild>
-                            <Button
-                              icon={<MoreVertical size="$1" />}
-                              circular
-                              size="$3"
-                              backgroundColor="$colorTransparent"
-                              hoverStyle={{ backgroundColor: '$gray5' }}
-                            />
-                          </Popover.Trigger>
-
-                          <Popover.Content
-                            borderWidth={1}
-                            borderColor="$borderColor"
-                            enterStyle={{ y: -10, opacity: 0 }}
-                            exitStyle={{ y: -10, opacity: 0 }}
-                            elevate
-                            animation={[
-                              'quick',
-                              {
-                                opacity: {
-                                  overshootClamping: true,
-                                },
-                              },
-                            ]}
-                            width={width * 0.8}
-                            alignSelf="center"
-                          >
-                            <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
-
-                            <XStack
-                              space="$3"
-                              padding="$3"
-                              alignItems="center"
-                              justifyContent="center"
-                              width="100%"
-                            >
-                              {user.email !== groupUser.username && (
-                                <Button
-                                  onPress={() => removeMember(groupUser.username)}
-                                  theme="red"
-                                  size="$3"
-                                  icon={<Trash size={16} />}
-                                  chromeless
-                                >
-                                  <Text size="$2">Remove</Text>
-                                </Button>
-                              )}
-
-                              <XStack space="$2" alignItems="center">
-                                <Text size="$2">Can View</Text>
-                                <Checkbox
-                                  checked={groupUser.can_view}
-                                  onCheckedChange={(newValue) => {
-                                    handleUserCheckBoxChange(groupUser.username, newValue);
-                                  }}
-                                  size="$2"
-                                />
-                              </XStack>
-                            </XStack>
-                          </Popover.Content>
-                        </Popover>
-                      )}
-                    </>
-                  )}
-                </XStack>
-              ))}
-
-            </YStack>
+                  </YStack>
+                )}
+              </XStack>
+            ))}
+          </YStack>
           )}
         </View>
         <View style={{ width: 42 }} />
@@ -766,7 +732,6 @@ const GroupsScreen = ({ navigation }) => {
                 data-configs-info-button
                 icon={<Info />}
                 onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
-                chromeless
                 style={{
                   flexDirection: "row",
                   alignItems: "center",

@@ -58,7 +58,7 @@ export const Select = (props: CustomSelectProps) => {
 
           <InternalSelect.Viewport
             minWidth={isMobile ? 320 : 260}
-            backgroundColor="transparent"
+
           >
             <InternalSelect.Group>
               {/* for longer lists memoizing these is useful */}
