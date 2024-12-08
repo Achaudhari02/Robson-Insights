@@ -2,13 +2,13 @@ import React, {useState} from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Linking, Alert } from 'react-native';
 import { PieChart } from '@/components';
 import { Info } from "@tamagui/lucide-icons";
-import { useTheme } from '../ThemeContext';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 const PieChartAnalysisScreen = ({ route }) => {
   const { data } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const  theme = useThemeName();
   const EXTERNAL_URL = 'https://www.who.int/publications/i/item/9789241513197';
 
   const groupDescriptions = {
@@ -114,9 +114,6 @@ const PieChartAnalysisScreen = ({ route }) => {
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -135,6 +132,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    position: 'relative',
     backgroundColor: 'white',
   },
   buttonContainer: {

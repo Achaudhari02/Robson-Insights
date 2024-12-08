@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, YStack, XStack } from "tamagui";
-import { ChevronLeft } from "@tamagui/lucide-icons";
-import { Pressable } from "react-native";
+import { Text, YStack } from "tamagui";
 import { TextField, Button } from "@/components";
 import { useNavigation } from "@react-navigation/native";
 import { Formik } from "formik";
@@ -92,6 +90,7 @@ const SignUpScreen = ({ route }) => {
               onChangeText={handleChange("firstName")}
               onBlur={handleBlur("firstName")}
               placeholder="First Name"
+              placeholderAsTitle={true}
               helperText={touched.firstName && errors.firstName ? errors.firstName : ""}
             />
             <TextField
@@ -99,6 +98,7 @@ const SignUpScreen = ({ route }) => {
               onChangeText={handleChange("lastName")}
               onBlur={handleBlur("lastName")}
               placeholder="Last Name"
+              placeholderAsTitle={true}
               helperText={touched.lastName && errors.lastName ? errors.lastName : ""}
             />
             <TextField
@@ -106,6 +106,7 @@ const SignUpScreen = ({ route }) => {
               onChangeText={handleChange("email")}
               onBlur={handleBlur("email")}
               placeholder="Email"
+              placeholderAsTitle={true}
               helperText={touched.email && errors.email ? errors.email : ""}
             />
             <TextField
@@ -114,6 +115,7 @@ const SignUpScreen = ({ route }) => {
               onBlur={handleBlur("password")}
               placeholder="Password"
               secureTextEntry
+              placeholderAsTitle={true}
               helperText={touched.password && errors.password ? errors.password : ""}
             />
           </YStack>

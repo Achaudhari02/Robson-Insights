@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Svg, G, Path } from 'react-native-svg';
 import * as d3Shape from 'd3-shape';
 import * as d3Scale from 'd3-scale';
-import { useTheme } from '../ThemeContext';
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 interface DataItem {
@@ -16,7 +16,7 @@ interface PieChartProps {
 }
 
 export const PieChart: React.FC<PieChartProps> = ({ data }) => {
-  const { theme, toggleTheme } = useTheme();
+  const theme  = useThemeName();
 
   const svgWidth = 400;
   const svgHeight = 300;

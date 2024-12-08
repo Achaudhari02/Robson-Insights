@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { registerRootComponent } from 'expo';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from '@/lib/auth';
@@ -7,9 +7,7 @@ import { TamaguiProvider, createTamagui, Theme } from 'tamagui'
 import { config } from '@tamagui/config/v3'
 import { useFonts } from 'expo-font'
 import { ToastProvider, ToastViewport } from '@tamagui/toast'
-import { ThemeProvider } from './ThemeContext';
-
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const tamaguiConfig = createTamagui(config)
 
@@ -30,11 +28,11 @@ const navigationConfig = {
           }
         },
         Auth: {
-        screens: {
-          Login: 'login',
-          Signup: 'signup',
-        }
-      },
+          screens: {
+            Login: 'login',
+            Signup: 'signup',
+          }
+        },
       }
     }
   }
@@ -53,18 +51,47 @@ const App = () => {
     InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
   })
 
-  if (!loadedFonts) {
-    return null
+  const [themeName, setThemeName] = useState<'light' | 'dark'>('light');
+  const [themeLoaded, setThemeLoaded] = useState(false);
+
+
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('theme');
+        if (savedTheme) {
+          setThemeName(savedTheme as 'light' | 'dark');
+        }
+        setThemeLoaded(true);
+      } catch (error) {
+        console.error('Error loading theme:', error);
+        setThemeLoaded(true);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    const newTheme = themeName === 'light' ? 'dark' : 'light';
+    setThemeName(newTheme);
+    try {
+      await AsyncStorage.setItem('theme', newTheme);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
+  };
+
+  if (!loadedFonts || !themeLoaded) {
+    return null;
   }
+
   return (
     <AuthProvider>
       <NavigationContainer linking={navigationConfig.linking}>
         <TamaguiProvider config={tamaguiConfig}>
-          <Theme name="light">
+          <Theme name={themeName}>
             <ToastProvider>
-              <ThemeProvider>
-                <AppRoutes />
-              </ThemeProvider>
+              <AppRoutes toggleTheme={toggleTheme} />
               <ToastViewport />
             </ToastProvider>
           </Theme>

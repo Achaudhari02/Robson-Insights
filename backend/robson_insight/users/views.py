@@ -32,7 +32,43 @@ class UserProfileDetailView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         queryset = UserProfile.objects.filter(pk=pk)
         return queryset
+    
+class GetUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        group_id = request.query_params.get('group_id')
+        email = request.query_params.get('email')
+
+        if not group_id or not email:
+            return Response(
+                {'error': 'Both group_id and email are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_profile = UserProfile.objects.get(
+                user__username=email,
+                group_id=group_id
+            )
+
+            return Response({
+                'is_admin': user_profile.is_admin,
+                'can_view': user_profile.can_view,
+                'username': user_profile.user.username
+            }, status=status.HTTP_200_OK)
+
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'User profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 class GroupListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = GroupSerializer
@@ -150,10 +186,14 @@ class RemoveUserFromGroup(APIView):
             user = User.objects.get(username=username)
             group = Group.objects.get(id=group_id)
             user_profile = UserProfile.objects.get(user=user, group=group)
+            num_user_profiles = UserProfile.objects.filter(user=request.user).count()
 
             requesting_user_admin = UserProfile.objects.get(user=request.user, group=group).is_admin
             if not requesting_user_admin:
                 return Response({'error': 'You are not authorized to remove users from this group.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            if num_user_profiles <= 1:
+                return Response({'error': 'You must be a member of at least one group.'}, status=status.HTTP_403_FORBIDDEN)
 
             user_profile.delete()
 

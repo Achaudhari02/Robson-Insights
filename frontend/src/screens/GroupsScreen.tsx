@@ -1,23 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Text } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Dimensions } from "react-native";
 import * as DocumentPicker from "expo-document-picker"
 import { axiosInstance } from "@/lib/axios";
 import { useAuth } from "@/hooks/useAuth";
-import { Select, Checkbox } from "@/components";
+import { Select, Checkbox, TextField } from "@/components";
 import {
-  Button as TamaguiButton,
-  Sheet,
-  H4,
+  Button,
   XStack,
   YStack,
   Dialog,
   Input,
+  ScrollView,
+  Popover,
+  Text
 } from "tamagui";
-import { Menu, Info, Sun, Moon } from "@tamagui/lucide-icons";
+import { Info } from "@tamagui/lucide-icons";
 import { useToastController, useToastState, Toast } from "@tamagui/toast";
-import { Check } from "@tamagui/lucide-icons";
+import { Check, MoreVertical, Trash, UserPlus, Edit3, Upload } from "@tamagui/lucide-icons";
 import Papa from 'papaparse';
-import { useTheme } from '../ThemeContext';
+
+const { width } = Dimensions.get('window');
+const isTabletOrDesktop = width >= 768;
+import { useThemeName } from 'tamagui';
 import { lightTheme, darkTheme } from '../themes';
 
 
@@ -28,11 +32,8 @@ const GroupsScreen = ({ navigation }) => {
   const [configurationGroups, setConfigurationGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedConfiguration, setSelectedConfiguration] = useState(null);
-  const { user, logoutFn } = useAuth();
+  const { user } = useAuth();
   const [newMember, setNewMember] = useState("");
-  const [newGroup, setNewGroup] = useState("");
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [joinRequests, setJoinRequests] = useState([]);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [isCreateConfigurationModalOpen, setCreateConfigurationModalOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -41,48 +42,41 @@ const GroupsScreen = ({ navigation }) => {
   const [configurationNameError, setConfigurationNameError] = useState("");
   const [groupsTooltipVisible, setGroupsTooltipVisible] = useState(false);
   const [configurationsTooltipVisible, setConfigurationsTooltipVisible] = useState(false);
-  const [groupsInfoLabelVisible, setGroupsInfoLabelVisible] = useState(true);
-  const [configurationsInfoLabelVisible, setConfigurationsInfoLabelVisible] = useState(true);
   const [isLeaveGroupDialogOpen, setLeaveGroupDialogOpen] = useState(false);
+  const [isAddMembersModalOpen, setAddMembersModalOpen] = useState(false);
+  const [isUpdateNameModalOpen, setUpdateNameModalOpen] = useState(false);
+  const [isGroupAdmin, setIsGroupAdmin] = useState(false);
+
+  const groupsTooltipRef = useRef(null);
+  const configurationsTooltipRef = useRef(null);
+
 
   const toast = useToastController();
   const currentToast = useToastState();
   const [checkedGroups, setCheckedGroups] = useState({});
-  const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ display: 'flex', flexDirection: 'row'}}>
-          <TamaguiButton
-            icon={theme === 'dark' ? <Sun size="$2" color={darkTheme.color} /> : <Moon size="$2" color={lightTheme.color}/>}
-            backgroundColor="$colorTransparent"
-            margin="$2"
-            onPress={() => {
-              toggleTheme();
-            }}
-            hoverStyle={{borderColor: '$colorTransparent'}}
-          >
-          </TamaguiButton>
-          <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              onPress={logoutFn}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Logout
-          </TamaguiButton>
-        </View>
-      ),
-    });
-  }, [navigation, theme]);
+  const theme = useThemeName();
 
   useEffect(() => {
     fetchGroups();
     fetchConfigurations();
+
+    const handleClickOutside = (event) => {
+      if (groupsTooltipRef.current &&
+        !groupsTooltipRef.current.contains(event.target) &&
+        !event.target.closest('[data-groups-info-button]')) {
+        setGroupsTooltipVisible(false);
+      }
+      if (configurationsTooltipRef.current &&
+        !configurationsTooltipRef.current.contains(event.target) &&
+        !event.target.closest('[data-configs-info-button]')) {
+        setConfigurationsTooltipVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
@@ -141,6 +135,8 @@ const GroupsScreen = ({ navigation }) => {
         }
       );
       setGroupUsers(response.data);
+      setIsGroupAdmin(response.data.find(u => u.username === user.email)?.is_admin || false);
+
     } catch (error) {
       console.error("Error fetching group users:", error);
     }
@@ -309,10 +305,9 @@ const GroupsScreen = ({ navigation }) => {
         { group_id: id, configuration_id: Number(selectedConfiguration) },
         { headers: { Authorization: `Token ${user.token}` } }
       );
-      setNewGroup("");
       fetchConfigurationGroups(selectedConfiguration);
       toast.show('Group added successfully', {
-        message: `$Group has been added to the configuration.`,
+        message: `This group has been added to the configuration.`,
       });
     } catch (error) {
       console.error('Error adding group:', error);
@@ -398,7 +393,7 @@ const GroupsScreen = ({ navigation }) => {
 
   const handleUserCheckBoxChange = async (username, newValue) => {
     try {
-      await axiosInstance.put(
+      await axiosInstance.post(
         "users/toggle-permissions/",
         {
           username: username,
@@ -426,222 +421,579 @@ const GroupsScreen = ({ navigation }) => {
     }));
   };
 
+  const handleGroupSelectChange = (value) => {
+    if (value === 'create-group') {
+      setCreateGroupModalOpen(true);
+    } else {
+      setSelectedGroup(value);
+    }
+  };
+
+  const handleConfigurationSelectChange = (value) => {
+    if (value === 'create-configuration') {
+      setCreateConfigurationModalOpen(true);
+    } else {
+      setSelectedConfiguration(value);
+    }
+  };
+
   const screenStyle = {
     backgroundColor: theme === 'dark' ? darkTheme.backgroundColor : lightTheme.backgroundColor,
     color: theme === 'dark' ? darkTheme.color : lightTheme.color,
   };
 
   return (
-    <View style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
-      <View style={screenStyle}>
-        <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
-            <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              style={{ width: 180 }}
-              onPress={() => setCreateGroupModalOpen(true)}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Create Group
-          </TamaguiButton>
-          <XStack flexDirection="row" justifyContent="center" alignItems="center">
-            <Text style={[styles.subtitle2, screenStyle]}>Groups</Text>
-            <View>
-              <View style={{flexDirection: "row", alignItems: "center"}}>
-                <TamaguiButton
-                  icon={<Info color={theme === 'dark' ? darkTheme.color : lightTheme.color}/>}
-                  size="$4"
-                  circular
-                  backgroundColor="$colorTransparent"
-                  marginLeft="$2"
-                  onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
-                  onHoverIn={() => setGroupsInfoLabelVisible(false)}
-                  onHoverOut={() => setGroupsInfoLabelVisible(true)}
-                />
-              <Text style={[{opacity: !groupsTooltipVisible && groupsInfoLabelVisible ? 1 : 0, marginLeft: -10}, screenStyle]}>learn more</Text>
-              </View>
-              {groupsTooltipVisible && (
-              <View style={[styles.tooltip, {backgroundColor: theme === 'dark' ? darkTheme.color : lightTheme.color}]}>
-                <View style={[styles.arrow, {borderRightColor: theme === 'dark' ? darkTheme.color : lightTheme.color}]} />
-                <Text style={{ color: screenStyle.backgroundColor }}>Groups allow you to organize users. Users must accept your invitation.</Text>
-              </View>
-              )}
+    <ScrollView style={[{ flex: 1, backgroundColor: 'white' }, screenStyle]}>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+        <XStack flexDirection="row" justifyContent="center" alignItems="center" position="relative" zIndex={2001}>
+          <Text style={styles.subtitle2}>Groups</Text>
+          <View style={{ position: 'relative', paddingVertical: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Button
+                size="$4"
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                data-groups-info-button
+                onPress={() => setGroupsTooltipVisible(!groupsTooltipVisible)}
+                icon={<Info color={theme === 'dark' ? darkTheme.color : lightTheme.color} />}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    color: '$color',
+                    marginLeft: -10
+                  }}
+                >
+                  learn more
+                </Text>
+              </Button>
             </View>
-          </XStack>
-          <TamaguiButton
-            icon={<Menu />}
-            size="$4"
-            circular
-            onPress={() => setSidebarOpen(true)}
-            style={screenStyle}
-            disabled
-          />
+            {groupsTooltipVisible && (
+              <YStack
+                position="absolute"
+                zIndex={2000}
+                elevation={4}
+                top="100%"
+                left="50%"
+                width="100%"
+                style={{ transform: [{ translateX: -50 }] }}
+              >
+                <View style={styles.tooltip} ref={groupsTooltipRef}>
+                  <View style={styles.arrow} />
+                  <Text style={{ color: 'white' }}>Groups allow you to organize users. Users must accept your invitation.</Text>
+                </View>
+              </YStack>
+            )}
+          </View>
         </XStack>
-        <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
-        <View style={{width: 180}}/>
+      </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+        <View style={[styles.container, screenStyle]}>
+          <XStack flex={1} alignItems="center" gap="$2">
+            <Select
+              items={[...groups, { label: 'Create Group', value: 'create-group' }]}
+              value={selectedGroup}
+              onValueChange={handleGroupSelectChange} />
+
+            {selectedGroup && isGroupAdmin && (
+              <Popover size="$5" allowFlip>
+                <Popover.Trigger asChild>
+                  <Button
+                    icon={<MoreVertical size="$1" />}
+                    circular
+                    size="$3"
+                    backgroundColor="$colorTransparent"
+                    hoverStyle={{ backgroundColor: '$gray5' }}
+                  />
+                </Popover.Trigger>
+
+                <Popover.Content
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                  enterStyle={{ y: -10, opacity: 0 }}
+                  exitStyle={{ y: -10, opacity: 0 }}
+                  elevate
+                  animation={[
+                    'quick',
+                    {
+                      opacity: {
+                        overshootClamping: true,
+                      },
+                    },
+                  ]}
+                  width={width * 0.8}
+                  maxWidth={400}
+                  alignSelf="center"
+                >
+                  <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
+
+                  <YStack space="$3" padding="$4">
+                    <Button
+                      onPress={() => setAddMembersModalOpen(true)}
+                      icon={<UserPlus size={16} />}
+                      size="$3"
+                    >
+                      Add Members Manually
+                    </Button>
+                    <Button
+                      onPress={handleFileUpload}
+                      icon={<Upload size={16} />}
+                      size="$3"
+                    >
+                      Add Members Via CSV
+                    </Button>
+                    <Button
+                      onPress={() => setUpdateNameModalOpen(true)}
+                      icon={<Edit3 size={16} />}
+                      size="$3"
+                    >
+                      Update Name
+                    </Button>
+                  </YStack>
+                </Popover.Content>
+              </Popover>
+            )}
+          </XStack>
+          {currentToast && !currentToast.isHandledNatively && (
+            <Toast
+              key={currentToast.id}
+              duration={currentToast.duration}
+              enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+              exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+              y={0}
+              opacity={1}
+              scale={1}
+              animation="100ms"
+              viewportName={currentToast.viewportName}
+            >
+              <YStack>
+                <Toast.Title>{currentToast.title}</Toast.Title>
+                {!!currentToast.message && (
+                  <Toast.Description>{currentToast.message}</Toast.Description>
+                )}
+              </YStack>
+            </Toast>
+          )}
+          {selectedGroup && (
+            <YStack paddingVertical="$2">
+            <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
+            {groupUsers.map((groupUser) => (
+              <XStack
+                key={groupUser.id}
+                alignItems="center"
+                justifyContent="space-between"
+                width="100%"
+                paddingVertical="$2"
+                paddingHorizontal="$4"
+                gap="$4"
+                opacity={!isGroupAdmin ? 0.6 : 1}
+              >
+                <XStack flex={1} minWidth={0}>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    flex={1}
+                    minWidth={0}
+                  >
+                    {groupUser.username}
+                  </Text>
+                </XStack>
+
+                {isTabletOrDesktop ? (
+                  <XStack gap="$4" alignItems="center">
+                    {isGroupAdmin && user.email !== groupUser.username && (
+                      <View>
+                        <Button
+                          onPress={() => removeMember(groupUser.username)}
+                          size="$3"
+                          flexShrink={0}
+                        >
+                          Remove
+                        </Button>
+                      </View>
+                    )}
+                    {!(isGroupAdmin && user.email === groupUser.username) && (
+                      <>
+                        <Text style={{ flexShrink: 0 }}>Viewing permissions</Text>
+                        <Checkbox
+                          checked={groupUser.can_view}
+                          onCheckedChange={(newValue) =>
+                            handleUserCheckBoxChange(groupUser.username, newValue)
+                          }
+                          size="$3"
+                          flexShrink={0}
+                          disabled={!isGroupAdmin}
+                        />
+                      </>
+                    )}
+                  </XStack>
+                ) : (
+                  <YStack alignItems="flex-start" width="100%" paddingVertical="$2" gap="$2">
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={{ width: '100%' }}
+                    >
+                      {groupUser.username}
+                    </Text>
+                    <XStack justifyContent="space-between" alignItems="center" width="100%">
+                      {isGroupAdmin && user.email !== groupUser.username && (
+                        <Button
+                          onPress={() => removeMember(groupUser.username)}
+                          size="$3"
+                          hoverStyle={{ backgroundColor: '$red6' }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                      {!(isGroupAdmin && user.email === groupUser.username) && (
+                        <XStack alignItems="center" gap="$2">
+                          <Text>Can View</Text>
+                          <Checkbox
+                            checked={groupUser.can_view}
+                            onCheckedChange={(newValue) => handleUserCheckBoxChange(groupUser.username, newValue)}
+                            size="$3"
+                            disabled={!isGroupAdmin}
+                          />
+                        </XStack>
+                      )}
+                    </XStack>
+                  </YStack>
+                )}
+              </XStack>
+            ))}
+          </YStack>
+          )}
+        </View>
+        <View style={{ width: 42 }} />
+      </XStack>
+      <Dialog
+        open={isCreateGroupModalOpen}
+        onOpenChange={setCreateGroupModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            key="content"
+            bordered
+            elevate
+            style={[styles.dialogContent, screenStyle]}
+          >
+            <Dialog.Title>Create Group</Dialog.Title>
+            <br />
+            <Input
+              placeholder="Group Name"
+              value={groupName}
+              onChangeText={(text) => {
+                setGroupName(text);
+                if (text.length >= 5) {
+                  setGroupNameError("");
+                }
+              }}
+              style={[styles.input, screenStyle]}
+            />
+            {groupNameError ? (
+              <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
+            ) : null}
+            <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+              <Button onPress={() => setCreateGroupModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onPress={createGroup}
+                disabled={groupName.length < 5}
+              >
+                Submit
+              </Button>
+            </XStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5" marginTop="$24">
+        <XStack flexDirection="row" justifyContent="center" alignItems="center" position="relative" zIndex={2000}>
+          <Text style={styles.subtitle2}>Configurations</Text>
+          <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Button
+                size="$4"
+                backgroundColor="$colorTransparent"
+                marginLeft="$2"
+                data-configs-info-button
+                icon={<Info />}
+                onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    marginLeft: -10,
+                    color: '$color'
+                  }}
+                >
+                  learn more
+                </Text>
+              </Button>
+            </View>
+            {configurationsTooltipVisible && (
+              <YStack
+                position="absolute"
+                zIndex={2000}
+                elevation={4}
+                top="100%"
+                left="50%"
+                style={{ transform: [{ translateX: -50 }] }}
+              >
+                <View style={styles.tooltip} ref={configurationsTooltipRef}>
+                  <View style={styles.arrow} />
+                  <Text style={{ color: 'white' }}>
+                    Configurations allow you to organize groups for combined analysis. No need to send any invitations; this is just for you!
+                  </Text>
+                </View>
+              </YStack>
+            )}
+          </View>
+        </XStack>
+        <View style={{ width: 42 }} />
+      </XStack>
+      <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
+
         <View style={[styles.container, screenStyle]}>
           <Select
-            items={groups}
-            value={selectedGroup}
-            onValueChange={(value) => setSelectedGroup(value)}
+            items={[...configurations, { label: 'Create Configuration', value: 'create-configuration' }]}
+            value={selectedConfiguration}
+            onValueChange={handleConfigurationSelectChange}
           />
-
-
-          {currentToast && !currentToast.isHandledNatively && (
-          <Toast
-            key={currentToast.id}
-            duration={currentToast.duration}
-            enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-            exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+          {selectedConfiguration && (
+            <YStack padding="$2" gap="$1">
+              <Text style={[styles.subtitle, screenStyle]}>Configuration Groups:</Text>
+              {configurationGroups.map((group) => (
+                <XStack justifyContent="flex-start" gap="$3" key={group.id} style={screenStyle}>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    minWidth={0}
+                  >{group.name}</Text>
+                  <Checkbox size="$3" checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
+                    <Checkbox.Indicator>
+                      <Check />
+                    </Checkbox.Indicator>
+                  </Checkbox>
+                </XStack>
+              ))}
+            </YStack>
+          )}
+        </View>
+        <View style={{ width: 42 }} />
+      </XStack>
+      <Dialog
+        open={isCreateConfigurationModalOpen}
+        onOpenChange={setCreateConfigurationModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            key="content"
+            bordered
+            elevate
+            style={[styles.dialogContent, screenStyle]}
+          >
+            <Dialog.Title style={screenStyle}>Create Configuration</Dialog.Title>
+            <br />
+            <Input
+              placeholder="Configuration Name"
+              value={newConfigurationName}
+              onChangeText={(text) => {
+                setNewConfigurationName(text);
+                if (text.length >= 5) {
+                  setConfigurationNameError("");
+                }
+              }}
+              style={[styles.input, screenStyle]}
+            />
+            {configurationNameError ? (
+              <Text style={styles.errorText}>{configurationNameError}</Text>
+            ) : null}
+            <XStack space="$2" marginTop="$4" justifyContent="flex-end">
+              <Button onPress={() => setCreateConfigurationModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onPress={createConfiguration}
+                disabled={newConfigurationName.length < 5}
+              >
+                Submit
+              </Button>
+            </XStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+      <Dialog
+        open={isLeaveGroupDialogOpen}
+        onOpenChange={setLeaveGroupDialogOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
             y={0}
             opacity={1}
             scale={1}
-            animation="100ms"
-            viewportName={currentToast.viewportName}
           >
-            <YStack>
-              <Toast.Title>{currentToast.title}</Toast.Title>
-              {!!currentToast.message && (
-                <Toast.Description>{currentToast.message}</Toast.Description>
-              )}
-            </YStack>
-          </Toast>
-        )}
-          {selectedGroup && (
-            <>
-              <Text style={[styles.subtitle, screenStyle]}>Group Members:</Text>
-              {groupUsers.map((user) => (
-                <View key={user.id} style={[styles.row, screenStyle]}>
-                  <Text style={[styles.username, screenStyle]}>{user.username}</Text>
-                  <TamaguiButton onPress={() => removeMember(user.username)} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
-                  >
-                    Remove
-                  </TamaguiButton>
-                  <Text style={screenStyle}>{"Viewing permissions"}</Text>
-                  <Checkbox
-                    checked={user.can_view}
-                    onCheckedChange={(newValue) =>
-                      handleUserCheckBoxChange(user.username, newValue)
-                    }
-                  />
-
-                </View>
-              ))}
-              <View style={[styles.row, screenStyle]}>
-                <Input
-                  placeholder="New group name"
-                  value={groupName}
-                  onChangeText={(text) => {
-                    setGroupName(text);
-                    if (text.length >= 5) {
-                      setGroupNameError("");
-                    }
+            <YStack space="$4">
+              <Dialog.Title>Leave Group</Dialog.Title>
+              <Dialog.Description>
+                Are you sure you want to leave this group? You'll need a new invitation to rejoin.
+              </Dialog.Description>
+              <XStack space="$3" justifyContent="flex-end">
+                <Button
+                  onPress={() => setLeaveGroupDialogOpen(false)}
+                  backgroundColor="$gray8"
+                  hoverStyle={{
+                    backgroundColor: "$gray7",
+                    opacity: 0.9
                   }}
-                  style={[styles.input, screenStyle]}
-                />
-                <TamaguiButton onPress={updateGroupName} disabled={groupName.length < 5} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
                 >
-                  Update Name
-                </TamaguiButton>
-              </View>
-              {groupNameError ? (
-                <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
-              ) : null}
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleLeaveGroup}
+                  backgroundColor="$red10"
+                  color="white"
+                  hoverStyle={{
+                    backgroundColor: "$red9",
+                    opacity: 0.9
+                  }}
+                >
+                  Leave
+                </Button>
+              </XStack>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
 
-
-              <View style={[styles.row, screenStyle]}>
-                <Input
-                  value={newMember}
-                  onChangeText={setNewMember}
-                  placeholder="Enter username"
-                  style={[styles.input, screenStyle]}
-                />
-                <TamaguiButton onPress={addMember} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
-                >
-                    Add Member
-                </TamaguiButton>
-              </View>
-              <View style={[styles.row, screenStyle]}>
-                <TamaguiButton onPress={handleFileUpload} style={styles.tamaguiButton} hoverStyle={styles.tamaguiButton}
-                >
-                    Add Members from CSV
-                </TamaguiButton>
-              </View>
-              <Sheet
-                modal
-                open={isSidebarOpen}
-                onOpenChange={setSidebarOpen}
-                snapPoints={[0.4, 0.8]}
-                zIndex={200000}
-                dismissOnSnapToBottom
-                animation="bouncy"
-              >
-                <Sheet.Frame>
-                  <Sheet.ScrollView>
-                    <YStack space="$3" padding="$4">
-                      <H4>Group Join Requests</H4>
-                      {joinRequests.length === 0 ? (
-                        <Text>No join requests</Text>
-                      ) : (
-                        joinRequests.map((request) => (
-                          <XStack
-                            key={request.username}
-                            justifyContent="space-between"
-                            alignItems="center"
-                          >
-                            <Text>{request.username}</Text>
-                            <XStack space="$2">
-                              <TamaguiButton
-                                size="$3"
-                                /*onPress={() => handleJoinRequest(request.username, 'approve')}*/
-                              >
-                                Approve
-                              </TamaguiButton>
-                              <TamaguiButton
-                                size="$3"
-                                /* onPress={() => handleJoinRequest(request.username, 'decline')} */
-                              >
-                                Decline
-                              </TamaguiButton>
-                            </XStack>
-                          </XStack>
-                        ))
-                      )}
-                    </YStack>
-                  </Sheet.ScrollView>
-                </Sheet.Frame>
-              </Sheet>
-            </>
-          )}
-        </View>
-        <View style={{width: 42}}/>
-        </XStack>
-        <Dialog
-          open={isCreateGroupModalOpen}
-          onOpenChange={setCreateGroupModalOpen}
-        >
-          <Dialog.Portal>
-            <Dialog.Overlay
-              key="overlay"
-              animation="quick"
-              opacity={0.5}
-              enterStyle={{ opacity: 0 }}
-              exitStyle={{ opacity: 0 }}
-              backgroundColor="black"
-            />
-            <Dialog.Content
-              key="content"
-              bordered
-              elevate
-              style={[styles.dialogContent, screenStyle]}
-            >
-              <Dialog.Title style={screenStyle}>Create Group</Dialog.Title>
-              <br />
+      {/* Add Members Modal */}
+      <Dialog open={isAddMembersModalOpen} onOpenChange={setAddMembersModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
+            y={0}
+            opacity={1}
+            scale={1}
+            width={width * 0.9}
+            maxWidth={500}
+          >
+            <Dialog.Title>Add Members</Dialog.Title>
+            <YStack space="$4" padding="$4">
               <Input
-                placeholder="Group Name"
+                placeholder="Member Email"
+                value={newMember}
+                onChangeText={setNewMember}
+              />
+              <Button onPress={addMember}>Add Member</Button>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      {/* Update Name Modal */}
+      <Dialog open={isUpdateNameModalOpen} onOpenChange={setUpdateNameModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            key="overlay"
+            animation="quick"
+            opacity={0.5}
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="black"
+          />
+          <Dialog.Content
+            bordered
+            elevate
+            key="content"
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+            enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            x={0}
+            y={0}
+            opacity={1}
+            scale={1}
+            width={width * 0.9}
+            maxWidth={500}
+          >
+            <Dialog.Title>Update Group Name</Dialog.Title>
+            <YStack space="$4" padding="$4" gap="$4">
+              <Input
+                placeholder="New Group Name"
                 value={groupName}
                 onChangeText={(text) => {
                   setGroupName(text);
@@ -649,207 +1001,67 @@ const GroupsScreen = ({ navigation }) => {
                     setGroupNameError("");
                   }
                 }}
-                style={[styles.input, screenStyle]}
               />
               {groupNameError ? (
-                <Text style={[styles.errorText, screenStyle]}>{groupNameError}</Text>
+                <Text style={styles.errorText}>{groupNameError}</Text>
               ) : null}
-              <XStack space="$2" marginTop="$4" justifyContent="flex-end">
-                <TamaguiButton onPress={() => setCreateGroupModalOpen(false)}>
-                  Cancel
-                </TamaguiButton>
-                <TamaguiButton
-                  onPress={createGroup}
-                  disabled={groupName.length < 5}
-                >
-                  Submit
-                </TamaguiButton>
-              </XStack>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog>
-        <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5" marginTop="$24">
-            <TamaguiButton
-              size="$4"
-              backgroundColor="$blue10"
-              color="white"
-              borderRadius="$2"
-              margin="$2"
-              style={{ width: 180 }}
-              onPress={() => setCreateConfigurationModalOpen(true)}
-              hoverStyle={styles.tamaguiButton}
-            >
-              Create Configuration
-          </TamaguiButton>
-
-          <XStack flexDirection="row" justifyContent="center" alignItems="center">
-            <Text style={[styles.subtitle2, screenStyle]}>Configurations</Text>
-            <View>
-              <View style={{flexDirection: "row", alignItems: "center"}}>
-                <TamaguiButton
-                  icon={<Info color={theme === 'dark' ? darkTheme.color : lightTheme.color}/>}
-                  size="$4"
-                  circular
-                  backgroundColor="$colorTransparent"
-                  marginLeft="$2"
-                  onPress={() => setConfigurationsTooltipVisible(!configurationsTooltipVisible)}
-                  onHoverIn={() => setConfigurationsInfoLabelVisible(false)}
-                  onHoverOut={() => setConfigurationsInfoLabelVisible(true)}
-                />
-                <Text style={[{opacity: !configurationsTooltipVisible && configurationsInfoLabelVisible ? 1 : 0, marginLeft: -10}, screenStyle]}>learn more</Text>
-              </View>
-              {configurationsTooltipVisible && (
-              <View style={[styles.tooltip, {backgroundColor: theme === 'dark' ? darkTheme.color : lightTheme.color}]}>
-                <View style={[styles.arrow, {borderRightColor: theme === 'dark' ? darkTheme.color : lightTheme.color}]} />
-                <Text style={{ color: screenStyle.backgroundColor }}>Configurations allow you to organize groups for combined analysis. No need to send any invitations; this is just for you!</Text>
-              </View>
-              )}
-            </View>
-          </XStack>
-          <View style={{width: 42}}/>
-        </XStack>
-        <XStack justifyContent="space-between" alignItems="flex-end" width="100%" paddingHorizontal="$5">
-        <View style={{width: 180}}/>
-        <View style={[styles.container, screenStyle]}>
-          <Select
-            items={configurations}
-            value={selectedConfiguration}
-            onValueChange={(value) => setSelectedConfiguration(value)}
-          />
-
-
-          {currentToast && !currentToast.isHandledNatively && (
-          <Toast
-            key={currentToast.id}
-            duration={currentToast.duration}
-            enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-            exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-            y={0}
-            opacity={1}
-            scale={1}
-            animation="100ms"
-            viewportName={currentToast.viewportName}
-          >
-            <YStack>
-              <Toast.Title>{currentToast.title}</Toast.Title>
-              {!!currentToast.message && (
-                <Toast.Description>{currentToast.message}</Toast.Description>
-              )}
-            </YStack>
-          </Toast>
-        )}
-          {selectedConfiguration && (
-            <>
-              <Text style={[styles.subtitle, screenStyle]}>Configuration Groups:</Text>
-              {configurationGroups.map((group) => (
-                <View key={group.id} style={[styles.row, screenStyle]}>
-                  <Text style={[styles.username, screenStyle]}>{group.name}</Text>
-                  <Checkbox checked={checkedGroups[group.id]} onCheckedChange={() => handleGroupCheckBoxChange(group.id)}>
-                  <Checkbox.Indicator>
-                      <Check />
-                    </Checkbox.Indicator>
-                  </Checkbox>
-                </View>
-              ))}
-            </>
-          )}
-        </View>
-        <View style={{width: 42}}/>
-        </XStack>
-        <Dialog
-          open={isCreateConfigurationModalOpen}
-          onOpenChange={setCreateConfigurationModalOpen}
-        >
-          <Dialog.Portal>
-            <Dialog.Overlay
-              key="overlay"
-              animation="quick"
-              opacity={0.5}
-              enterStyle={{ opacity: 0 }}
-              exitStyle={{ opacity: 0 }}
-              backgroundColor="black"
-            />
-            <Dialog.Content
-              key="content"
-              bordered
-              elevate
-              style={[styles.dialogContent, screenStyle]}
-            >
-              <Dialog.Title style={screenStyle}>Create Configuration</Dialog.Title>
-              <br />
-              <Input
-                placeholder="Configuration Name"
-                value={newConfigurationName}
-                onChangeText={(text) => {
-                  setNewConfigurationName(text);
-                  if (text.length >= 5) {
-                    setConfigurationNameError("");
-                  }
+              <Button
+                onPress={() => {
+                  updateGroupName();
+                  setUpdateNameModalOpen(false);
                 }}
-                style={[styles.input, screenStyle]}
-              />
-              {configurationNameError ? (
-                <Text style={styles.errorText}>{configurationNameError}</Text>
-              ) : null}
-              <XStack space="$2" marginTop="$4" justifyContent="flex-end">
-                <TamaguiButton onPress={() => setCreateConfigurationModalOpen(false)}>
-                  Cancel
-                </TamaguiButton>
-                <TamaguiButton
-                  onPress={createConfiguration}
-                  disabled={newConfigurationName.length < 5}
-                >
-                  Submit
-                </TamaguiButton>
-              </XStack>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog>
-      </View>
-    </View>
+                disabled={groupName.length < 5}
+              >
+                Update Name
+              </Button>
+            </YStack>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 20,
-    padding: 20,
-    maxWidth: 600,
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    maxWidth: '100%',
     alignSelf: 'center',
     backgroundColor: 'white',
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    paddingHorizontal: isTabletOrDesktop ? 20 : 0,
+    paddingVertical: 2,
     gap: 10,
+    flexWrap: 'wrap',
+    width: isTabletOrDesktop ? '80%' : '100%',
+    justifyContent: 'space-between', // Use space-between for better distribution
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: width > 768 ? 20 : width > 480 ? 18 : 16, // Adjust font size for different screen sizes
     fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 8,
     flex: 1,
-    marginRight: 10,
-    maxWidth: 400,
-  },
-  spacer: {
-    width: 10,
+    maxWidth: '100%', // Allow input to take full width
   },
   username: {
     flex: 1,
-    marginRight: 10,
   },
   dialogContent: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    width: 300,
+    width: '90%', // Use percentage for width
+    maxWidth: 400,
     alignSelf: "center",
   },
   errorText: {
@@ -857,27 +1069,22 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   subtitle2: {
-    fontSize: 24,
+    fontSize: width > 768 ? 24 : width > 480 ? 22 : 20, // Adjust font size for different screen sizes
   },
   tooltip: {
-    position: 'absolute',
-    left: '100%',
-    top: '50%',
-    transform: [{ translateY: -50 }],
+    backgroundColor: '#333',
     padding: 10,
-    marginTop: 20,
-    marginLeft: -50,
     borderRadius: 5,
-    width: 300,
+    width: width > 480 ? 250 : 200,
   },
   arrow: {
     position: 'absolute',
-    top: 35,
-    right: '100%',
-    marginTop: -10,
-    marginLeft: -50,
+    top: -8, // Adjust this value to fine-tune arrow position
+    left: '50%',
+    transform: [{ translateX: -5 }], // Half of the borderWidth to center it
     borderWidth: 5,
     borderColor: 'transparent',
+    borderBottomColor: '#333',
     borderStyle: 'solid',
   },
   tamaguiButton: {
