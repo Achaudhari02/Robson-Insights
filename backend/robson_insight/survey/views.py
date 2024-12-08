@@ -2,6 +2,7 @@ import csv
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.utils.dateparse import parse_date
+from django.shortcuts import get_object_or_404
 
 from django.http import HttpResponse, JsonResponse
 from django.core.mail import EmailMessage
@@ -189,7 +190,7 @@ class FilterEntriesByDateView(APIView):
         return JsonResponse({'entries': entries_data})
         
         
-class EntryFilterListView(generics.ListAPIView):
+class EntryFilterListView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EntrySerializer
 
@@ -513,3 +514,19 @@ class GenerateQuarterlyXLSX(APIView):
         response["Content-Disposition"] = 'attachment; filename="quarterly_survey_data.xlsx"'
         wb.save(response)
         return response
+    
+    
+class DeleteFilterView(APIView):
+    
+    def delete(self, request, pk):
+        
+        filter = get_object_or_404(Filter, pk=pk)
+        
+        try:
+            filter = Filter.objects.get(pk=pk, user=request.user)
+        except:
+            return Response({'error': 'filter not found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        filter.delete()
+        
+        return Response({'success': 'filter deleted'}, status=status.HTTP_200_OK) 
