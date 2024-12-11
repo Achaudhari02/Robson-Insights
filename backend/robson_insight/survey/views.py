@@ -37,7 +37,9 @@ class EntryListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         # Fetch all user profiles where the user has can_add permissions
-        user_profiles = UserProfile.objects
+        user_profiles = UserProfile.objects.filter(
+            user=self.request.user
+        )
         if not user_profiles.exists():
             raise PermissionDenied("You do not have permission to add entries to any group.")
 
